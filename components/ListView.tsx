@@ -68,9 +68,7 @@ export default function ListView({
           }}>
             Snippets
           </h1>
-          <span style={{
-            fontSize: 13, color: "var(--text3)", fontWeight: 600,
-          }}>
+          <span style={{ fontSize: 13, color: "var(--text3)", fontWeight: 600 }}>
             v{version}
           </span>
         </div>
@@ -166,9 +164,7 @@ export default function ListView({
                   }}>
                     {cat}
                   </span>
-                  <span style={{
-                    fontSize: 13, color: "var(--text3)", fontWeight: 600,
-                  }}>
+                  <span style={{ fontSize: 13, color: "var(--text3)", fontWeight: 600 }}>
                     {catCount(cat)}
                   </span>
                   {filterCat === cat && (
@@ -257,9 +253,7 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
       }}>
         Nog geen snippets
       </p>
-      <p style={{
-        color: "var(--text3)", fontSize: 14, margin: "0 0 24px",
-      }}>
+      <p style={{ color: "var(--text3)", fontSize: 14, margin: "0 0 24px" }}>
         Tik op + om je eerste snippet toe te voegen
       </p>
       <button style={{
@@ -284,29 +278,57 @@ function SwipeRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
 }) {
   const [offset, setOffset] = useState(0);
   const startX = useRef(0);
+  const startY = useRef(0);
   const isDragging = useRef(false);
+  const isHorizontal = useRef<boolean | null>(null);
   const THRESHOLD = 60;
 
   const onTouchStart = (e: React.TouchEvent) => {
     startX.current = e.touches[0].clientX;
+    startY.current = e.touches[0].clientY;
     isDragging.current = true;
+    isHorizontal.current = null;
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
     if (!isDragging.current) return;
-    const diff = e.touches[0].clientX - startX.current;
-    setOffset(Math.max(-120, Math.min(80, diff)));
+    const diffX = e.touches[0].clientX - startX.current;
+    const diffY = e.touches[0].clientY - startY.current;
+
+    // Bepaal richting bij eerste beweging
+    if (isHorizontal.current === null) {
+      if (Math.abs(diffX) > Math.abs(diffY)) {
+        isHorizontal.current = true;
+      } else {
+        isHorizontal.current = false;
+        isDragging.current = false;
+        return;
+      }
+    }
+
+    if (!isHorizontal.current) return;
+    e.preventDefault();
+    setOffset(Math.max(-120, Math.min(80, diffX)));
   };
 
   const onTouchEnd = () => {
     isDragging.current = false;
+    isHorizontal.current = null;
     if (offset < -THRESHOLD) {
       setOffset(-120);
     } else if (offset > THRESHOLD) {
       setOffset(0);
-      onEdit();
+      setTimeout(() => onEdit(), 300);
     } else {
       setOffset(0);
+    }
+  };
+
+  const handleClick = () => {
+    if (Math.abs(offset) > 5) {
+      setOffset(0);
+    } else {
+      onOpen();
     }
   };
 
@@ -360,11 +382,12 @@ function SwipeRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
           transform: `translateX(${offset}px)`,
           transition: isDragging.current ? "none" : "transform 0.3s ease",
           animation: `snapIn 0.25s ease ${delay}ms both`,
+          userSelect: "none",
         }}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
-        onClick={offset === 0 ? onOpen : () => setOffset(0)}
+        onClick={handleClick}
       >
         <div style={{ position: "relative" }}>
           <div style={{

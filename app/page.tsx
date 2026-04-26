@@ -186,7 +186,8 @@ export default function Page() {
         <div style={{
           position: "fixed", bottom: 96,
           left: "50%", transform: "translateX(-50%)",
-          background: toast.includes("🗑") ? "#ef4444" : "#10b981",
+          background: background: toast.startsWith("🗑") ? "#ef4444" : "#10b981",
+
           color: "#fff", padding: "9px 20px",
           borderRadius: 20, fontSize: 14,
           fontWeight: 600, zIndex: 300,
