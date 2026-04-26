@@ -12,7 +12,8 @@ import ListView from "@/components/ListView";
 import DetailView from "@/components/DetailView";
 import EditView from "@/components/EditView";
 
-export const VERSION = "1.2";
+const VERSION = "1.2";
+
 type View = "list" | "detail" | "edit" | "new";
 
 export default function Page() {
