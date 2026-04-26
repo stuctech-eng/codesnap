@@ -6,11 +6,14 @@ const CATS = ["AI Prompts", "Snippets", "Config", "UI", "Machines", "Ideeën"];
 
 interface Props {
   snip: Snippet | null;
+  theme: "dark" | "light";
   onSave: (data: Omit<Snippet, "id">) => void;
   onCancel: () => void;
 }
 
-export default function EditView({ snip, onSave, onCancel }: Props) {
+type Field = "title" | "description" | "code" | "category" | "tags" | null;
+
+export default function EditView({ snip, theme, onSave, onCancel }: Props) {
   const isNew = !snip;
   const [form, setForm] = useState({
     title: snip?.title || "",
@@ -20,15 +23,8 @@ export default function EditView({ snip, onSave, onCancel }: Props) {
     tags: snip?.tags?.join(", ") || "",
     favorite: snip?.favorite || false,
   });
-  const codeRef = useRef<HTMLTextAreaElement>(null);
+  const [activeField, setActiveField] = useState<Field>(null);
   const set = (k: string, v: unknown) => setForm(f => ({ ...f, [k]: v }));
-
-  useEffect(() => {
-    if (codeRef.current) {
-      codeRef.current.style.height = "auto";
-      codeRef.current.style.height = codeRef.current.scrollHeight + "px";
-    }
-  }, [form.code]);
 
   const save = () => {
     if (!form.title.trim()) { alert("Titel is verplicht"); return; }
@@ -38,70 +34,130 @@ export default function EditView({ snip, onSave, onCancel }: Props) {
     });
   };
 
+  // Full screen field editor
+  if (activeField && activeField !== "category") {
+    return (
+      <FullScreenField
+        label={activeField.toUpperCase()}
+        value={form[activeField]}
+        isCode={activeField === "code"}
+        onDone={(val) => { set(activeField, val); setActiveField(null); }}
+        onCancel={() => setActiveField(null)}
+      />
+    );
+  }
+
   const F: React.CSSProperties = {
     width: "100%", boxSizing: "border-box",
-    background: "#1c1c1e", border: "none",
-    borderRadius: 12, color: "#f9fafb",
+    background: "var(--bg2)", border: "1px solid var(--border)",
+    borderRadius: 12, color: "var(--text)",
     fontSize: 16, padding: 14, outline: "none",
   };
-  const L: React.CSSProperties = {
-    fontSize: 12, color: "#6b7280", fontWeight: 600,
-    marginBottom: 6, paddingLeft: 2,
-    letterSpacing: "0.05em", display: "block",
-  };
+
+  const fieldRow = (label: string, field: Field, preview: string) => (
+    <button
+      style={{ display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 4, background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 14, padding: "14px 16px", width: "100%", cursor: "pointer", marginBottom: 12, boxSizing: "border-box" }}
+      onClick={() => setActiveField(field)}
+    >
+      <span style={{ fontSize: 11, color: "var(--text3)", fontWeight: 700, letterSpacing: "0.08em" }}>{label}</span>
+      <span style={{ fontSize: 15, color: preview ? "var(--text)" : "var(--text3)", textAlign: "left", lineHeight: 1.4, fontFamily: field === "code" ? "monospace" : "inherit" }}>
+        {preview || `Tik om ${label.toLowerCase()} in te voeren...`}
+      </span>
+      <div style={{ alignSelf: "flex-end", marginTop: 4 }}>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="m9 18 6-6-6-6"/></svg>
+      </div>
+    </button>
+  );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "52px 16px 12px", background: "#000", borderBottom: "1px solid #111", position: "sticky", top: 0, zIndex: 10 }}>
-        <button style={{ background: "none", border: "none", color: "#f59e0b", fontSize: 17, cursor: "pointer" }} onClick={onCancel}>Cancel</button>
-        <span style={{ fontSize: 17, fontWeight: 600 }}>{isNew ? "Add Snippet" : "Edit Snippet"}</span>
-        <button style={{ background: "none", border: "none", color: "#f59e0b", fontSize: 17, fontWeight: 700, cursor: "pointer" }} onClick={save}>Save</button>
+    <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", background: "var(--bg)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "52px 16px 12px", background: "var(--bg)", borderBottom: "1px solid var(--border)", position: "sticky", top: 0, zIndex: 10 }}>
+        <button style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 17, cursor: "pointer" }} onClick={onCancel}>Cancel</button>
+        <span style={{ fontSize: 17, fontWeight: 600, color: "var(--text)" }}>{isNew ? "Add Snippet" : "Edit Snippet"}</span>
+        <button style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 17, fontWeight: 700, cursor: "pointer" }} onClick={save}>Save</button>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px 60px" }}>
+
+        {fieldRow("TITEL", "title", form.title)}
+        {fieldRow("BESCHRIJVING", "description", form.description)}
+        {fieldRow("CODE", "code", form.code ? form.code.slice(0, 60) + (form.code.length > 60 ? "..." : "") : "")}
+
+        {/* Categorie select inline */}
         <div style={{ marginBottom: 12 }}>
-          <label style={L}>TITEL</label>
-          <input style={F} placeholder="Naam van de snippet"
-            value={form.title} onChange={e => set("title", e.target.value)} />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={L}>BESCHRIJVING</label>
-          <textarea style={{ ...F, minHeight: 80, resize: "none", lineHeight: 1.5 }}
-            placeholder="Wat doet deze snippet?"
-            value={form.description} onChange={e => set("description", e.target.value)} />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={L}>CODE</label>
-          <textarea ref={codeRef}
-            style={{ ...F, fontFamily: "'Fira Code',monospace", fontSize: 13, color: "#fbbf24", minHeight: 130, resize: "none", lineHeight: 1.7 }}
-            placeholder="Plak hier je code..."
-            value={form.code} onChange={e => set("code", e.target.value)} />
-        </div>
-        <div style={{ marginBottom: 12 }}>
-          <label style={L}>CATEGORIE</label>
+          <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 700, letterSpacing: "0.08em", marginBottom: 6, paddingLeft: 2 }}>CATEGORIE</div>
           <select style={{ ...F }} value={form.category} onChange={e => set("category", e.target.value)}>
-            {CATS.map(c => <option key={c} value={c} style={{ background: "#1c1c1e" }}>{c}</option>)}
+            {CATS.map(c => <option key={c} value={c} style={{ background: "var(--bg2)" }}>{c}</option>)}
           </select>
         </div>
-        <div style={{ marginBottom: 16 }}>
-          <label style={L}>TAGS</label>
-          <input style={F} placeholder="react, api, prompt"
-            value={form.tags} onChange={e => set("tags", e.target.value)} />
-        </div>
 
-        <button style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#1c1c1e", borderRadius: 12, padding: 14, border: "none", width: "100%", cursor: "pointer", marginBottom: 16 }}
+        {fieldRow("TAGS", "tags", form.tags)}
+
+        {/* Favoriet */}
+        <button style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "var(--bg2)", borderRadius: 14, padding: "14px 16px", border: "1px solid var(--border)", width: "100%", cursor: "pointer", marginBottom: 20, boxSizing: "border-box" }}
           onClick={() => set("favorite", !form.favorite)}>
-          <span style={{ color: "#9ca3af", fontSize: 15 }}>Markeer als favoriet</span>
-          <div style={{ width: 46, height: 26, borderRadius: 13, position: "relative", background: form.favorite ? "#f59e0b" : "#3a3a3c", transition: "background 0.25s", flexShrink: 0 }}>
+          <span style={{ color: "var(--text2)", fontSize: 15 }}>Markeer als favoriet</span>
+          <div style={{ width: 46, height: 26, borderRadius: 13, position: "relative", background: form.favorite ? "var(--accent)" : "var(--bg3)", transition: "background 0.25s", flexShrink: 0 }}>
             <div style={{ position: "absolute", top: 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "transform 0.25s", transform: form.favorite ? "translateX(22px)" : "translateX(2px)" }} />
           </div>
         </button>
 
-        <button style={{ width: "100%", padding: 16, background: "#f59e0b", borderRadius: 14, border: "none", color: "#000", fontSize: 17, fontWeight: 700, cursor: "pointer" }}
+        <button style={{ width: "100%", padding: 16, background: "var(--accent)", borderRadius: 14, border: "none", color: "#000", fontSize: 17, fontWeight: 700, cursor: "pointer" }}
           onClick={save}>
           {isNew ? "Snippet Opslaan" : "Wijzigingen Opslaan"}
         </button>
       </div>
+    </div>
+  );
+}
+
+// ── FULLSCREEN FIELD ──────────────────────────────────────
+function FullScreenField({ label, value, isCode, onDone, onCancel }: {
+  label: string;
+  value: string;
+  isCode: boolean;
+  onDone: (val: string) => void;
+  onCancel: () => void;
+}) {
+  const [text, setText] = useState(value);
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    setTimeout(() => ref.current?.focus(), 100);
+  }, []);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "var(--bg)", zIndex: 500, display: "flex", flexDirection: "column", animation: "slideInRight 0.25s ease" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "52px 16px 12px", borderBottom: "1px solid var(--border)", background: "var(--bg)" }}>
+        <button style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 17, cursor: "pointer" }} onClick={onCancel}>Annuleer</button>
+        <span style={{ fontSize: 17, fontWeight: 600, color: "var(--text)" }}>{label}</span>
+        <button style={{ background: "none", border: "none", color: "var(--accent)", fontSize: 17, fontWeight: 700, cursor: "pointer" }} onClick={() => onDone(text)}>Klaar</button>
+      </div>
+
+      <textarea
+        ref={ref}
+        style={{
+          flex: 1, padding: 20, fontSize: isCode ? 14 : 18,
+          lineHeight: isCode ? 1.7 : 1.6,
+          background: "var(--bg)", border: "none", outline: "none",
+          color: isCode ? "var(--code-text)" : "var(--text)",
+          fontFamily: isCode ? "'Fira Code','JetBrains Mono',monospace" : "inherit",
+          resize: "none",
+        }}
+        placeholder={isCode ? "Plak hier je code..." : `Voer ${label.toLowerCase()} in...`}
+        value={text}
+        onChange={e => setText(e.target.value)}
+      />
+
+      {isCode && (
+        <div style={{ padding: "8px 16px 34px", background: "var(--bg)", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span style={{ fontSize: 12, color: "var(--text3)" }}>{text.split("\n").length} regels · {text.length} tekens</span>
+          <button style={{ background: "var(--bg2)", border: "1px solid var(--border)", borderRadius: 10, padding: "6px 14px", color: "var(--text2)", fontSize: 13, cursor: "pointer" }}
+            onClick={() => navigator.clipboard.readText().then(t => setText(t))}>
+            Plak
+          </button>
+        </div>
+      )}
     </div>
   );
 }
