@@ -28,18 +28,16 @@ export default function Page() {
 
   const active = snips.find((s) => s.id === activeId);
 
-  // Theme
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
-  // Firebase realtime
   useEffect(() => {
     const unsub = listenSnippets(setSnips);
     return () => unsub();
   }, []);
 
-  const flash = (msg: string, color = "#10b981") => {
+  const flash = (msg: string) => {
     setToast(msg);
     setTimeout(() => setToast(null), 2000);
   };
@@ -57,7 +55,7 @@ export default function Page() {
 
   const handleDelete = async (id: string) => {
     await deleteSnippet(id);
-    flash("🗑 Verwijderd", "#ef4444");
+    flash("🗑 Verwijderd");
     goList();
   };
 
@@ -110,9 +108,12 @@ export default function Page() {
       ),
     [snips, search, filterCat]);
 
-  const featured = useMemo(() => snips.filter((s) => s.favorite), [snips]);
+  const featured = useMemo(() =>
+    snips.filter((s) => s.favorite),
+    [snips]);
 
-  const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
+  const toggleTheme = () =>
+    setTheme(t => t === "dark" ? "light" : "dark");
 
   return (
     <main style={{
