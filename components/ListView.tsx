@@ -59,18 +59,35 @@ export default function ListView({
       {/* Header */}
       <div style={{ padding: "52px 20px 12px", background: "var(--bg)" }}>
         <div style={{
-          display: "flex", alignItems: "baseline",
-          gap: 10, marginBottom: 14,
+          display: "flex", alignItems: "center",
+          justifyContent: "space-between", marginBottom: 14,
         }}>
-          <h1 style={{
-            fontSize: 34, fontWeight: 700, margin: 0,
-            letterSpacing: "-0.03em", color: "var(--text)",
-          }}>
-            Snippets
-          </h1>
-          <span style={{ fontSize: 13, color: "var(--text3)", fontWeight: 600 }}>
-            v{version}
-          </span>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+            <h1 style={{
+              fontSize: 34, fontWeight: 700, margin: 0,
+              letterSpacing: "-0.03em", color: "var(--text)",
+            }}>
+              Snippets
+            </h1>
+            <span style={{ fontSize: 13, color: "var(--text3)", fontWeight: 600 }}>
+              v{version}
+            </span>
+          </div>
+          {/* Thema knop rechtsboven */}
+          <button
+            onClick={onToggleTheme}
+            style={{
+              width: 36, height: 36, borderRadius: "50%",
+              background: "var(--bg2)", border: "1px solid var(--border)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              cursor: "pointer",
+            }}
+          >
+            {theme === "dark"
+              ? <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+              : <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" strokeWidth="2" strokeLinecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+            }
+          </button>
         </div>
 
         {/* Search */}
@@ -80,8 +97,7 @@ export default function ListView({
           padding: "0 12px", gap: 8, marginBottom: 10,
           border: "1px solid var(--border)",
         }}>
-          <svg width="15" height="15" viewBox="0 0 24 24"
-            fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="8"/>
             <path d="m21 21-4.35-4.35"/>
           </svg>
@@ -96,11 +112,10 @@ export default function ListView({
             onChange={e => onSearch(e.target.value)}
           />
           {search && (
-            <button style={{
-              background: "none", border: "none",
-              color: "var(--text3)", fontSize: 16, cursor: "pointer",
-            }}
-              onClick={() => onSearch("")}>✕</button>
+            <button
+              style={{ background: "none", border: "none", color: "var(--text3)", fontSize: 16, cursor: "pointer" }}
+              onClick={() => onSearch("")}
+            >✕</button>
           )}
         </div>
 
@@ -129,8 +144,7 @@ export default function ListView({
             <span style={{ color: "var(--text3)", fontSize: 12 }}>
               {catCount(filterCat)} snippets
             </span>
-            <svg width="14" height="14" viewBox="0 0 24 24"
-              fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round">
               <path d={showCatMenu ? "m18 15-6-6-6 6" : "m6 9 6 6 6-6"}/>
             </svg>
           </button>
@@ -168,8 +182,7 @@ export default function ListView({
                     {catCount(cat)}
                   </span>
                   {filterCat === cat && (
-                    <svg width="14" height="14" viewBox="0 0 24 24"
-                      fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
                       <polyline points="20 6 9 17 4 12"/>
                     </svg>
                   )}
@@ -181,14 +194,15 @@ export default function ListView({
       </div>
 
       {/* List */}
-      <div style={{ flex: 1, overflowY: "auto", paddingBottom: 110 }}
-        onClick={() => setShowCatMenu(false)}>
-
+      <div
+        style={{ flex: 1, overflowY: "auto", paddingBottom: 110 }}
+        onClick={() => setShowCatMenu(false)}
+      >
         <Section title="My snippets" count={mySnips.length}>
           {mySnips.length === 0
             ? <EmptyState onAdd={onAdd} />
             : mySnips.map((s, i) => (
-              <SwipeRow key={s.id} snip={s} delay={i * 35}
+              <LongPressRow key={s.id} snip={s} delay={i * 35}
                 onOpen={() => onOpen(s.id!)}
                 onFav={() => onFav(s.id!, s.favorite)}
                 onEdit={() => onEdit(s.id!)}
@@ -203,7 +217,7 @@ export default function ListView({
         {featured.length > 0 && (
           <Section title="Featured" count={featured.length}>
             {featured.map((s, i) => (
-              <SwipeRow key={s.id} snip={s} delay={i * 35}
+              <LongPressRow key={s.id} snip={s} delay={i * 35}
                 onOpen={() => onOpen(s.id!)}
                 onFav={() => onFav(s.id!, s.favorite)}
                 onEdit={() => onEdit(s.id!)}
@@ -216,7 +230,35 @@ export default function ListView({
         )}
       </div>
 
-      <BottomNav onAdd={onAdd} onToggleTheme={onToggleTheme} theme={theme} />
+      {/* Bottom nav -- grote + knop */}
+      <div style={{
+        position: "fixed", bottom: 0, left: "50%",
+        transform: "translateX(-50%)",
+        width: "100%", maxWidth: 430,
+        background: "var(--bg)",
+        borderTop: "1px solid var(--border)",
+        display: "flex", justifyContent: "center",
+        alignItems: "center",
+        padding: "12px 0 34px", zIndex: 50,
+      }}>
+        <button
+          onClick={onAdd}
+          style={{
+            display: "flex", alignItems: "center", gap: 10,
+            background: "var(--accent)", border: "none",
+            borderRadius: 16, padding: "14px 32px",
+            color: "#000", fontSize: 17, fontWeight: 700,
+            cursor: "pointer",
+            boxShadow: "0 4px 16px rgba(245,158,11,0.4)",
+          }}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Nieuwe Snippet
+        </button>
+      </div>
     </div>
   );
 }
@@ -247,28 +289,27 @@ function EmptyState({ onAdd }: { onAdd: () => void }) {
   return (
     <div style={{ padding: "48px 20px", textAlign: "center" }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>✂️</div>
-      <p style={{
-        color: "var(--text2)", fontSize: 17,
-        fontWeight: 600, margin: "0 0 8px",
-      }}>
+      <p style={{ color: "var(--text2)", fontSize: 17, fontWeight: 600, margin: "0 0 8px" }}>
         Nog geen snippets
       </p>
       <p style={{ color: "var(--text3)", fontSize: 14, margin: "0 0 24px" }}>
-        Tik op + om je eerste snippet toe te voegen
+        Tik op de knop om je eerste snippet toe te voegen
       </p>
-      <button style={{
-        background: "var(--accent)", color: "#000", border: "none",
-        padding: "12px 24px", borderRadius: 14,
-        fontSize: 16, fontWeight: 700, cursor: "pointer",
-      }}
-        onClick={onAdd}>
+      <button
+        style={{
+          background: "var(--accent)", color: "#000", border: "none",
+          padding: "12px 24px", borderRadius: 14,
+          fontSize: 16, fontWeight: 700, cursor: "pointer",
+        }}
+        onClick={onAdd}
+      >
         + Eerste snippet
       </button>
     </div>
   );
 }
 
-function SwipeRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
+function LongPressRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
   snip: Snippet;
   onOpen: () => void;
   onFav: () => void;
@@ -276,118 +317,41 @@ function SwipeRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
   onDelete: () => void;
   delay: number;
 }) {
-  const [offset, setOffset] = useState(0);
-  const startX = useRef(0);
-  const startY = useRef(0);
-  const isDragging = useRef(false);
-  const isHorizontal = useRef<boolean | null>(null);
-  const THRESHOLD = 60;
-
-  const onTouchStart = (e: React.TouchEvent) => {
-    startX.current = e.touches[0].clientX;
-    startY.current = e.touches[0].clientY;
-    isDragging.current = true;
-    isHorizontal.current = null;
-  };
-
-  const onTouchMove = (e: React.TouchEvent) => {
-    if (!isDragging.current) return;
-    const diffX = e.touches[0].clientX - startX.current;
-    const diffY = e.touches[0].clientY - startY.current;
-
-    // Bepaal richting bij eerste beweging
-    if (isHorizontal.current === null) {
-      if (Math.abs(diffX) > Math.abs(diffY)) {
-        isHorizontal.current = true;
-      } else {
-        isHorizontal.current = false;
-        isDragging.current = false;
-        return;
-      }
-    }
-
-    if (!isHorizontal.current) return;
-    e.preventDefault();
-    setOffset(Math.max(-120, Math.min(80, diffX)));
-  };
-
-  const onTouchEnd = () => {
-    isDragging.current = false;
-    isHorizontal.current = null;
-    if (offset < -THRESHOLD) {
-      setOffset(-120);
-    } else if (offset > THRESHOLD) {
-      setOffset(0);
-      setTimeout(() => onEdit(), 300);
-    } else {
-      setOffset(0);
-    }
-  };
-
-  const handleClick = () => {
-    if (Math.abs(offset) > 5) {
-      setOffset(0);
-    } else {
-      onOpen();
-    }
-  };
-
+  const [showMenu, setShowMenu] = useState(false);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const catColor = CAT_COLORS[snip.category] || "var(--accent)";
 
+  const startPress = () => {
+    pressTimer.current = setTimeout(() => {
+      setShowMenu(true);
+    }, 500);
+  };
+
+  const cancelPress = () => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
+  };
+
   return (
-    <div style={{
-      position: "relative", overflow: "hidden",
-      borderBottom: "1px solid var(--border)",
-    }}>
-      {/* Achter links -- Edit */}
-      <div style={{
-        position: "absolute", left: 0, top: 0, bottom: 0, width: 80,
-        background: "var(--accent)",
-        display: "flex", alignItems: "center",
-        justifyContent: "center", cursor: "pointer",
-      }}
-        onClick={onEdit}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 20 }}>✏️</div>
-          <div style={{
-            fontSize: 10, fontWeight: 700,
-            color: "#000", marginTop: 2,
-          }}>EDIT</div>
-        </div>
-      </div>
-
-      {/* Achter rechts -- Delete */}
-      <div style={{
-        position: "absolute", right: 0, top: 0, bottom: 0, width: 120,
-        background: "var(--red)",
-        display: "flex", alignItems: "center",
-        justifyContent: "center", cursor: "pointer",
-      }}
-        onClick={() => { setOffset(0); onDelete(); }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ fontSize: 20 }}>🗑</div>
-          <div style={{
-            fontSize: 10, fontWeight: 700,
-            color: "#fff", marginTop: 2,
-          }}>VERWIJDER</div>
-        </div>
-      </div>
-
-      {/* Row */}
+    <>
       <div
         style={{
           display: "flex", alignItems: "flex-start",
           padding: "14px 20px", cursor: "pointer",
           background: "var(--bg)",
-          transform: `translateX(${offset}px)`,
-          transition: isDragging.current ? "none" : "transform 0.3s ease",
+          borderBottom: "1px solid var(--border)",
           animation: `snapIn 0.25s ease ${delay}ms both`,
           userSelect: "none",
         }}
-        onTouchStart={onTouchStart}
-        onTouchMove={onTouchMove}
-        onTouchEnd={onTouchEnd}
-        onClick={handleClick}
+        onTouchStart={startPress}
+        onTouchEnd={cancelPress}
+        onTouchMove={cancelPress}
+        onMouseDown={startPress}
+        onMouseUp={cancelPress}
+        onMouseLeave={cancelPress}
+        onClick={() => { if (!showMenu) onOpen(); }}
       >
         <div style={{ position: "relative" }}>
           <div style={{
@@ -406,10 +370,7 @@ function SwipeRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
         </div>
 
         <div style={{ flex: 1, paddingLeft: 14, paddingRight: 8 }}>
-          <div style={{
-            fontSize: 17, fontWeight: 600,
-            marginBottom: 3, color: "var(--text)",
-          }}>
+          <div style={{ fontSize: 17, fontWeight: 600, marginBottom: 3, color: "var(--text)" }}>
             {snip.title}
           </div>
           {snip.description && (
@@ -421,17 +382,9 @@ function SwipeRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
               {snip.description}
             </div>
           )}
-          <div style={{
-            display: "flex", alignItems: "center",
-            gap: 6, marginTop: 6,
-          }}>
-            <div style={{
-              width: 6, height: 6, borderRadius: "50%",
-              background: catColor,
-            }} />
-            <span style={{
-              fontSize: 11, color: "var(--text3)", fontWeight: 500,
-            }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+            <div style={{ width: 6, height: 6, borderRadius: "50%", background: catColor }} />
+            <span style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500 }}>
               {snip.category}
             </span>
           </div>
@@ -439,22 +392,15 @@ function SwipeRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
 
         <button
           style={{
-            display: "flex", flexDirection: "column",
-            alignItems: "center", background: "none",
-            border: "none", cursor: "pointer",
+            display: "flex", flexDirection: "column", alignItems: "center",
+            background: "none", border: "none", cursor: "pointer",
             padding: "2px 0", flexShrink: 0,
           }}
           onClick={e => { e.stopPropagation(); onFav(); }}
         >
           {snip.favorite
-            ? <svg width="21" height="21" viewBox="0 0 24 24"
-                fill="var(--accent)" stroke="var(--accent)" strokeWidth="2">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
-            : <svg width="21" height="21" viewBox="0 0 24 24"
-                fill="none" stroke="var(--border2)" strokeWidth="2">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
-              </svg>
+            ? <svg width="21" height="21" viewBox="0 0 24 24" fill="var(--accent)" stroke="var(--accent)" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            : <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="var(--border2)" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
           }
           <span style={{
             fontSize: 11, marginTop: 2, fontWeight: 600,
@@ -464,6 +410,79 @@ function SwipeRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
           </span>
         </button>
       </div>
-    </div>
+
+      {/* Lang indrukken menu */}
+      {showMenu && (
+        <div
+          style={{
+            position: "fixed", inset: 0,
+            background: "rgba(0,0,0,0.6)",
+            zIndex: 200, display: "flex",
+            flexDirection: "column",
+            justifyContent: "flex-end",
+            padding: "0 8px 34px",
+          }}
+          onClick={() => setShowMenu(false)}
+        >
+          <div onClick={e => e.stopPropagation()}>
+            <div style={{
+              background: "var(--bg2)", borderRadius: 14,
+              overflow: "hidden", marginBottom: 8,
+            }}>
+              <div style={{
+                padding: "12px 16px",
+                borderBottom: "1px solid var(--border2)",
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "var(--text)" }}>
+                  {snip.title}
+                </div>
+                <div style={{ fontSize: 12, color: "var(--text3)", marginTop: 2 }}>
+                  {snip.category}
+                </div>
+              </div>
+              <button
+                style={{
+                  width: "100%", padding: 18,
+                  background: "transparent", border: "none",
+                  color: "var(--accent)", fontSize: 17,
+                  fontWeight: 500, cursor: "pointer",
+                }}
+                onClick={() => { setShowMenu(false); onEdit(); }}
+              >
+                ✏️ Bewerken
+              </button>
+              <div style={{ height: 1, background: "var(--border2)" }} />
+              <button
+                style={{
+                  width: "100%", padding: 18,
+                  background: "transparent", border: "none",
+                  color: "var(--red)", fontSize: 17,
+                  fontWeight: 500, cursor: "pointer",
+                }}
+                onClick={() => {
+                  setShowMenu(false);
+                  setTimeout(() => {
+                    if (window.confirm(`"${snip.title}" verwijderen?`)) onDelete();
+                  }, 100);
+                }}
+              >
+                🗑 Verwijderen
+              </button>
+            </div>
+            <button
+              style={{
+                width: "100%", padding: 18,
+                background: "var(--bg2)", border: "none",
+                color: "var(--accent)", fontSize: 17,
+                fontWeight: 700, cursor: "pointer", borderRadius: 14,
+              }}
+              onClick={() => setShowMenu(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
