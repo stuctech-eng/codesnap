@@ -16,7 +16,9 @@ const VERSION = "1.2";
 type View = "list" | "detail" | "edit" | "new";
 
 export default function Page() {
+  const [mounted, setMounted] = useState(false);
   const [snips, setSnips] = useState<Snippet[]>([]);
+
   const [view, setView] = useState<View>("list");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -112,8 +114,29 @@ export default function Page() {
     snips.filter((s) => s.favorite),
     [snips]);
 
-  const toggleTheme = () =>
+    const toggleTheme = () =>
     setTheme(t => t === "dark" ? "light" : "dark");
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) return (
+    <main style={{
+      minHeight: "100vh",
+      background: "#000",
+      maxWidth: 430,
+      margin: "0 auto",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+    }}>
+      <div style={{ color: "#f59e0b", fontSize: 32 }}>✂️</div>
+    </main>
+  );
+
+  return (
+
 
   return (
     <main style={{
