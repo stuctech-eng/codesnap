@@ -30,12 +30,36 @@ function detectLanguage(code: string): string {
 function buildCopyText(snip: Snippet, action: string): string {
   const lang = detectLanguage(snip.code);
   const type = snip.snippetType || "code";
+  const codeBlock = "```" + lang + "\n" + snip.code + "\n```";
 
-  const prefixes: Record<string, string> = {
-    analyseer: `Analyseer deze ${lang} code en geef gedetailleerde feedback:\n\n`,
-    bugfix:    `Zoek alle bugs in deze ${lang} code en geef de gecorrigeerde versie:\n\n`,
-    verbeter:  `Verbeter deze ${lang} code qua leesbaarheid en best practices:\n\n`,
-  };
+  if (action === "code") return snip.code;
+
+  if (type === "prompt") {
+    if (action === "alles") {
+      return "## CodeSnap -- " + snip.title + "\n\n**Categorie:** " + snip.category +
+        (snip.tags?.length ? "\n**Tags:** " + snip.tags.join(", ") : "") +
+        "\n\n---\n\n### Beschrijving\n" + snip.description +
+        "\n\n---\n\n### Prompt\n" + snip.code;
+    }
+    return snip.code;
+  }
+
+  if (action === "alles") {
+    const descPart = snip.description
+      ? "\n\n---\n\n### " + (type === "instructie" ? "Instructie" : "Beschrijving") + "\n" + snip.description
+      : "";
+    return "## CodeSnap -- " + snip.title + "\n\n**Categorie:** " + snip.category +
+      (snip.tags?.length ? "\n**Tags:** " + snip.tags.join(", ") : "") +
+      descPart + "\n\n---\n\n### Code\n" + codeBlock;
+  }
+
+  if (action === "analyseer") return "Analyseer deze " + lang + " code en geef gedetailleerde feedback:\n\n" + codeBlock;
+  if (action === "bugfix")    return "Zoek alle bugs in deze " + lang + " code en geef de gecorrigeerde versie:\n\n" + codeBlock;
+  if (action === "verbeter")  return "Verbeter deze " + lang + " code qua leesbaarheid en best practices:\n\n" + codeBlock;
+
+  return codeBlock;
+}
+
 
   const codeBlock = `\`\`\`${lang}\n${snip.code}\n\`\`\``;
 
