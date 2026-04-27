@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { Snippet } from "@/lib/types";
-import BottomNav from "./BottomNav";
 
 const CATEGORIES = ["Alles", "AI Prompts", "Snippets", "Config", "UI", "Machines", "Ideeën"];
 const CAT_COLORS: Record<string, string> = {
@@ -73,7 +72,6 @@ export default function ListView({
               v{version}
             </span>
           </div>
-          {/* Thema knop rechtsboven */}
           <button
             onClick={onToggleTheme}
             style={{
@@ -107,7 +105,7 @@ export default function ListView({
               outline: "none", color: "var(--text)",
               fontSize: 16, padding: "11px 0",
             }}
-            placeholder="Search"
+            placeholder="Zoek in titels, beschrijving en code..."
             value={search}
             onChange={e => onSearch(e.target.value)}
           />
@@ -230,7 +228,7 @@ export default function ListView({
         )}
       </div>
 
-      {/* Bottom nav -- grote + knop */}
+      {/* Bottom nav */}
       <div style={{
         position: "fixed", bottom: 0, left: "50%",
         transform: "translateX(-50%)",
@@ -322,9 +320,7 @@ function LongPressRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
   const catColor = CAT_COLORS[snip.category] || "var(--accent)";
 
   const startPress = () => {
-    pressTimer.current = setTimeout(() => {
-      setShowMenu(true);
-    }, 500);
+    pressTimer.current = setTimeout(() => setShowMenu(true), 500);
   };
 
   const cancelPress = () => {
@@ -332,6 +328,11 @@ function LongPressRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
       clearTimeout(pressTimer.current);
       pressTimer.current = null;
     }
+  };
+
+  const formatDate = (date?: string) => {
+    if (!date) return "";
+    return date;
   };
 
   return (
@@ -344,18 +345,20 @@ function LongPressRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
           borderBottom: "1px solid var(--border)",
           animation: `snapIn 0.25s ease ${delay}ms both`,
           userSelect: "none",
-        }}
+          WebkitUserSelect: "none",
+        } as React.CSSProperties}
         onTouchStart={startPress}
         onTouchEnd={cancelPress}
         onTouchMove={cancelPress}
+        onContextMenu={e => e.preventDefault()}
         onMouseDown={startPress}
         onMouseUp={cancelPress}
         onMouseLeave={cancelPress}
         onClick={() => { if (!showMenu) onOpen(); }}
       >
-        <div style={{ position: "relative" }}>
+        <div style={{ position: "relative", flexShrink: 0 }}>
           <div style={{
-            width: 48, height: 48, borderRadius: 12, flexShrink: 0,
+            width: 48, height: 48, borderRadius: 12,
             display: "flex", alignItems: "center", justifyContent: "center",
             fontSize: 15, fontWeight: 800, color: "#000",
             background: avColor(snip.title),
@@ -382,11 +385,19 @@ function LongPressRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
               {snip.description}
             </div>
           )}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 6 }}>
             <div style={{ width: 6, height: 6, borderRadius: "50%", background: catColor }} />
             <span style={{ fontSize: 11, color: "var(--text3)", fontWeight: 500 }}>
               {snip.category}
             </span>
+            {snip.createdAt && (
+              <>
+                <span style={{ fontSize: 11, color: "var(--border2)" }}>·</span>
+                <span style={{ fontSize: 11, color: "var(--text3)" }}>
+                  {formatDate(snip.createdAt)}
+                </span>
+              </>
+            )}
           </div>
         </div>
 
@@ -418,8 +429,7 @@ function LongPressRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
             position: "fixed", inset: 0,
             background: "rgba(0,0,0,0.6)",
             zIndex: 200, display: "flex",
-            flexDirection: "column",
-            justifyContent: "flex-end",
+            flexDirection: "column", justifyContent: "flex-end",
             padding: "0 8px 34px",
           }}
           onClick={() => setShowMenu(false)}
@@ -442,9 +452,8 @@ function LongPressRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
               </div>
               <button
                 style={{
-                  width: "100%", padding: 18,
-                  background: "transparent", border: "none",
-                  color: "var(--accent)", fontSize: 17,
+                  width: "100%", padding: 18, background: "transparent",
+                  border: "none", color: "var(--accent)", fontSize: 17,
                   fontWeight: 500, cursor: "pointer",
                 }}
                 onClick={() => { setShowMenu(false); onEdit(); }}
@@ -454,9 +463,8 @@ function LongPressRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
               <div style={{ height: 1, background: "var(--border2)" }} />
               <button
                 style={{
-                  width: "100%", padding: 18,
-                  background: "transparent", border: "none",
-                  color: "var(--red)", fontSize: 17,
+                  width: "100%", padding: 18, background: "transparent",
+                  border: "none", color: "var(--red)", fontSize: 17,
                   fontWeight: 500, cursor: "pointer",
                 }}
                 onClick={() => {
@@ -471,9 +479,8 @@ function LongPressRow({ snip, onOpen, onFav, onEdit, onDelete, delay }: {
             </div>
             <button
               style={{
-                width: "100%", padding: 18,
-                background: "var(--bg2)", border: "none",
-                color: "var(--accent)", fontSize: 17,
+                width: "100%", padding: 18, background: "var(--bg2)",
+                border: "none", color: "var(--accent)", fontSize: 17,
                 fontWeight: 700, cursor: "pointer", borderRadius: 14,
               }}
               onClick={() => setShowMenu(false)}

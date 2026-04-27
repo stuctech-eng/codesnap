@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import { Snippet } from "@/lib/types";
 
 const initials = (t = "") => t.slice(0, 2).toUpperCase();
@@ -11,17 +11,9 @@ const CAT_COLORS: Record<string, string> = {
   "Machines": "#3b82f6", "Ideeën": "#8b5cf6",
 };
 
-// VS Code kleuren
 const VS = {
-  bg: "#1e1e1e",
-  bar: "#252526",
-  lineNum: "#858585",
-  keyword: "#569cd6",
-  string: "#ce9178",
-  comment: "#6a9955",
-  default: "#d4d4d4",
-  number: "#b5cea8",
-  accent: "#c586c0",
+  bg: "#1e1e1e", bar: "#252526",
+  lineNum: "#858585", default: "#d4d4d4",
 };
 
 interface Props {
@@ -32,7 +24,8 @@ interface Props {
   onCloseSheet: () => void; onAdd: () => void;
 }
 
-type FullField = "title" | "description" | "code" | null;
+type FullField = "title" | "description" | "code" | "notes" | null;
+type Tab = "about" | "code" | "notes";
 
 export default function DetailView({
   snip, copied, showSheet, theme,
@@ -40,18 +33,52 @@ export default function DetailView({
   onCopy, onFav, onShare, onExport,
   onCloseSheet, onAdd,
 }: Props) {
-  const [tab, setTab] = useState<"about" | "code">("about");
+  const [tab, setTab] = useState<Tab>("about");
   const [fullField, setFullField] = useState<FullField>(null);
+  const [copyAllDone, setCopyAllDone] = useState(false);
+  const [formatDone, setFormatDone] = useState(false);
   const catColor = CAT_COLORS[snip.category] || "var(--accent)";
 
-  // Volledig scherm weergave
+  const copyAll = () => {
+    const text = `# ${snip.title}\n\n**Categorie:** ${snip.category}\n\n## Beschrijving\n${snip.description}\n\n## Code\n\`\`\`\n${snip.code}\n\`\`\`${snip.notes ? `\n\n## Notities\n${snip.notes}` : ""}\n\n**Tags:** ${snip.tags?.join(", ")}`;
+    navigator.clipboard.writeText(text).then(() => {
+      setCopyAllDone(true);
+      setTimeout(() => setCopyAllDone(false), 2200);
+    });
+  };
+
+  const formatCode = () => {
+    try {
+      // Probeer JSON te formatteren
+      const parsed = JSON.parse(snip.code);
+      const formatted = JSON.stringify(parsed, null, 2);
+      navigator.clipboard.writeText(formatted).then(() => {
+        setFormatDone(true);
+        setTimeout(() => setFormatDone(false), 2200);
+      });
+    } catch {
+      // Basis JS/TS formatting
+      let code = snip.code;
+      code = code.replace(/;(\S)/g, ";\n$1");
+      code = code.replace(/\{(\S)/g, "{\n  $1");
+      code = code.replace(/(\S)\}/g, "\n$1\n}");
+      navigator.clipboard.writeText(code).then(() => {
+        setFormatDone(true);
+        setTimeout(() => setFormatDone(false), 2200);
+      });
+    }
+  };
+
   if (fullField) {
     return (
       <FullScreenRead
         label={fullField.toUpperCase()}
-        value={fullField === "title" ? snip.title
+        value={
+          fullField === "title" ? snip.title
           : fullField === "description" ? snip.description
-          : snip.code}
+          : fullField === "notes" ? (snip.notes || "")
+          : snip.code
+        }
         isCode={fullField === "code"}
         copied={copied}
         onCopy={onCopy}
@@ -82,11 +109,14 @@ export default function DetailView({
           </svg>
           <span style={{ color: "var(--accent)", fontSize: 17 }}>Snippets</span>
         </button>
-        <span style={{ fontSize: 17, fontWeight: 600, color: "var(--text)", maxWidth: 180, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+        <span style={{
+          fontSize: 16, fontWeight: 600, color: "var(--text)",
+          maxWidth: 160, overflow: "hidden",
+          textOverflow: "ellipsis", whiteSpace: "nowrap",
+        }}>
           {snip.title}
         </span>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          {/* + knop */}
           <button
             onClick={onAdd}
             style={{
@@ -101,7 +131,6 @@ export default function DetailView({
               <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
           </button>
-          {/* ··· knop */}
           <button
             style={{ background: "none", border: "none", cursor: "pointer" }}
             onClick={onDots}
@@ -121,28 +150,29 @@ export default function DetailView({
         </div>
       </div>
 
-      {/* Segment */}
+      {/* Tabs */}
       <div style={{ padding: "10px 16px 0", background: "var(--bg)" }}>
         <div style={{ background: "var(--bg2)", borderRadius: 10, padding: 2, display: "flex" }}>
-          {(["about", "code"] as const).map(t => (
+          {(["about", "code", "notes"] as Tab[]).map(t => (
             <button key={t} onClick={() => setTab(t)}
               style={{
                 flex: 1, padding: "7px 0", borderRadius: 8,
-                border: "none", cursor: "pointer", fontSize: 15,
+                border: "none", cursor: "pointer", fontSize: 14,
                 fontWeight: tab === t ? 600 : 500,
                 background: tab === t ? "var(--bg3)" : "transparent",
                 color: tab === t ? "var(--text)" : "var(--text2)",
               }}>
-              {t === "about" ? "About" : "Code"}
+              {t === "about" ? "About" : t === "code" ? "Code" : "Notes"}
             </button>
           ))}
         </div>
       </div>
 
       <div style={{ flex: 1, overflowY: "auto", paddingBottom: 40 }}>
-        {tab === "about" ? (
+
+        {/* ABOUT TAB */}
+        {tab === "about" && (
           <div style={{ padding: "24px 20px" }}>
-            {/* Avatar */}
             <div style={{
               width: 72, height: 72, borderRadius: 18,
               display: "flex", alignItems: "center", justifyContent: "center",
@@ -152,37 +182,25 @@ export default function DetailView({
               {initials(snip.title)}
             </div>
 
-            {/* Titel -- tik voor volledig scherm */}
-            <button
-              onClick={() => setFullField("title")}
-              style={{
-                display: "block", width: "100%", textAlign: "left",
-                background: "none", border: "none", cursor: "pointer",
-                padding: 0, marginBottom: 10,
-              }}
-            >
-              <h1 style={{
-                fontSize: 30, fontWeight: 700, margin: 0,
-                letterSpacing: "-0.02em", color: "var(--text)",
-              }}>
-                {snip.title}
-              </h1>
-            </button>
+            <h1 style={{
+              fontSize: 28, fontWeight: 700, margin: "0 0 10px",
+              letterSpacing: "-0.02em", color: "var(--text)",
+            }}>
+              {snip.title}
+            </h1>
 
-            {/* Categorie */}
             {snip.category && (
               <div style={{
                 display: "inline-flex", alignItems: "center", gap: 6,
                 background: catColor + "22", padding: "4px 12px",
                 borderRadius: 20, fontSize: 13, fontWeight: 600,
-                marginBottom: 14, color: catColor,
+                marginBottom: 16, color: catColor,
               }}>
                 <div style={{ width: 6, height: 6, borderRadius: "50%", background: catColor }} />
                 {snip.category}
               </div>
             )}
 
-            {/* Beschrijving -- tik voor volledig scherm */}
             {snip.description && (
               <button
                 onClick={() => setFullField("description")}
@@ -194,7 +212,7 @@ export default function DetailView({
                 }}
               >
                 <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 700, marginBottom: 6, letterSpacing: "0.06em" }}>
-                  BESCHRIJVING ›
+                  BESCHRIJVING › volledig scherm
                 </div>
                 <p style={{
                   fontSize: 15, color: "var(--text2)",
@@ -207,7 +225,6 @@ export default function DetailView({
               </button>
             )}
 
-            {/* Tags */}
             {snip.tags?.length > 0 && (
               <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 20 }}>
                 {snip.tags.map(t => (
@@ -220,8 +237,23 @@ export default function DetailView({
               </div>
             )}
 
-            {/* Acties */}
-            <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+            {/* Kopieer Alles */}
+            <button
+              onClick={copyAll}
+              style={{
+                display: "flex", alignItems: "center", justifyContent: "center",
+                gap: 8, width: "100%", padding: "13px",
+                background: copyAllDone ? "var(--green)" : "var(--bg2)",
+                border: "1px solid var(--border)", borderRadius: 14,
+                cursor: "pointer", fontSize: 15, fontWeight: 700,
+                color: copyAllDone ? "#fff" : "var(--text2)",
+                marginBottom: 10, transition: "background 0.2s",
+              }}
+            >
+              {copyAllDone ? "✓ Alles gekopieerd!" : "⎘ Kopieer Alles (markdown)"}
+            </button>
+
+            <div style={{ display: "flex", gap: 10 }}>
               <button onClick={onFav} style={{
                 flex: 1, padding: "12px",
                 background: snip.favorite ? "var(--accent)" : "var(--bg2)",
@@ -245,25 +277,42 @@ export default function DetailView({
               }}>↓ Export</button>
             </div>
           </div>
-        ) : (
-          <div style={{ padding: "16px" }}>
-            {/* Copy knop */}
-            <button
-              style={{
-                display: "flex", alignItems: "center", justifyContent: "center",
-                gap: 10, width: "100%", padding: 16, borderRadius: 14,
-                border: "none", fontSize: 17, fontWeight: 700,
-                cursor: "pointer", marginBottom: 12,
-                background: copied ? "var(--green)" : "var(--accent)",
-                color: copied ? "#fff" : "#000",
-                transition: "background 0.2s",
-              }}
-              onClick={onCopy}
-            >
-              {copied ? "✓ Gekopieerd!" : "⎘ Kopieer Code"}
-            </button>
+        )}
 
-            {/* Volledig scherm knop */}
+        {/* CODE TAB */}
+        {tab === "code" && (
+          <div style={{ padding: "16px" }}>
+            <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+              <button
+                style={{
+                  flex: 2, display: "flex", alignItems: "center",
+                  justifyContent: "center", gap: 8, padding: "13px",
+                  borderRadius: 14, border: "none", fontSize: 15,
+                  fontWeight: 700, cursor: "pointer",
+                  background: copied ? "var(--green)" : "var(--accent)",
+                  color: copied ? "#fff" : "#000",
+                  transition: "background 0.2s",
+                }}
+                onClick={onCopy}
+              >
+                {copied ? "✓ Gekopieerd!" : "⎘ Kopieer Code"}
+              </button>
+              <button
+                style={{
+                  flex: 1, display: "flex", alignItems: "center",
+                  justifyContent: "center", gap: 6, padding: "13px",
+                  borderRadius: 14, border: "1px solid var(--border)",
+                  fontSize: 13, fontWeight: 700, cursor: "pointer",
+                  background: formatDone ? "var(--green)" : "var(--bg2)",
+                  color: formatDone ? "#fff" : "var(--text2)",
+                  transition: "background 0.2s",
+                }}
+                onClick={formatCode}
+              >
+                {formatDone ? "✓ Klaar" : "⚡ Format"}
+              </button>
+            </div>
+
             <button
               onClick={() => setFullField("code")}
               style={{
@@ -278,8 +327,56 @@ export default function DetailView({
               ⛶ Volledig scherm
             </button>
 
-            {/* VS Code block */}
             <VSCodeBlock code={snip.code} />
+          </div>
+        )}
+
+        {/* NOTES TAB */}
+        {tab === "notes" && (
+          <div style={{ padding: "20px" }}>
+            {snip.notes ? (
+              <button
+                onClick={() => setFullField("notes")}
+                style={{
+                  display: "block", width: "100%", textAlign: "left",
+                  background: "var(--bg2)", border: "1px solid var(--border)",
+                  borderRadius: 14, padding: "16px",
+                  cursor: "pointer", marginBottom: 16,
+                }}
+              >
+                <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 700, marginBottom: 8, letterSpacing: "0.06em" }}>
+                  NOTITIES › volledig scherm
+                </div>
+                <p style={{
+                  fontSize: 15, color: "var(--text)",
+                  lineHeight: 1.6, margin: 0,
+                  whiteSpace: "pre-wrap",
+                }}>
+                  {snip.notes}
+                </p>
+              </button>
+            ) : (
+              <div style={{ textAlign: "center", padding: "48px 20px" }}>
+                <div style={{ fontSize: 40, marginBottom: 12 }}>📝</div>
+                <p style={{ color: "var(--text2)", fontSize: 16, fontWeight: 600, margin: "0 0 6px" }}>
+                  Geen notities
+                </p>
+                <p style={{ color: "var(--text3)", fontSize: 14, margin: "0 0 20px" }}>
+                  Voeg notities toe via bewerken
+                </p>
+                <button
+                  onClick={onEdit}
+                  style={{
+                    background: "var(--accent)", color: "#000",
+                    border: "none", padding: "10px 20px",
+                    borderRadius: 12, fontSize: 15,
+                    fontWeight: 700, cursor: "pointer",
+                  }}
+                >
+                  ✏️ Bewerken
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -312,7 +409,6 @@ export default function DetailView({
   );
 }
 
-// ── VS CODE BLOCK ─────────────────────────────────────────
 function VSCodeBlock({ code }: { code: string }) {
   const lines = code.split("\n");
   return (
@@ -346,8 +442,7 @@ function VSCodeBlock({ code }: { code: string }) {
             <span style={{
               fontSize: 12.5, color: VS.default, lineHeight: "22px",
               fontFamily: "'Fira Code','JetBrains Mono',monospace",
-              whiteSpace: "pre",
-              paddingRight: 16,
+              whiteSpace: "pre", paddingRight: 16,
             }}>
               {line || " "}
             </span>
@@ -358,14 +453,9 @@ function VSCodeBlock({ code }: { code: string }) {
   );
 }
 
-// ── VOLLEDIG SCHERM LEZEN ─────────────────────────────────
 function FullScreenRead({ label, value, isCode, copied, onCopy, onClose }: {
-  label: string;
-  value: string;
-  isCode: boolean;
-  copied: boolean;
-  onCopy: () => void;
-  onClose: () => void;
+  label: string; value: string; isCode: boolean;
+  copied: boolean; onCopy: () => void; onClose: () => void;
 }) {
   return (
     <div style={{
@@ -390,22 +480,23 @@ function FullScreenRead({ label, value, isCode, copied, onCopy, onClose }: {
         <span style={{ fontSize: 15, fontWeight: 600, color: isCode ? VS.default : "var(--text)" }}>
           {label}
         </span>
-        {isCode && (
+        {isCode ? (
           <button
             style={{
               background: copied ? "#10b981" : "var(--accent)",
               border: "none", borderRadius: 10,
-              padding: "6px 14px", color: copied ? "#fff" : "#000",
+              padding: "6px 14px",
+              color: copied ? "#fff" : "#000",
               fontSize: 14, fontWeight: 700, cursor: "pointer",
             }}
             onClick={onCopy}
           >
             {copied ? "✓" : "Copy"}
           </button>
+        ) : (
+          <div style={{ width: 60 }} />
         )}
-        {!isCode && <div style={{ width: 60 }} />}
       </div>
-
       <div style={{ flex: 1, overflowY: "auto" }}>
         {isCode ? (
           <VSCodeBlock code={value} />
@@ -413,7 +504,7 @@ function FullScreenRead({ label, value, isCode, copied, onCopy, onClose }: {
           <div style={{ padding: "20px" }}>
             <p style={{
               fontSize: 18, color: "var(--text)",
-              lineHeight: 1.7, margin: 0,
+              lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap",
             }}>
               {value}
             </p>

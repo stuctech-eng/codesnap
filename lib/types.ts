@@ -3,6 +3,7 @@ export interface Snippet {
   title: string;
   description: string;
   code: string;
+  notes?: string;
   category: string;
   tags: string[];
   favorite: boolean;

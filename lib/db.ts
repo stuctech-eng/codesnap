@@ -31,6 +31,7 @@ export function listenSnippets(callback: (snips: Snippet[]) => void) {
 export async function addSnippet(data: Omit<Snippet, "id">) {
   return await addDoc(collection(db, COL), {
     ...data,
+    notes: data.notes || "",
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
