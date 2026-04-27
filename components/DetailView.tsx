@@ -12,65 +12,122 @@ const CAT_COLORS: Record<string,string> = {
 };
 
 // ── SYNTAX HIGHLIGHTER ────────────────────────────────────
-function highlight(code: string): React.ReactNode[] {
-  const lines = code.split("\n");
-  return lines.map((line, i) => (
-    <div key={i} style={{ display:"flex", minHeight:22 }}>
-      <span style={{
-        width:38, textAlign:"right", paddingRight:14,
-        fontSize:12, color:"#484f58", flexShrink:0,
-        fontFamily:"monospace", lineHeight:"22px",
-        userSelect:"none", borderRight:"1px solid #21262d",
-        marginRight:14,
-      }}>
-        {i + 1}
-      </span>
-      <span
-        style={{ fontSize:13, lineHeight:"22px", whiteSpace:"pre", paddingRight:16, fontFamily:"'Fira Code','JetBrains Mono','Courier New',monospace" }}
-        dangerouslySetInnerHTML={{ __html: colorize(line) }}
-      />
-    </div>
-  ));
-}
+// Kleuren gebaseerd op Working Copy / GitHub Dark thema
+const KEYWORDS = ["import","export","from","const","let","var","function","return","if","else","for","while","class","new","async","await","try","catch","throw","typeof","instanceof","default","null","undefined","true","false","this","super","extends","interface","type","enum","void","in","of","do","switch","case","break","continue"];
 
-function colorize(line: string): string {
-  const esc = (s: string) => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+function tokenize(line: string): React.ReactNode {
+  const parts: React.ReactNode[] = [];
+  let remaining = line;
+  let key = 0;
 
-  // HTML tags
-  if (line.trim().startsWith("<") || line.includes("</")) {
-    return line.replace(/(<\/?[\w\s="'.:#-]*\/?>)/g, (m) =>
-      `<span style="color:#7ee787">${esc(m)}</span>`
-    ).replace(/("[^"]*")/g, (m) =>
-      `<span style="color:#a5d6ff">${esc(m)}</span>`
-    );
+  const push = (text: string, color: string) => {
+    parts.push(<span key={key++} style={{ color }}>{text}</span>);
+  };
+
+  while (remaining.length > 0) {
+    // Comment //
+    const commentMatch = remaining.match(/^(\/\/.*)/);
+    if (commentMatch) { push(commentMatch[1], "#8b949e"); break; }
+
+    // Comment #
+    const hashMatch = remaining.match(/^(#.*)/);
+    if (hashMatch) { push(hashMatch[1], "#8b949e"); break; }
+
+    // String dubbel
+    const dblMatch = remaining.match(/^("(?:[^"\\]|\\.)*")/);
+    if (dblMatch) { push(dblMatch[1], "#a5d6ff"); remaining = remaining.slice(dblMatch[1].length); continue; }
+
+    // String enkel
+    const sglMatch = remaining.match(/^('(?:[^'\\]|\\.)*')/);
+    if (sglMatch) { push(sglMatch[1], "#a5d6ff"); remaining = remaining.slice(sglMatch[1].length); continue; }
+
+    // Template literal
+    const tplMatch = remaining.match(/^(`(?:[^`\\]|\\.)*`)/);
+    if (tplMatch) { push(tplMatch[1], "#a5d6ff"); remaining = remaining.slice(tplMatch[1].length); continue; }
+
+    // HTML tag
+    const tagMatch = remaining.match(/^(<\/?[a-zA-Z][a-zA-Z0-9-]*)/);
+    if (tagMatch) { push(tagMatch[1], "#7ee787"); remaining = remaining.slice(tagMatch[1].length); continue; }
+
+    // HTML attribuut =
+    const attrMatch = remaining.match(/^([a-zA-Z-]+=)/);
+    if (attrMatch && parts.length > 0) { push(attrMatch[1], "#79c0ff"); remaining = remaining.slice(attrMatch[1].length); continue; }
+
+    // Number
+    const numMatch = remaining.match(/^(\b\d+\.?\d*\b)/);
+    if (numMatch) { push(numMatch[1], "#79c0ff"); remaining = remaining.slice(numMatch[1].length); continue; }
+
+    // Keyword
+    const wordMatch = remaining.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)/);
+    if (wordMatch) {
+      const word = wordMatch[1];
+      if (KEYWORDS.includes(word)) {
+        push(word, "#ff7b72");
+      } else if (remaining[word.length] === "(") {
+        push(word, "#d2a8ff");
+      } else if (word[0] === word[0].toUpperCase() && word[0] !== word[0].toLowerCase()) {
+        push(word, "#ffa657");
+      } else {
+        push(word, "#e6edf3");
+      }
+      remaining = remaining.slice(word.length);
+      continue;
+    }
+
+    // Overige tekens
+    push(remaining[0], "#e6edf3");
+    remaining = remaining.slice(1);
   }
 
-  let result = esc(line);
+  return <>{parts}</>;
+}
 
-  // Comments
-  result = result.replace(/(\/\/.*$|#.*$)/g,
-    `<span style="color:#8b949e;font-style:italic">$1</span>`);
+function CodeBlock({ code }: { code: string }) {
+  const lines = code.split("\n");
+  const lineNumWidth = String(lines.length).length * 10 + 16;
 
-  // Strings
-  result = result.replace(/(&quot;[^&]*&quot;|'[^']*'|`[^`]*`)/g,
-    `<span style="color:#a5d6ff">$1</span>`);
+  return (
+    <div style={{ background:"#0d1117", borderRadius:12, overflow:"hidden", border:"1px solid #30363d" }}>
+      {/* Mac-stijl toolbar */}
+      <div style={{ background:"#161b22", padding:"8px 14px", display:"flex", alignItems:"center", gap:8, borderBottom:"1px solid #21262d", flexShrink:0 }}>
+        <div style={{ width:10, height:10, borderRadius:"50%", background:"#ff5f57" }} />
+        <div style={{ width:10, height:10, borderRadius:"50%", background:"#febc2e" }} />
+        <div style={{ width:10, height:10, borderRadius:"50%", background:"#28c840" }} />
+        <span style={{ marginLeft:8, fontSize:11, color:"#484f58", fontFamily:"monospace" }}>
+          {lines.length} regels · {code.length} tekens
+        </span>
+      </div>
 
-  // Keywords
-  const keywords = ["import","export","from","const","let","var","function","return","if","else","for","while","class","new","async","await","try","catch","throw","typeof","instanceof","default","null","undefined","true","false","this","super","extends","interface","type","enum"];
-  keywords.forEach(kw => {
-    result = result.replace(new RegExp(`\\b(${kw})\\b`, "g"),
-      `<span style="color:#ff7b72">$1</span>`);
-  });
-
-  // Numbers
-  result = result.replace(/\b(\d+\.?\d*)\b/g,
-    `<span style="color:#79c0ff">$1</span>`);
-
-  // Function calls
-  result = result.replace(/\b([a-zA-Z_$][a-zA-Z0-9_$]*)\s*(?=\()/g,
-    `<span style="color:#d2a8ff">$1</span>`);
-
-  return result;
+      {/* Code inhoud -- horizontaal scrollbaar */}
+      <div style={{ overflowX:"auto", overflowY:"visible", WebkitOverflowScrolling:"touch" } as React.CSSProperties}>
+        <div style={{ padding:"10px 0", minWidth:"max-content" }}>
+          {lines.map((line, i) => (
+            <div key={i} style={{ display:"flex", minHeight:21, alignItems:"flex-start" }}>
+              {/* Regelnummer */}
+              <span style={{
+                width:lineNumWidth, textAlign:"right", paddingRight:14,
+                fontSize:12, color:"#484f58", flexShrink:0,
+                fontFamily:"'Fira Code','JetBrains Mono',monospace",
+                lineHeight:"21px", userSelect:"none",
+                position:"sticky", left:0,
+                background:"#0d1117",
+              }}>
+                {i + 1}
+              </span>
+              {/* Code regel */}
+              <span style={{
+                fontSize:13, lineHeight:"21px", paddingRight:24,
+                fontFamily:"'Fira Code','JetBrains Mono','Courier New',monospace",
+                whiteSpace:"pre",
+              }}>
+                {tokenize(line || " ")}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
 }
 
 interface Props {
@@ -104,7 +161,7 @@ export default function DetailView({
 
   if (fullField) {
     return (
-      <FullScreenRead
+      <FullScreenView
         label={fullField === "code" ? "CODE" : "BESCHRIJVING"}
         value={fullField === "code" ? snip.code : snip.description}
         isCode={fullField === "code"}
@@ -124,6 +181,7 @@ export default function DetailView({
         padding:"52px 14px 12px",
         borderBottom:"1px solid var(--border)",
         background:"var(--bg)",
+        position:"sticky", top:0, zIndex:10,
       }}>
         <button style={{ display:"flex", alignItems:"center", gap:4, background:"none", border:"none", cursor:"pointer" }} onClick={onBack}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -171,17 +229,16 @@ export default function DetailView({
       {/* ── CONTENT ── */}
       <div style={{ flex:1, overflowY:"auto", paddingBottom:40 }}>
 
-        {/* ABOUT */}
+        {/* ABOUT TAB */}
         {tab === "about" && (
-          <div style={{ padding:"20px 16px" }}>
-
+          <div style={{ padding:"16px" }}>
             {/* Header kaart */}
-            <div style={{ background:"var(--bg2)", borderRadius:14, padding:16, marginBottom:12, border:"1px solid var(--border2)", display:"flex", gap:14, alignItems:"flex-start" }}>
-              <div style={{ width:52, height:52, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", fontSize:18, fontWeight:800, color:"#000", background:avColor(snip.title), flexShrink:0 }}>
+            <div style={{ background:"var(--bg2)", borderRadius:14, padding:14, marginBottom:12, border:"1px solid var(--border2)", display:"flex", gap:12, alignItems:"center" }}>
+              <div style={{ width:48, height:48, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, fontWeight:800, color:"#000", background:avColor(snip.title), flexShrink:0 }}>
                 {initials(snip.title)}
               </div>
               <div style={{ flex:1, minWidth:0 }}>
-                <h1 style={{ fontSize:20, fontWeight:800, margin:"0 0 6px", color:"var(--text)", letterSpacing:"-0.02em" }}>
+                <h1 style={{ fontSize:19, fontWeight:800, margin:"0 0 5px", color:"var(--text)", letterSpacing:"-0.02em" }}>
                   {snip.title}
                 </h1>
                 <div style={{ display:"inline-flex", alignItems:"center", gap:5, background:catColor+"22", padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:600, color:catColor }}>
@@ -255,9 +312,9 @@ export default function DetailView({
           </div>
         )}
 
-        {/* CODE */}
+        {/* CODE TAB */}
         {tab === "code" && (
-          <div style={{ padding:"14px" }}>
+          <div style={{ padding:"12px" }}>
             <div style={{ display:"flex", gap:8, marginBottom:10 }}>
               <button onClick={onCopy} style={{
                 flex:2, display:"flex", alignItems:"center", justifyContent:"center",
@@ -270,8 +327,7 @@ export default function DetailView({
                 {copied ? "✓ Gekopieerd!" : "⎘ Kopieer Code"}
               </button>
               <button onClick={() => setFullField("code")} style={{
-                flex:1, display:"flex", alignItems:"center", justifyContent:"center",
-                gap:6, padding:"12px", borderRadius:12,
+                flex:1, padding:"12px", borderRadius:12,
                 border:"1px solid var(--border2)", background:"var(--bg2)",
                 fontSize:13, fontWeight:600, cursor:"pointer", color:"var(--text2)",
               }}>
@@ -279,20 +335,7 @@ export default function DetailView({
               </button>
             </div>
 
-            {/* VS Code blok met syntax highlighting */}
-            <div style={{ background:"#0d1117", borderRadius:12, overflow:"hidden", border:"1px solid #30363d" }}>
-              <div style={{ background:"#161b22", padding:"8px 14px", display:"flex", alignItems:"center", gap:8, borderBottom:"1px solid #21262d" }}>
-                <div style={{ width:10, height:10, borderRadius:"50%", background:"#ff5f57" }} />
-                <div style={{ width:10, height:10, borderRadius:"50%", background:"#febc2e" }} />
-                <div style={{ width:10, height:10, borderRadius:"50%", background:"#28c840" }} />
-                <span style={{ marginLeft:8, fontSize:11, color:"#484f58", fontFamily:"monospace" }}>
-                  {snip.code.split("\n").length} regels
-                </span>
-              </div>
-              <div style={{ overflowX:"auto", padding:"12px 0" }}>
-                {highlight(snip.code)}
-              </div>
-            </div>
+            <CodeBlock code={snip.code} />
           </div>
         )}
       </div>
@@ -321,7 +364,8 @@ export default function DetailView({
   );
 }
 
-function FullScreenRead({ label, value, isCode, copied, onCopy, onClose }: {
+// ── VOLLEDIG SCHERM ───────────────────────────────────────
+function FullScreenView({ label, value, isCode, copied, onCopy, onClose }: {
   label:string; value:string; isCode:boolean;
   copied:boolean; onCopy:()=>void; onClose:()=>void;
 }) {
@@ -334,22 +378,33 @@ function FullScreenRead({ label, value, isCode, copied, onCopy, onClose }: {
         background: isCode ? "#161b22" : "var(--bg)",
         flexShrink:0,
       }}>
-        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onClose}>← Terug</button>
-        <span style={{ fontSize:15, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)" }}>{label}</span>
+        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onClose}>
+          ← Terug
+        </button>
+        <span style={{ fontSize:15, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)" }}>
+          {label}
+        </span>
         {isCode
-          ? <button onClick={onCopy} style={{ background: copied ? "#10b981" : "var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color: copied ? "#fff" : "#000", fontSize:14, fontWeight:700, cursor:"pointer" }}>
+          ? <button onClick={onCopy} style={{
+              background: copied ? "#10b981" : "var(--accent)",
+              border:"none", borderRadius:10, padding:"6px 14px",
+              color: copied ? "#fff" : "#000",
+              fontSize:14, fontWeight:700, cursor:"pointer",
+            }}>
               {copied ? "✓" : "Copy"}
             </button>
           : <div style={{ width:60 }} />
         }
       </div>
-      <div style={{ flex:1, overflowY:"auto" }}>
+      <div style={{ flex:1, overflow:"auto" }}>
         {isCode
-          ? <div style={{ background:"#0d1117", minHeight:"100%" }}>
-              <div style={{ padding:"12px 0" }}>{highlight(value)}</div>
+          ? <div style={{ padding:"12px", minHeight:"100%" }}>
+              <CodeBlock code={value} />
             </div>
           : <div style={{ padding:"20px" }}>
-              <p style={{ fontSize:17, color:"var(--text)", lineHeight:1.7, margin:0, whiteSpace:"pre-wrap" }}>{value}</p>
+              <p style={{ fontSize:17, color:"var(--text)", lineHeight:1.7, margin:0, whiteSpace:"pre-wrap" }}>
+                {value}
+              </p>
             </div>
         }
       </div>
