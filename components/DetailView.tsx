@@ -26,7 +26,7 @@ function detectLanguage(code: string): string {
   return "code";
 }
 
-// ── COPY FUNCTIES ─────────────────────────────────────────
+// ── COPY FUNCTIE ──────────────────────────────────────────
 function buildCopyText(snip: Snippet, action: string): string {
   const lang = detectLanguage(snip.code);
   const type = snip.snippetType || "code";
@@ -61,35 +61,6 @@ function buildCopyText(snip: Snippet, action: string): string {
   // Analyseer / Bug Fix / Verbeter → prefix + alleen code blok
   const prefix = prefixes[action] || "";
   return `${prefix}${codeBlock}`;
-}
-
-
-  const prefix = actionPrefixes[action] || "";
-
-  // Prompt type -- geen code blok nodig
-  if (type === "prompt") {
-    if (action === "alles") {
-      return `## CodeSnap -- ${snip.title}\n\n**Categorie:** ${snip.category}${snip.tags?.length ? `\n**Tags:** ${snip.tags.join(", ")}` : ""}\n\n---\n\n### Beschrijving\n${snip.description}\n\n---\n\n### Prompt\n${snip.code}`;
-    }
-    return snip.code;
-  }
-
-  // Instructie type
-  if (type === "instructie") {
-    if (action === "alles" || action === "code") {
-      return `## CodeSnap -- ${snip.title}\n\n**Categorie:** ${snip.category}${snip.tags?.length ? `\n**Tags:** ${snip.tags.join(", ")}` : ""}\n\n---\n\n### Instructie\n${snip.description}\n\n---\n\n### Code\n\`\`\`${lang}\n${snip.code}\n\`\`\``;
-    }
-    return `${prefix}### Instructie\n${snip.description}\n\n### Code\n\`\`\`${lang}\n${snip.code}\n\`\`\``;
-  }
-
-  // Code type
-  if (action === "code") return snip.code;
-
-  if (action === "alles") {
-    return `## CodeSnap -- ${snip.title}\n\n**Categorie:** ${snip.category}${snip.tags?.length ? `\n**Tags:** ${snip.tags.join(", ")}` : ""}${snip.description ? `\n\n---\n\n### Beschrijving\n${snip.description}` : ""}\n\n---\n\n### Code\n\`\`\`${lang}\n${snip.code}\n\`\`\``;
-  }
-
-  return `${prefix}\`\`\`${lang}\n${snip.code}\n\`\`\``;
 }
 
 // ── SYNTAX HIGHLIGHTER ────────────────────────────────────
@@ -279,7 +250,6 @@ export default function DetailView({
         {/* ABOUT TAB */}
         {tab === "about" && (
           <div style={{ padding:"16px" }}>
-            {/* Header kaart */}
             <div style={{ background:"var(--bg2)", borderRadius:14, padding:14, marginBottom:12, border:"1px solid var(--border2)", display:"flex", gap:12, alignItems:"center" }}>
               <div style={{ width:48, height:48, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, fontWeight:800, color:"#000", background:avColor(snip.title), flexShrink:0 }}>
                 {initials(snip.title)}
@@ -300,7 +270,6 @@ export default function DetailView({
               </div>
             </div>
 
-            {/* Beschrijving */}
             {snip.description && (
               <button onClick={() => setFullField("description")} style={{ display:"block", width:"100%", textAlign:"left", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", cursor:"pointer", marginBottom:12 }}>
                 <div style={{ fontSize:10, color:"var(--text3)", fontWeight:700, marginBottom:6, letterSpacing:"0.1em" }}>
@@ -312,7 +281,6 @@ export default function DetailView({
               </button>
             )}
 
-            {/* Tags */}
             {snip.tags?.length > 0 && (
               <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:14 }}>
                 {snip.tags.map(t => (
@@ -321,7 +289,6 @@ export default function DetailView({
               </div>
             )}
 
-            {/* Kopieer alles */}
             <button onClick={() => copyAction("alles")} style={{
               display:"flex", alignItems:"center", justifyContent:"center", gap:8,
               width:"100%", padding:"12px", borderRadius:12, border:"1px solid var(--border2)",
@@ -333,7 +300,6 @@ export default function DetailView({
               {copyState === "alles" ? "✓ Gekopieerd!" : "⎘ Kopieer Alles (markdown)"}
             </button>
 
-            {/* Acties */}
             <div style={{ display:"flex", gap:8 }}>
               <button onClick={onFav} style={{ flex:1, padding:"11px 8px", borderRadius:12, background: snip.favorite ? "var(--accent)" : "var(--bg2)", border:"1px solid var(--border2)", cursor:"pointer", fontSize:13, fontWeight:700, color: snip.favorite ? "#000" : "var(--text2)" }}>
                 {snip.favorite ? "★ Favoriet" : "☆ Favoriet"}
@@ -347,8 +313,6 @@ export default function DetailView({
         {/* CODE TAB */}
         {tab === "code" && (
           <div style={{ padding:"12px" }}>
-
-            {/* Taaldetectie badge */}
             <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
               <div style={{ background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:20, padding:"4px 12px", fontSize:12, fontWeight:700, color:"var(--text3)" }}>
                 {lang}
@@ -358,10 +322,7 @@ export default function DetailView({
               </button>
             </div>
 
-            {/* Actie knoppen -- slim per type */}
             <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:10 }}>
-
-              {/* Kopieer code -- altijd */}
               <button onClick={() => copyAction("code")} style={{
                 padding:"11px 8px", borderRadius:12, border:"none",
                 background: copyState === "code" ? "var(--green)" : "var(--accent)",
@@ -372,7 +333,6 @@ export default function DetailView({
                 {copyState === "code" ? "✓ Klaar" : "⎘ Kopieer Code"}
               </button>
 
-              {/* Analyseer -- niet voor prompt */}
               {snippetType !== "prompt" && (
                 <button onClick={() => copyAction("analyseer")} style={{
                   padding:"11px 8px", borderRadius:12, border:"1px solid var(--border2)",
@@ -384,7 +344,6 @@ export default function DetailView({
                 </button>
               )}
 
-              {/* Bug fix -- alleen voor code en instructie */}
               {snippetType !== "prompt" && (
                 <button onClick={() => copyAction("bugfix")} style={{
                   padding:"11px 8px", borderRadius:12, border:"1px solid var(--border2)",
@@ -396,7 +355,6 @@ export default function DetailView({
                 </button>
               )}
 
-              {/* Verbeter -- alleen voor code en instructie */}
               {snippetType !== "prompt" && (
                 <button onClick={() => copyAction("verbeter")} style={{
                   padding:"11px 8px", borderRadius:12, border:"1px solid var(--border2)",
