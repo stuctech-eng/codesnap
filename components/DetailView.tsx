@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Snippet, SnippetType } from "@/lib/types";
+import { Snippet } from "@/lib/types";
 
 const initials = (t = "") => t.slice(0, 2).toUpperCase();
 const AV = ["#f59e0b","#d97706","#b45309","#78350f"];
@@ -11,33 +11,34 @@ const CAT_COLORS: Record<string,string> = {
   "Machines":"#3b82f6","Ideeën":"#8b5cf6",
 };
 
-// ── TAALDETECTIE ──────────────────────────────────────────
 function detectLanguage(code: string): string {
   const c = code.toLowerCase();
-  if (c.includes("import") && (c.includes("from") || c.includes("react"))) return "typescript";
-  if (c.includes("import {") || c.includes("export default") || c.includes("const ") || c.includes("function ")) return "javascript";
-  if (c.includes("<!doctype") || c.includes("<html") || c.includes("<head") || c.includes("<meta") || c.includes("<link")) return "html";
+  if (c.includes("<meta") || c.includes("<link") || c.includes("<html") || c.includes("<!doctype")) return "html";
+  if (c.includes("import") && c.includes("from")) return "typescript";
+  if (c.includes("export default") || c.includes("const ") || c.includes("function ")) return "javascript";
   if (c.includes("select ") && c.includes("from ")) return "sql";
   if (c.includes("def ") && c.includes("print(")) return "python";
   if (c.includes("<?php")) return "php";
   if (c.trim().startsWith("{") || c.trim().startsWith("[")) return "json";
-  if (c.includes("body {") || c.includes("margin:") || c.includes("padding:") || c.includes("color:")) return "css";
-  if (c.includes("#!/bin/bash") || c.includes("echo ") || c.includes("npm ") || c.includes("cd ")) return "bash";
+  if (c.includes("body {") || c.includes("margin:") || c.includes("padding:")) return "css";
+  if (c.includes("#!/bin/bash") || c.includes("npm ") || c.includes("cd ")) return "bash";
   return "code";
 }
 
-// ── COPY FUNCTIE ──────────────────────────────────────────
 function buildCopyText(snip: Snippet, action: string): string {
   const lang = detectLanguage(snip.code);
   const type = snip.snippetType || "code";
-  const codeBlock = "```" + lang + "\n" + snip.code + "\n```";
+  const fence = "```";
+  const codeBlock = fence + lang + "\n" + snip.code + "\n" + fence;
 
-  if (action === "code") return snip.code;
+  if (action === "code") {
+    return snip.code;
+  }
 
   if (type === "prompt") {
     if (action === "alles") {
-      return "## CodeSnap -- " + snip.title + "\n\n**Categorie:** " + snip.category +
-        (snip.tags?.length ? "\n**Tags:** " + snip.tags.join(", ") : "") +
+      const tags = snip.tags?.length ? "\n**Tags:** " + snip.tags.join(", ") : "";
+      return "## CodeSnap -- " + snip.title + "\n\n**Categorie:** " + snip.category + tags +
         "\n\n---\n\n### Beschrijving\n" + snip.description +
         "\n\n---\n\n### Prompt\n" + snip.code;
     }
@@ -45,49 +46,27 @@ function buildCopyText(snip: Snippet, action: string): string {
   }
 
   if (action === "alles") {
-    const descPart = snip.description
-      ? "\n\n---\n\n### " + (type === "instructie" ? "Instructie" : "Beschrijving") + "\n" + snip.description
-      : "";
-    return "## CodeSnap -- " + snip.title + "\n\n**Categorie:** " + snip.category +
-      (snip.tags?.length ? "\n**Tags:** " + snip.tags.join(", ") : "") +
-      descPart + "\n\n---\n\n### Code\n" + codeBlock;
+    const tags = snip.tags?.length ? "\n**Tags:** " + snip.tags.join(", ") : "";
+    const label = type === "instructie" ? "Instructie" : "Beschrijving";
+    const descPart = snip.description ? "\n\n---\n\n### " + label + "\n" + snip.description : "";
+    return "## CodeSnap -- " + snip.title + "\n\n**Categorie:** " + snip.category + tags + descPart + "\n\n---\n\n### Code\n" + codeBlock;
   }
 
-  if (action === "analyseer") return "Analyseer deze " + lang + " code en geef gedetailleerde feedback:\n\n" + codeBlock;
-  if (action === "bugfix")    return "Zoek alle bugs in deze " + lang + " code en geef de gecorrigeerde versie:\n\n" + codeBlock;
-  if (action === "verbeter")  return "Verbeter deze " + lang + " code qua leesbaarheid en best practices:\n\n" + codeBlock;
+  if (action === "analyseer") {
+    return "Analyseer deze " + lang + " code en geef gedetailleerde feedback:\n\n" + codeBlock;
+  }
+
+  if (action === "bugfix") {
+    return "Zoek alle bugs in deze " + lang + " code en geef de gecorrigeerde versie:\n\n" + codeBlock;
+  }
+
+  if (action === "verbeter") {
+    return "Verbeter deze " + lang + " code qua leesbaarheid en best practices:\n\n" + codeBlock;
+  }
 
   return codeBlock;
 }
 
-
-  const codeBlock = `\`\`\`${lang}\n${snip.code}\n\`\`\``;
-
-  // Altijd alleen code
-  if (action === "code") return snip.code;
-
-  // Prompt type
-  if (type === "prompt") {
-    if (action === "alles") {
-      return `## CodeSnap -- ${snip.title}\n\n**Categorie:** ${snip.category}${snip.tags?.length ? `\n**Tags:** ${snip.tags.join(", ")}` : ""}\n\n---\n\n### Beschrijving\n${snip.description}\n\n---\n\n### Prompt\n${snip.code}`;
-    }
-    return snip.code;
-  }
-
-  // Alles kopiëren
-  if (action === "alles") {
-    const descPart = snip.description
-      ? `\n\n---\n\n### ${type === "instructie" ? "Instructie" : "Beschrijving"}\n${snip.description}`
-      : "";
-    return `## CodeSnap -- ${snip.title}\n\n**Categorie:** ${snip.category}${snip.tags?.length ? `\n**Tags:** ${snip.tags.join(", ")}` : ""}${descPart}\n\n---\n\n### Code\n${codeBlock}`;
-  }
-
-  // Analyseer / Bug Fix / Verbeter → prefix + alleen code blok
-  const prefix = prefixes[action] || "";
-  return `${prefix}${codeBlock}`;
-}
-
-// ── SYNTAX HIGHLIGHTER ────────────────────────────────────
 const KEYWORDS = ["import","export","from","const","let","var","function","return","if","else","for","while","class","new","async","await","try","catch","throw","typeof","instanceof","default","null","undefined","true","false","this","super","extends","interface","type","enum","void","in","of","do","switch","case","break","continue"];
 
 function tokenize(line: string): React.ReactNode {
@@ -98,34 +77,39 @@ function tokenize(line: string): React.ReactNode {
     parts.push(<span key={key++} style={{ color }}>{text}</span>);
 
   while (remaining.length > 0) {
-    const commentMatch = remaining.match(/^(\/\/.*)/);
-    if (commentMatch) { push(commentMatch[1], "#8b949e"); break; }
+    const c1 = remaining.match(/^(\/\/.*)/);
+    if (c1) { push(c1[1], "#8b949e"); break; }
 
-    const hashMatch = remaining.match(/^(#.*)/);
-    if (hashMatch) { push(hashMatch[1], "#8b949e"); break; }
+    const c2 = remaining.match(/^(#.*)/);
+    if (c2) { push(c2[1], "#8b949e"); break; }
 
-    const dblMatch = remaining.match(/^("(?:[^"\\]|\\.)*")/);
-    if (dblMatch) { push(dblMatch[1], "#a5d6ff"); remaining = remaining.slice(dblMatch[1].length); continue; }
+    const s1 = remaining.match(/^("(?:[^"\\]|\\.)*")/);
+    if (s1) { push(s1[1], "#a5d6ff"); remaining = remaining.slice(s1[1].length); continue; }
 
-    const sglMatch = remaining.match(/^('(?:[^'\\]|\\.)*')/);
-    if (sglMatch) { push(sglMatch[1], "#a5d6ff"); remaining = remaining.slice(sglMatch[1].length); continue; }
+    const s2 = remaining.match(/^('(?:[^'\\]|\\.)*')/);
+    if (s2) { push(s2[1], "#a5d6ff"); remaining = remaining.slice(s2[1].length); continue; }
 
-    const tplMatch = remaining.match(/^(`(?:[^`\\]|\\.)*`)/);
-    if (tplMatch) { push(tplMatch[1], "#a5d6ff"); remaining = remaining.slice(tplMatch[1].length); continue; }
+    const s3 = remaining.match(/^(`(?:[^`\\]|\\.)*`)/);
+    if (s3) { push(s3[1], "#a5d6ff"); remaining = remaining.slice(s3[1].length); continue; }
 
-    const tagMatch = remaining.match(/^(<\/?[a-zA-Z][a-zA-Z0-9-]*)/);
-    if (tagMatch) { push(tagMatch[1], "#7ee787"); remaining = remaining.slice(tagMatch[1].length); continue; }
+    const t1 = remaining.match(/^(<\/?[a-zA-Z][a-zA-Z0-9-]*)/);
+    if (t1) { push(t1[1], "#7ee787"); remaining = remaining.slice(t1[1].length); continue; }
 
-    const numMatch = remaining.match(/^(\b\d+\.?\d*\b)/);
-    if (numMatch) { push(numMatch[1], "#79c0ff"); remaining = remaining.slice(numMatch[1].length); continue; }
+    const n1 = remaining.match(/^(\b\d+\.?\d*\b)/);
+    if (n1) { push(n1[1], "#79c0ff"); remaining = remaining.slice(n1[1].length); continue; }
 
-    const wordMatch = remaining.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)/);
-    if (wordMatch) {
-      const word = wordMatch[1];
-      if (KEYWORDS.includes(word)) push(word, "#ff7b72");
-      else if (remaining[word.length] === "(") push(word, "#d2a8ff");
-      else if (word[0] === word[0].toUpperCase() && word[0] !== word[0].toLowerCase()) push(word, "#ffa657");
-      else push(word, "#e6edf3");
+    const w1 = remaining.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)/);
+    if (w1) {
+      const word = w1[1];
+      if (KEYWORDS.includes(word)) {
+        push(word, "#ff7b72");
+      } else if (remaining[word.length] === "(") {
+        push(word, "#d2a8ff");
+      } else if (word[0] === word[0].toUpperCase() && word[0] !== word[0].toLowerCase()) {
+        push(word, "#ffa657");
+      } else {
+        push(word, "#e6edf3");
+      }
       remaining = remaining.slice(word.length);
       continue;
     }
@@ -163,7 +147,11 @@ function CodeBlock({ code }: { code: string }) {
               }}>
                 {i + 1}
               </span>
-              <span style={{ fontSize:13, lineHeight:"21px", paddingRight:24, fontFamily:"'Fira Code','JetBrains Mono','Courier New',monospace", whiteSpace:"pre" }}>
+              <span style={{
+                fontSize:13, lineHeight:"21px", paddingRight:24,
+                fontFamily:"'Fira Code','JetBrains Mono','Courier New',monospace",
+                whiteSpace:"pre",
+              }}>
                 {tokenize(line || " ")}
               </span>
             </div>
@@ -197,11 +185,11 @@ export default function DetailView({
   const snippetType = snip.snippetType || "code";
   const lang = detectLanguage(snip.code);
 
-  const typeInfo = {
-    code:       { icon:"🔧", label:"Code Snippet",      color:"#10b981" },
-    prompt:     { icon:"🤖", label:"AI Prompt",         color:"#6366f1" },
-    instructie: { icon:"📋", label:"Instructie + Code", color:"#f59e0b" },
-  }[snippetType];
+  const typeInfo = snippetType === "prompt"
+    ? { icon:"🤖", label:"AI Prompt", color:"#6366f1" }
+    : snippetType === "instructie"
+    ? { icon:"📋", label:"Instructie + Code", color:"#f59e0b" }
+    : { icon:"🔧", label:"Code Snippet", color:"#10b981" };
 
   const copyAction = (action: string) => {
     const text = buildCopyText(snip, action);
@@ -239,13 +227,16 @@ export default function DetailView({
         <div style={{ display:"flex", gap:8 }}>
           <button onClick={onAdd} style={{ width:32, height:32, borderRadius:"50%", background:"var(--accent)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+              <line x1="12" y1="5" x2="12" y2="19"/>
+              <line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
           </button>
           <button onClick={onDots} style={{ background:"none", border:"none", cursor:"pointer" }}>
             <div style={{ width:32, height:32, borderRadius:"50%", background:"var(--bg2)", border:"1px solid var(--border2)", display:"flex", alignItems:"center", justifyContent:"center" }}>
               <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--text2)">
-                <circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/>
+                <circle cx="12" cy="5" r="2"/>
+                <circle cx="12" cy="12" r="2"/>
+                <circle cx="12" cy="19" r="2"/>
               </svg>
             </div>
           </button>
@@ -308,7 +299,9 @@ export default function DetailView({
             {snip.tags?.length > 0 && (
               <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:14 }}>
                 {snip.tags.map(t => (
-                  <span key={t} style={{ background:"var(--bg3)", color:"var(--text3)", padding:"3px 10px", borderRadius:20, fontSize:12, border:"1px solid var(--border2)" }}>#{t}</span>
+                  <span key={t} style={{ background:"var(--bg3)", color:"var(--text3)", padding:"3px 10px", borderRadius:20, fontSize:12, border:"1px solid var(--border2)" }}>
+                    #{t}
+                  </span>
                 ))}
               </div>
             )}
@@ -328,8 +321,12 @@ export default function DetailView({
               <button onClick={onFav} style={{ flex:1, padding:"11px 8px", borderRadius:12, background: snip.favorite ? "var(--accent)" : "var(--bg2)", border:"1px solid var(--border2)", cursor:"pointer", fontSize:13, fontWeight:700, color: snip.favorite ? "#000" : "var(--text2)" }}>
                 {snip.favorite ? "★ Favoriet" : "☆ Favoriet"}
               </button>
-              <button onClick={onShare} style={{ flex:1, padding:"11px 8px", borderRadius:12, background:"var(--bg2)", border:"1px solid var(--border2)", cursor:"pointer", fontSize:13, fontWeight:700, color:"var(--text2)" }}>↗ Delen</button>
-              <button onClick={onExport} style={{ flex:1, padding:"11px 8px", borderRadius:12, background:"var(--bg2)", border:"1px solid var(--border2)", cursor:"pointer", fontSize:13, fontWeight:700, color:"var(--text2)" }}>↓ Export</button>
+              <button onClick={onShare} style={{ flex:1, padding:"11px 8px", borderRadius:12, background:"var(--bg2)", border:"1px solid var(--border2)", cursor:"pointer", fontSize:13, fontWeight:700, color:"var(--text2)" }}>
+                ↗ Delen
+              </button>
+              <button onClick={onExport} style={{ flex:1, padding:"11px 8px", borderRadius:12, background:"var(--bg2)", border:"1px solid var(--border2)", cursor:"pointer", fontSize:13, fontWeight:700, color:"var(--text2)" }}>
+                ↓ Export
+              </button>
             </div>
           </div>
         )}
@@ -427,8 +424,12 @@ function FullScreenView({ label, value, isCode, copied, onCopy, onClose }: {
   return (
     <div style={{ position:"fixed", inset:0, background: isCode ? "#0d1117" : "var(--bg)", zIndex:500, display:"flex", flexDirection:"column" }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid var(--border)", background: isCode ? "#161b22" : "var(--bg)", flexShrink:0 }}>
-        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onClose}>← Terug</button>
-        <span style={{ fontSize:15, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)" }}>{label}</span>
+        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onClose}>
+          ← Terug
+        </button>
+        <span style={{ fontSize:15, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)" }}>
+          {label}
+        </span>
         {isCode
           ? <button onClick={onCopy} style={{ background: copied ? "#10b981" : "var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color: copied ? "#fff" : "#000", fontSize:14, fontWeight:700, cursor:"pointer" }}>
               {copied ? "✓" : "Copy"}
@@ -440,7 +441,9 @@ function FullScreenView({ label, value, isCode, copied, onCopy, onClose }: {
         {isCode
           ? <div style={{ padding:"12px" }}><CodeBlock code={value} /></div>
           : <div style={{ padding:"20px" }}>
-              <p style={{ fontSize:17, color:"var(--text)", lineHeight:1.7, margin:0, whiteSpace:"pre-wrap" }}>{value}</p>
+              <p style={{ fontSize:17, color:"var(--text)", lineHeight:1.7, margin:0, whiteSpace:"pre-wrap" }}>
+                {value}
+              </p>
             </div>
         }
       </div>
