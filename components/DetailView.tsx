@@ -31,13 +31,38 @@ function buildCopyText(snip: Snippet, action: string): string {
   const lang = detectLanguage(snip.code);
   const type = snip.snippetType || "code";
 
-  const actionPrefixes: Record<string, string> = {
-    analyseer: `Analyseer de volgende ${lang} code en geef gedetailleerde feedback:\n\n`,
-    bugfix:    `Zoek alle bugs in de volgende ${lang} code en geef de gecorrigeerde versie:\n\n`,
-    verbeter:  `Verbeter de volgende ${lang} code qua leesbaarheid, performance en best practices:\n\n`,
-    alles:     "",
-    code:      "",
+  const prefixes: Record<string, string> = {
+    analyseer: `Analyseer deze ${lang} code en geef gedetailleerde feedback:\n\n`,
+    bugfix:    `Zoek alle bugs in deze ${lang} code en geef de gecorrigeerde versie:\n\n`,
+    verbeter:  `Verbeter deze ${lang} code qua leesbaarheid en best practices:\n\n`,
   };
+
+  const codeBlock = `\`\`\`${lang}\n${snip.code}\n\`\`\``;
+
+  // Altijd alleen code
+  if (action === "code") return snip.code;
+
+  // Prompt type
+  if (type === "prompt") {
+    if (action === "alles") {
+      return `## CodeSnap -- ${snip.title}\n\n**Categorie:** ${snip.category}${snip.tags?.length ? `\n**Tags:** ${snip.tags.join(", ")}` : ""}\n\n---\n\n### Beschrijving\n${snip.description}\n\n---\n\n### Prompt\n${snip.code}`;
+    }
+    return snip.code;
+  }
+
+  // Alles kopiëren
+  if (action === "alles") {
+    const descPart = snip.description
+      ? `\n\n---\n\n### ${type === "instructie" ? "Instructie" : "Beschrijving"}\n${snip.description}`
+      : "";
+    return `## CodeSnap -- ${snip.title}\n\n**Categorie:** ${snip.category}${snip.tags?.length ? `\n**Tags:** ${snip.tags.join(", ")}` : ""}${descPart}\n\n---\n\n### Code\n${codeBlock}`;
+  }
+
+  // Analyseer / Bug Fix / Verbeter → prefix + alleen code blok
+  const prefix = prefixes[action] || "";
+  return `${prefix}${codeBlock}`;
+}
+
 
   const prefix = actionPrefixes[action] || "";
 
