@@ -52,18 +52,6 @@ function buildCopyText(snip: Snippet, action: string): string {
     return "## CodeSnap -- " + snip.title + "\n\n**Categorie:** " + snip.category + tags + descPart + "\n\n---\n\n### Code\n" + codeBlock;
   }
 
-  if (action === "analyseer") {
-    return "Analyseer deze " + lang + " code en geef gedetailleerde feedback:\n\n" + codeBlock;
-  }
-
-  if (action === "bugfix") {
-    return "Zoek alle bugs in deze " + lang + " code en geef de gecorrigeerde versie:\n\n" + codeBlock;
-  }
-
-  if (action === "verbeter") {
-    return "Verbeter deze " + lang + " code qua leesbaarheid en best practices:\n\n" + codeBlock;
-  }
-
   return codeBlock;
 }
 
@@ -79,41 +67,28 @@ function tokenize(line: string): React.ReactNode {
   while (remaining.length > 0) {
     const c1 = remaining.match(/^(\/\/.*)/);
     if (c1) { push(c1[1], "#8b949e"); break; }
-
     const c2 = remaining.match(/^(#.*)/);
     if (c2) { push(c2[1], "#8b949e"); break; }
-
     const s1 = remaining.match(/^("(?:[^"\\]|\\.)*")/);
     if (s1) { push(s1[1], "#a5d6ff"); remaining = remaining.slice(s1[1].length); continue; }
-
     const s2 = remaining.match(/^('(?:[^'\\]|\\.)*')/);
     if (s2) { push(s2[1], "#a5d6ff"); remaining = remaining.slice(s2[1].length); continue; }
-
     const s3 = remaining.match(/^(`(?:[^`\\]|\\.)*`)/);
     if (s3) { push(s3[1], "#a5d6ff"); remaining = remaining.slice(s3[1].length); continue; }
-
     const t1 = remaining.match(/^(<\/?[a-zA-Z][a-zA-Z0-9-]*)/);
     if (t1) { push(t1[1], "#7ee787"); remaining = remaining.slice(t1[1].length); continue; }
-
     const n1 = remaining.match(/^(\b\d+\.?\d*\b)/);
     if (n1) { push(n1[1], "#79c0ff"); remaining = remaining.slice(n1[1].length); continue; }
-
     const w1 = remaining.match(/^([a-zA-Z_$][a-zA-Z0-9_$]*)/);
     if (w1) {
       const word = w1[1];
-      if (KEYWORDS.includes(word)) {
-        push(word, "#ff7b72");
-      } else if (remaining[word.length] === "(") {
-        push(word, "#d2a8ff");
-      } else if (word[0] === word[0].toUpperCase() && word[0] !== word[0].toLowerCase()) {
-        push(word, "#ffa657");
-      } else {
-        push(word, "#e6edf3");
-      }
+      if (KEYWORDS.includes(word)) push(word, "#ff7b72");
+      else if (remaining[word.length] === "(") push(word, "#d2a8ff");
+      else if (word[0] === word[0].toUpperCase() && word[0] !== word[0].toLowerCase()) push(word, "#ffa657");
+      else push(word, "#e6edf3");
       remaining = remaining.slice(word.length);
       continue;
     }
-
     push(remaining[0], "#e6edf3");
     remaining = remaining.slice(1);
   }
@@ -124,7 +99,6 @@ function CodeBlock({ code }: { code: string }) {
   const lines = code.split("\n");
   const lineNumWidth = String(lines.length).length * 10 + 16;
   const lang = detectLanguage(code);
-
   return (
     <div style={{ background:"#0d1117", borderRadius:12, overflow:"hidden", border:"1px solid #30363d" }}>
       <div style={{ background:"#161b22", padding:"8px 14px", display:"flex", alignItems:"center", gap:8, borderBottom:"1px solid #21262d" }}>
@@ -138,20 +112,11 @@ function CodeBlock({ code }: { code: string }) {
       <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" } as React.CSSProperties}>
         <div style={{ padding:"10px 0", minWidth:"max-content" }}>
           {lines.map((line, i) => (
-            <div key={i} style={{ display:"flex", minHeight:21, alignItems:"flex-start" }}>
-              <span style={{
-                width:lineNumWidth, textAlign:"right", paddingRight:14,
-                fontSize:12, color:"#484f58", flexShrink:0,
-                fontFamily:"monospace", lineHeight:"21px", userSelect:"none",
-                position:"sticky", left:0, background:"#0d1117",
-              }}>
+            <div key={i} style={{ display:"flex", minHeight:21 }}>
+              <span style={{ width:lineNumWidth, textAlign:"right", paddingRight:14, fontSize:12, color:"#484f58", flexShrink:0, fontFamily:"monospace", lineHeight:"21px", userSelect:"none", position:"sticky", left:0, background:"#0d1117" }}>
                 {i + 1}
               </span>
-              <span style={{
-                fontSize:13, lineHeight:"21px", paddingRight:24,
-                fontFamily:"'Fira Code','JetBrains Mono','Courier New',monospace",
-                whiteSpace:"pre",
-              }}>
+              <span style={{ fontSize:13, lineHeight:"21px", paddingRight:24, fontFamily:"'Fira Code','JetBrains Mono','Courier New',monospace", whiteSpace:"pre" }}>
                 {tokenize(line || " ")}
               </span>
             </div>
@@ -343,50 +308,18 @@ export default function DetailView({
               </button>
             </div>
 
-            <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8, marginBottom:10 }}>
-              <button onClick={() => copyAction("code")} style={{
-                padding:"11px 8px", borderRadius:12, border:"none",
-                background: copyState === "code" ? "var(--green)" : "var(--accent)",
-                color: copyState === "code" ? "#fff" : "#000",
-                fontSize:13, fontWeight:700, cursor:"pointer",
-                gridColumn: snippetType === "prompt" ? "1 / -1" : "auto",
-              }}>
-                {copyState === "code" ? "✓ Klaar" : "⎘ Kopieer Code"}
-              </button>
-
-              {snippetType !== "prompt" && (
-                <button onClick={() => copyAction("analyseer")} style={{
-                  padding:"11px 8px", borderRadius:12, border:"1px solid var(--border2)",
-                  background: copyState === "analyseer" ? "var(--green)" : "var(--bg2)",
-                  color: copyState === "analyseer" ? "#fff" : "var(--text2)",
-                  fontSize:13, fontWeight:700, cursor:"pointer",
-                }}>
-                  {copyState === "analyseer" ? "✓ Klaar" : "🔍 Analyseer"}
-                </button>
-              )}
-
-              {snippetType !== "prompt" && (
-                <button onClick={() => copyAction("bugfix")} style={{
-                  padding:"11px 8px", borderRadius:12, border:"1px solid var(--border2)",
-                  background: copyState === "bugfix" ? "var(--green)" : "var(--bg2)",
-                  color: copyState === "bugfix" ? "#fff" : "var(--text2)",
-                  fontSize:13, fontWeight:700, cursor:"pointer",
-                }}>
-                  {copyState === "bugfix" ? "✓ Klaar" : "🐛 Bug Fix"}
-                </button>
-              )}
-
-              {snippetType !== "prompt" && (
-                <button onClick={() => copyAction("verbeter")} style={{
-                  padding:"11px 8px", borderRadius:12, border:"1px solid var(--border2)",
-                  background: copyState === "verbeter" ? "var(--green)" : "var(--bg2)",
-                  color: copyState === "verbeter" ? "#fff" : "var(--text2)",
-                  fontSize:13, fontWeight:700, cursor:"pointer",
-                }}>
-                  {copyState === "verbeter" ? "✓ Klaar" : "✨ Verbeter"}
-                </button>
-              )}
-            </div>
+            {/* ALLEEN kopieer knop -- geen analyseer/bugfix/verbeter */}
+            <button onClick={() => copyAction("code")} style={{
+              display:"flex", alignItems:"center", justifyContent:"center",
+              gap:8, padding:"13px", borderRadius:12, border:"none",
+              width:"100%", marginBottom:10,
+              background: copyState === "code" ? "var(--green)" : "var(--accent)",
+              color: copyState === "code" ? "#fff" : "#000",
+              fontSize:15, fontWeight:700, cursor:"pointer",
+              transition:"background 0.2s",
+            }}>
+              {copyState === "code" ? "✓ Gekopieerd!" : "⎘ Kopieer Code"}
+            </button>
 
             <CodeBlock code={snip.code} />
           </div>
@@ -424,12 +357,8 @@ function FullScreenView({ label, value, isCode, copied, onCopy, onClose }: {
   return (
     <div style={{ position:"fixed", inset:0, background: isCode ? "#0d1117" : "var(--bg)", zIndex:500, display:"flex", flexDirection:"column" }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid var(--border)", background: isCode ? "#161b22" : "var(--bg)", flexShrink:0 }}>
-        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onClose}>
-          ← Terug
-        </button>
-        <span style={{ fontSize:15, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)" }}>
-          {label}
-        </span>
+        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onClose}>← Terug</button>
+        <span style={{ fontSize:15, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)" }}>{label}</span>
         {isCode
           ? <button onClick={onCopy} style={{ background: copied ? "#10b981" : "var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color: copied ? "#fff" : "#000", fontSize:14, fontWeight:700, cursor:"pointer" }}>
               {copied ? "✓" : "Copy"}
@@ -441,9 +370,7 @@ function FullScreenView({ label, value, isCode, copied, onCopy, onClose }: {
         {isCode
           ? <div style={{ padding:"12px" }}><CodeBlock code={value} /></div>
           : <div style={{ padding:"20px" }}>
-              <p style={{ fontSize:17, color:"var(--text)", lineHeight:1.7, margin:0, whiteSpace:"pre-wrap" }}>
-                {value}
-              </p>
+              <p style={{ fontSize:17, color:"var(--text)", lineHeight:1.7, margin:0, whiteSpace:"pre-wrap" }}>{value}</p>
             </div>
         }
       </div>
