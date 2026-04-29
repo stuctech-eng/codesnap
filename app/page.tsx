@@ -14,7 +14,11 @@ const ListView = dynamic(() => import("@/components/ListView"), { ssr: false });
 const DetailView = dynamic(() => import("@/components/DetailView"), { ssr: false });
 const EditView = dynamic(() => import("@/components/EditView"), { ssr: false });
 
-const VERSION = "1.4";
+// Auto versie -- datum van vandaag
+const VERSION = new Date().toLocaleDateString("nl-NL", {
+  day:"2-digit", month:"2-digit", year:"2-digit"
+}).replace(/\//g, ".");
+
 type View = "list" | "detail" | "edit" | "new";
 
 export default function Page() {
@@ -73,7 +77,7 @@ export default function Page() {
   };
 
   const shareSnippet = (snip: Snippet) => {
-    const text = `${snip.title}\n\n${snip.code}`;
+    const text = snip.title + "\n\n" + snip.code;
     if (navigator.share) {
       navigator.share({ title: snip.title, text });
     } else {
@@ -83,12 +87,12 @@ export default function Page() {
   };
 
   const exportSnippet = (snip: Snippet) => {
-    const text = `# ${snip.title}\n\n${snip.description}\n\n\`\`\`\n${snip.code}\n\`\`\`\n\nTags: ${snip.tags?.join(", ")}\nCategorie: ${snip.category}`;
+    const text = "# " + snip.title + "\n\n" + snip.description + "\n\n```\n" + snip.code + "\n```\n\nTags: " + snip.tags?.join(", ");
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${snip.title.replace(/\s+/g, "-")}.txt`;
+    a.download = snip.title.replace(/\s+/g, "-") + ".txt";
     a.click();
     flash("✓ Geëxporteerd");
   };

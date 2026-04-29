@@ -99,33 +99,32 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
 
   const allCats = [...ALL_CATS, ...customCats];
 
-  // Uniforme rij stijl -- zelfde als categorie/tags
-  const fieldBtn = (
-    label: string,
-    field: Field,
-    value: string,
-    isCode = false,
-  ) => (
+  // Uniforme rij -- zelfde stijl overal
+  const FieldRow = ({ label, field, preview, isCode = false }: {
+    label: string; field: Field; preview: string; isCode?: boolean;
+  }) => (
     <button
-      key={field}
       style={{
         display:"flex", alignItems:"center", justifyContent:"space-between",
         background:"var(--bg2)", border:"1px solid var(--border2)",
         borderRadius:12, padding:"13px 14px", width:"100%",
         cursor:"pointer", marginBottom:12, boxSizing:"border-box",
+        textAlign:"left",
       }}
       onClick={() => setActiveField(field)}
     >
-      <div style={{ flex:1, textAlign:"left", minWidth:0 }}>
-        <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:4 }}>
+      <div style={{ flex:1, minWidth:0 }}>
+        <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:5 }}>
           {label}
         </div>
         <div style={{
-          fontSize:15, color: value ? "var(--text)" : "var(--text3)",
+          fontSize:15,
+          color: preview ? "var(--text)" : "var(--text3)",
           fontFamily: isCode ? "'Fira Code','JetBrains Mono',monospace" : "inherit",
           overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
+          fontWeight: preview ? 500 : 400,
         }}>
-          {value || "Tik om in te voeren..."}
+          {preview || "Tik om in te voeren..."}
         </div>
       </div>
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0, marginLeft:10 }}>
@@ -170,11 +169,11 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
           </div>
         </div>
 
-        {/* VELDEN -- zelfde stijl als categorie */}
-        {fieldBtn("TITEL", "title", form.title)}
-        {fieldBtn("BESCHRIJVING", "description", form.description)}
-        {fieldBtn("CODE", "code", form.code ? form.code.slice(0,60) + (form.code.length > 60 ? "..." : "") : "", true)}
-        {fieldBtn("NOTITIES", "notes", form.notes ? form.notes.slice(0,60) + (form.notes.length > 60 ? "..." : "") : "")}
+        {/* VELDEN */}
+        <FieldRow label="TITEL" field="title" preview={form.title} />
+        <FieldRow label="BESCHRIJVING" field="description" preview={form.description} />
+        <FieldRow label="CODE" field="code" isCode preview={form.code ? form.code.slice(0,60) + (form.code.length > 60 ? "..." : "") : ""} />
+        <FieldRow label="NOTITIES" field="notes" preview={form.notes ? form.notes.slice(0,60) + (form.notes.length > 60 ? "..." : "") : ""} />
 
         {/* CATEGORIE */}
         <div style={{ marginBottom:12 }}>
@@ -184,7 +183,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
             onClick={() => setShowPopup("categorie")}
           >
             <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-              <div style={{ width:8, height:8, borderRadius:"50%", background:"var(--accent)" }} />
+              <div style={{ width:8, height:8, borderRadius:"50%", background:"var(--accent)", flexShrink:0 }} />
               <span style={{ fontSize:15, color:"var(--text)", fontWeight:600 }}>{form.category}</span>
             </div>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round">
@@ -202,7 +201,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
           >
             <div style={{ display:"flex", flexWrap:"wrap", gap:6, flex:1 }}>
               {form.tags.length === 0
-                ? <span style={{ fontSize:15, color:"var(--text3)", lineHeight:"24px" }}>Tik om tags te kiezen...</span>
+                ? <span style={{ fontSize:15, color:"var(--text3)", lineHeight:"24px", fontWeight:400 }}>Tik om tags te kiezen...</span>
                 : form.tags.map(t => (
                   <span key={t} style={{ background:"var(--accent)", color:"#000", padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:700 }}>
                     #{t}
@@ -242,14 +241,14 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
           <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }}
             onClick={e => e.stopPropagation()}>
 
+            {/* Header */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
               <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Categorie kiezen</span>
               <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
-                onClick={() => setShowPopup(null)}>
-                Klaar
-              </button>
+                onClick={() => setShowPopup(null)}>Klaar</button>
             </div>
 
+            {/* Lijst */}
             <div style={{ maxHeight:300, overflowY:"auto" }}>
               {allCats.map(cat => (
                 <button key={cat}
@@ -257,7 +256,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   onClick={() => { set("category", cat); setShowPopup(null); }}
                 >
                   <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                    <div style={{ width:8, height:8, borderRadius:"50%", background: form.category===cat ? "var(--accent)" : "var(--border2)" }} />
+                    <div style={{ width:8, height:8, borderRadius:"50%", background: form.category===cat ? "var(--accent)" : "var(--border2)", flexShrink:0 }} />
                     <span style={{ fontSize:15, color:"var(--text)", fontWeight: form.category===cat ? 700 : 400 }}>{cat}</span>
                   </div>
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
@@ -268,7 +267,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                     )}
                     {customCats.includes(cat) && (
                       <button
-                        style={{ background:"var(--red)", border:"none", borderRadius:"50%", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}
+                        style={{ background:"var(--red)", border:"none", borderRadius:"50%", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
                         onClick={e => {
                           e.stopPropagation();
                           setCustomCats(prev => prev.filter(c => c !== cat));
@@ -285,6 +284,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
               ))}
             </div>
 
+            {/* Eigen categorie */}
             <div style={{ padding:"10px 14px 14px", borderTop:"1px solid var(--border2)" }}>
               <div style={{ display:"flex", gap:8 }}>
                 <input
@@ -294,70 +294,71 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   onChange={e => setNewCat(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") addCustomCat(); }}
                 />
-                <button
-                  style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#000", fontSize:18, fontWeight:700, cursor:"pointer" }}
-                  onClick={addCustomCat}
-                >+</button>
+                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#000", fontSize:18, fontWeight:700, cursor:"pointer" }}
+                  onClick={addCustomCat}>+</button>
               </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* TAGS POPUP */}
+      {/* TAGS POPUP -- identiek aan categorie */}
       {showPopup === "tags" && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:300, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 8px 34px" }}
           onClick={() => setShowPopup(null)}>
           <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }}
             onClick={e => e.stopPropagation()}>
 
+            {/* Header */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
               <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Tags kiezen</span>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                 {form.tags.length > 0 && (
-                  <span style={{ fontSize:12, color:"var(--accent)", fontWeight:600 }}>
-                    {form.tags.length} geselecteerd
-                  </span>
+                  <span style={{ fontSize:12, color:"var(--accent)", fontWeight:600 }}>{form.tags.length} geselecteerd</span>
                 )}
                 <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
-                  onClick={() => setShowPopup(null)}>
-                  Klaar
-                </button>
+                  onClick={() => setShowPopup(null)}>Klaar</button>
               </div>
             </div>
 
-            {/* Geselecteerde tags bovenaan met × */}
+            {/* Geselecteerde tags bovenaan -- zelfde stijl als categorie lijst */}
             {form.tags.length > 0 && (
-              <div style={{ padding:"10px 14px", borderBottom:"1px solid var(--border2)", display:"flex", flexWrap:"wrap", gap:6 }}>
-                {form.tags.map(t => (
-                  <button key={t}
-                    style={{ display:"flex", alignItems:"center", gap:5, background:"var(--accent)", border:"none", borderRadius:20, padding:"5px 10px", cursor:"pointer" }}
-                    onClick={() => toggleTag(t)}
+              <div style={{ maxHeight:150, overflowY:"auto" }}>
+                {form.tags.map(tag => (
+                  <button key={tag}
+                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"12px 16px", background:"var(--bg3)", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                    onClick={() => toggleTag(tag)}
                   >
-                    <span style={{ fontSize:12, fontWeight:700, color:"#000" }}>#{t}</span>
-                    <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="3" strokeLinecap="round">
-                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                      <div style={{ width:8, height:8, borderRadius:"50%", background:"var(--accent)", flexShrink:0 }} />
+                      <span style={{ fontSize:15, color:"var(--text)", fontWeight:700 }}>#{tag}</span>
+                    </div>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
+                      <polyline points="20 6 9 17 4 12"/>
                     </svg>
                   </button>
                 ))}
               </div>
             )}
 
-            {/* Beschikbare tags */}
-            <div style={{ padding:14, display:"flex", flexWrap:"wrap", gap:8, maxHeight:200, overflowY:"auto" }}>
+            {/* Beschikbare tags -- zelfde stijl */}
+            <div style={{ maxHeight:200, overflowY:"auto" }}>
               {ALL_TAGS.filter(t => !form.tags.includes(t)).map(tag => (
                 <button key={tag}
-                  style={{ padding:"7px 14px", borderRadius:20, border:"1px solid var(--border2)", background:"var(--bg3)", color:"var(--text2)", fontSize:13, fontWeight:600, cursor:"pointer" }}
+                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"12px 16px", background:"transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
                   onClick={() => toggleTag(tag)}
                 >
-                  #{tag}
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ width:8, height:8, borderRadius:"50%", background:"var(--border2)", flexShrink:0 }} />
+                    <span style={{ fontSize:15, color:"var(--text)", fontWeight:400 }}>#{tag}</span>
+                  </div>
                 </button>
               ))}
             </div>
 
             {/* Eigen tag */}
-            <div style={{ padding:"0 14px 14px", borderTop:"1px solid var(--border2)" }}>
-              <div style={{ display:"flex", gap:8, marginTop:10 }}>
+            <div style={{ padding:"10px 14px 14px", borderTop:"1px solid var(--border2)" }}>
+              <div style={{ display:"flex", gap:8 }}>
                 <input
                   style={{ flex:1, background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:10, color:"var(--text)", fontSize:14, padding:"10px 12px", outline:"none" }}
                   placeholder="Eigen tag typen..."
@@ -365,10 +366,8 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   onChange={e => setNewTag(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") addCustomTag(); }}
                 />
-                <button
-                  style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#000", fontSize:18, fontWeight:700, cursor:"pointer" }}
-                  onClick={addCustomTag}
-                >+</button>
+                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#000", fontSize:18, fontWeight:700, cursor:"pointer" }}
+                  onClick={addCustomTag}>+</button>
               </div>
             </div>
           </div>
