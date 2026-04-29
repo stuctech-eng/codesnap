@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
-import { Snippet, CodeBlock } from "@/lib/types";
+import { Snippet, CodeBlock as CodeBlockType } from "@/lib/types";
+
 
 const initials = (t = "") => t.slice(0, 2).toUpperCase();
 const AV = ["#f59e0b","#d97706","#b45309","#78350f"];
