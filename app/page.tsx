@@ -13,7 +13,7 @@ import dynamic from "next/dynamic";
 const ListView = dynamic(() => import("@/components/ListView"), { ssr: false });
 const DetailView = dynamic(() => import("@/components/DetailView"), { ssr: false });
 const EditView = dynamic(() => import("@/components/EditView"), { ssr: false });
-const EditView = dynamic(() => import("@/components/EditView"), { ssr: false });
+
 const VERSION = "29.04";
 
 
