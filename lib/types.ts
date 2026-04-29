@@ -11,7 +11,7 @@ export interface Snippet {
   title: string;
   description: string;
   code: string;
-  codeBlocks?: CodeBlock[];
+  codeBlocks: CodeBlock[];
   notes?: string;
   snippetType?: SnippetType;
   category: string;

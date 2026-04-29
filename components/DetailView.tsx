@@ -1,7 +1,6 @@
 "use client";
 import { useState } from "react";
-import { Snippet, CodeBlock as CodeBlockType } from "@/lib/types";
-
+import { Snippet } from "@/lib/types";
 
 const initials = (t = "") => t.slice(0, 2).toUpperCase();
 const AV = ["#f59e0b","#d97706","#b45309","#78350f"];
@@ -12,17 +11,35 @@ const CAT_COLORS: Record<string,string> = {
   "Machines":"#3b82f6","Ideeën":"#8b5cf6",
 };
 
+const LANG_COLORS: Record<string,string> = {
+  html:"#e34c26", css:"#264de4", js:"#f7df1e",
+  ts:"#3178c6", tsx:"#3178c6", jsx:"#61dafb",
+  json:"#10b981", sql:"#336791", python:"#3572A5",
+  md:"#6b7280", env:"#ef4444", bash:"#89e051",
+  code:"#8b949e",
+};
+
+function getLang(filename: string): string {
+  const ext = filename.split(".").pop()?.toLowerCase() || "";
+  const map: Record<string,string> = {
+    html:"html", css:"css", js:"js", ts:"ts",
+    tsx:"tsx", jsx:"jsx", json:"json", sql:"sql",
+    py:"python", md:"md", env:"env", sh:"bash",
+    code:"code",
+  };
+  return map[ext] || ext || "code";
+}
+
 function detectLanguage(code: string): string {
   const c = code.toLowerCase();
-  if (c.includes("<meta") || c.includes("<link") || c.includes("<html") || c.includes("<!doctype")) return "html";
+  if (c.includes("<meta") || c.includes("<link") || c.includes("<html")) return "html";
   if (c.includes("import") && c.includes("from")) return "typescript";
   if (c.includes("export default") || c.includes("const ") || c.includes("function ")) return "javascript";
   if (c.includes("select ") && c.includes("from ")) return "sql";
   if (c.includes("def ") && c.includes("print(")) return "python";
-  if (c.includes("<?php")) return "php";
   if (c.trim().startsWith("{") || c.trim().startsWith("[")) return "json";
   if (c.includes("body {") || c.includes("margin:") || c.includes("padding:")) return "css";
-  if (c.includes("#!/bin/bash") || c.includes("npm ") || c.includes("cd ")) return "bash";
+  if (c.includes("npm ") || c.includes("cd ")) return "bash";
   return "code";
 }
 
@@ -30,28 +47,29 @@ function buildCopyText(snip: Snippet, action: string, blockId?: string): string 
   const fence = "```";
 
   // Kopieer specifiek blok
-  if (blockId && blockId !== "main") {
+  if (blockId) {
     const block = snip.codeBlocks?.find(b => b.id === blockId);
     if (block) {
-      const lang = detectLanguage(block.code);
+      const lang = getLang(block.filename);
       return fence + lang + "\n" + block.code + "\n" + fence;
     }
   }
 
-  const lang = detectLanguage(snip.code);
+  const firstBlock = snip.codeBlocks?.[0];
+  const mainCode = firstBlock?.code || snip.code || "";
+  const lang = firstBlock ? getLang(firstBlock.filename) : detectLanguage(mainCode);
   const type = snip.snippetType || "code";
-  const codeBlock = fence + lang + "\n" + snip.code + "\n" + fence;
 
-  if (action === "code") return snip.code;
+  if (action === "code") return mainCode;
 
   if (type === "prompt") {
     if (action === "alles") {
       const tags = snip.tags?.length ? "\n**Tags:** " + snip.tags.join(", ") : "";
       return "## CodeSnap -- " + snip.title + "\n\n**Categorie:** " + snip.category + tags +
         "\n\n---\n\n### Beschrijving\n" + snip.description +
-        "\n\n---\n\n### Prompt\n" + snip.code;
+        "\n\n---\n\n### Prompt\n" + mainCode;
     }
-    return snip.code;
+    return mainCode;
   }
 
   if (action === "alles") {
@@ -59,19 +77,21 @@ function buildCopyText(snip: Snippet, action: string, blockId?: string): string 
     const label = type === "instructie" ? "Instructie" : "Beschrijving";
     const descPart = snip.description ? "\n\n---\n\n### " + label + "\n" + snip.description : "";
 
-    // Alle code blokken meenemen
-    let allCode = "### Code\n" + codeBlock;
+    let allCode = "";
     if (snip.codeBlocks && snip.codeBlocks.length > 0) {
-      snip.codeBlocks.forEach(b => {
-        const bLang = detectLanguage(b.code);
-        allCode += "\n\n### " + b.filename + "\n" + fence + bLang + "\n" + b.code + "\n" + fence;
+      snip.codeBlocks.forEach((b, i) => {
+        const bLang = getLang(b.filename);
+        if (i > 0) allCode += "\n\n";
+        allCode += "### " + b.filename + "\n" + fence + bLang + "\n" + b.code + "\n" + fence;
       });
+    } else {
+      allCode = "### Code\n" + fence + lang + "\n" + mainCode + "\n" + fence;
     }
 
     return "## CodeSnap -- " + snip.title + "\n\n**Categorie:** " + snip.category + tags + descPart + "\n\n---\n\n" + allCode;
   }
 
-  return codeBlock;
+  return fence + lang + "\n" + mainCode + "\n" + fence;
 }
 
 const KEYWORDS = ["import","export","from","const","let","var","function","return","if","else","for","while","class","new","async","await","try","catch","throw","typeof","instanceof","default","null","undefined","true","false","this","super","extends","interface","type","enum","void","in","of","do","switch","case","break","continue"];
@@ -114,10 +134,11 @@ function tokenize(line: string): React.ReactNode {
   return <>{parts}</>;
 }
 
-function CodeBlock({ code, filename }: { code: string; filename?: string }) {
+function CodeViewer({ code, filename }: { code: string; filename: string }) {
   const lines = code.split("\n");
   const lineNumWidth = String(lines.length).length * 10 + 16;
-  const lang = filename ? filename.split(".").pop() || detectLanguage(code) : detectLanguage(code);
+  const lang = getLang(filename);
+  const langColor = LANG_COLORS[lang] || "#8b949e";
 
   return (
     <div style={{ background:"#0d1117", borderRadius:12, overflow:"hidden", border:"1px solid #30363d" }}>
@@ -125,9 +146,14 @@ function CodeBlock({ code, filename }: { code: string; filename?: string }) {
         <div style={{ width:10, height:10, borderRadius:"50%", background:"#ff5f57" }} />
         <div style={{ width:10, height:10, borderRadius:"50%", background:"#febc2e" }} />
         <div style={{ width:10, height:10, borderRadius:"50%", background:"#28c840" }} />
-        <span style={{ marginLeft:8, fontSize:11, color:"#484f58", fontFamily:"monospace" }}>
-          {filename || lang} · {lines.length} regels · {code.length} tekens
-        </span>
+        <div style={{ marginLeft:8, display:"flex", alignItems:"center", gap:6 }}>
+          <div style={{ fontSize:11, fontWeight:700, padding:"1px 7px", borderRadius:20, background: langColor + "22", color: langColor, fontFamily:"monospace" }}>
+            {lang}
+          </div>
+          <span style={{ fontSize:11, color:"#484f58", fontFamily:"monospace" }}>
+            {filename} · {lines.length} regels
+          </span>
+        </div>
       </div>
       <div style={{ overflowX:"auto", WebkitOverflowScrolling:"touch" } as React.CSSProperties}>
         <div style={{ padding:"10px 0", minWidth:"max-content" }}>
@@ -163,12 +189,16 @@ export default function DetailView({
   onCloseSheet, onAdd,
 }: Props) {
   const [tab, setTab] = useState<MainTab>("about");
-  const [activeBlock, setActiveBlock] = useState<string>("main");
-  const [fullField, setFullField] = useState<string|null>(null);
+  const [activeBlockId, setActiveBlockId] = useState<string|null>(
+    snip.codeBlocks?.[0]?.id || null
+  );
+  const [fullScreen, setFullScreen] = useState(false);
   const [copyState, setCopyState] = useState<string|null>(null);
+
   const catColor = CAT_COLORS[snip.category] || "var(--accent)";
   const snippetType = snip.snippetType || "code";
-  const hasBlocks = snip.codeBlocks && snip.codeBlocks.length > 0;
+  const blocks = snip.codeBlocks || [];
+  const activeBlock = blocks.find(b => b.id === activeBlockId) || blocks[0];
 
   const typeInfo = snippetType === "prompt"
     ? { icon:"🤖", label:"AI Prompt", color:"#6366f1" }
@@ -184,25 +214,23 @@ export default function DetailView({
     });
   };
 
-  // Huidig actief code blok
-  const currentCode = activeBlock === "main"
-    ? snip.code
-    : snip.codeBlocks?.find(b => b.id === activeBlock)?.code || "";
-  const currentFilename = activeBlock === "main"
-    ? undefined
-    : snip.codeBlocks?.find(b => b.id === activeBlock)?.filename;
-  const currentLang = detectLanguage(currentCode);
-
-  if (fullField) {
+  if (fullScreen && activeBlock) {
     return (
-      <FullScreenView
-        label={fullField === "code" ? (currentFilename || "CODE") : "BESCHRIJVING"}
-        value={fullField === "code" ? currentCode : snip.description}
-        isCode={fullField === "code"}
-        copied={copied}
-        onCopy={onCopy}
-        onClose={() => setFullField(null)}
-      />
+      <div style={{ position:"fixed", inset:0, background:"#0d1117", zIndex:500, display:"flex", flexDirection:"column" }}>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid #21262d", background:"#161b22", flexShrink:0 }}>
+          <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={() => setFullScreen(false)}>← Terug</button>
+          <span style={{ fontSize:13, fontWeight:600, color:"#e6edf3", fontFamily:"monospace" }}>{activeBlock.filename}</span>
+          <button
+            style={{ background: copyState === activeBlock.id ? "#10b981" : "var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color: copyState === activeBlock.id ? "#fff" : "#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
+            onClick={() => copyAction("code", activeBlock.id)}
+          >
+            {copyState === activeBlock.id ? "✓" : "Copy"}
+          </button>
+        </div>
+        <div style={{ flex:1, overflow:"auto", padding:"12px" }}>
+          <CodeViewer code={activeBlock.code} filename={activeBlock.filename} />
+        </div>
+      </div>
     );
   }
 
@@ -237,7 +265,7 @@ export default function DetailView({
         </div>
       </div>
 
-      {/* ABOUT / CODE TABS */}
+      {/* TABS */}
       <div style={{ padding:"10px 14px 0", background:"var(--bg)" }}>
         <div style={{ background:"var(--bg2)", borderRadius:10, padding:3, display:"flex", border:"1px solid var(--border2)" }}>
           {(["about","code"] as MainTab[]).map(t => (
@@ -248,7 +276,7 @@ export default function DetailView({
               color: tab===t ? "#000" : "var(--text2)",
               transition:"background 0.2s",
             }}>
-              {t === "about" ? "About" : "Code"}
+              {t === "about" ? "About" : "Code" + (blocks.length > 1 ? " (" + blocks.length + ")" : "")}
             </button>
           ))}
         </div>
@@ -280,14 +308,14 @@ export default function DetailView({
             </div>
 
             {snip.description && (
-              <button onClick={() => setFullField("description")} style={{ display:"block", width:"100%", textAlign:"left", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", cursor:"pointer", marginBottom:12 }}>
+              <div style={{ background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", marginBottom:12 }}>
                 <div style={{ fontSize:10, color:"var(--text3)", fontWeight:700, marginBottom:6, letterSpacing:"0.1em" }}>
-                  {snippetType === "instructie" ? "INSTRUCTIE" : "BESCHRIJVING"} › volledig scherm
+                  {snippetType === "instructie" ? "INSTRUCTIE" : "BESCHRIJVING"}
                 </div>
-                <p style={{ fontSize:14, color:"var(--text2)", lineHeight:1.6, margin:0, display:"-webkit-box", overflow:"hidden", WebkitLineClamp:3, WebkitBoxOrient:"vertical" } as React.CSSProperties}>
+                <p style={{ fontSize:14, color:"var(--text2)", lineHeight:1.6, margin:0, whiteSpace:"pre-wrap" }}>
                   {snip.description}
                 </p>
-              </button>
+              </div>
             )}
 
             {snip.tags?.length > 0 && (
@@ -323,50 +351,57 @@ export default function DetailView({
         {tab === "code" && (
           <div style={{ padding:"12px" }}>
 
-            {/* Bestand tabs -- als er meerdere zijn */}
-            {hasBlocks && (
-              <div style={{ display:"flex", gap:6, overflowX:"auto", marginBottom:10, paddingBottom:4 }}>
-                <button
-                  style={{ padding:"6px 14px", borderRadius:20, border:"1px solid " + (activeBlock==="main" ? "var(--accent)" : "var(--border2)"), background: activeBlock==="main" ? "var(--accent)" : "var(--bg2)", color: activeBlock==="main" ? "#000" : "var(--text2)", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", fontFamily:"monospace" }}
-                  onClick={() => setActiveBlock("main")}
-                >
-                  {snip.title.slice(0,12)}
-                </button>
-                {snip.codeBlocks?.map(block => (
-                  <button key={block.id}
-                    style={{ padding:"6px 14px", borderRadius:20, border:"1px solid " + (activeBlock===block.id ? "var(--accent)" : "var(--border2)"), background: activeBlock===block.id ? "var(--accent)" : "var(--bg2)", color: activeBlock===block.id ? "#000" : "var(--text2)", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", fontFamily:"monospace" }}
-                    onClick={() => setActiveBlock(block.id)}
-                  >
-                    {block.filename}
-                  </button>
-                ))}
+            {/* Bestand tabs */}
+            {blocks.length > 1 && (
+              <div style={{ display:"flex", gap:6, overflowX:"auto", marginBottom:10, paddingBottom:2 }}>
+                {blocks.map(block => {
+                  const lang = getLang(block.filename);
+                  const langColor = LANG_COLORS[lang] || "#8b949e";
+                  const isActive = activeBlock?.id === block.id;
+                  return (
+                    <button key={block.id}
+                      style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 12px", borderRadius:20, border:"1px solid " + (isActive ? "var(--accent)" : "var(--border2)"), background: isActive ? "var(--accent)" : "var(--bg2)", color: isActive ? "#000" : "var(--text2)", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}
+                      onClick={() => setActiveBlockId(block.id)}
+                    >
+                      <span style={{ fontSize:10, padding:"1px 5px", borderRadius:10, background: langColor + (isActive ? "44" : "22"), color: isActive ? "#000" : langColor, fontFamily:"monospace" }}>
+                        {lang}
+                      </span>
+                      {block.filename}
+                    </button>
+                  );
+                })}
               </div>
             )}
 
-            {/* Taal + volledig scherm */}
-            <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:10 }}>
-              <div style={{ background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:20, padding:"4px 12px", fontSize:12, fontWeight:700, color:"var(--text3)" }}>
-                {currentFilename || currentLang}
+            {activeBlock ? (
+              <>
+                {/* Volledig scherm knop */}
+                <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
+                  <button onClick={() => setFullScreen(true)} style={{ background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:20, padding:"4px 12px", fontSize:12, fontWeight:700, color:"var(--text2)", cursor:"pointer" }}>
+                    ⛶ Volledig scherm
+                  </button>
+                </div>
+
+                {/* Kopieer knop */}
+                <button onClick={() => copyAction("code", activeBlock.id)} style={{
+                  display:"flex", alignItems:"center", justifyContent:"center",
+                  gap:8, padding:"13px", borderRadius:12, border:"none",
+                  width:"100%", marginBottom:10,
+                  background: copyState === activeBlock.id ? "var(--green)" : "var(--accent)",
+                  color: copyState === activeBlock.id ? "#fff" : "#000",
+                  fontSize:15, fontWeight:700, cursor:"pointer",
+                  transition:"background 0.2s",
+                }}>
+                  {copyState === activeBlock.id ? "✓ Gekopieerd!" : "⎘ Kopieer " + activeBlock.filename}
+                </button>
+
+                <CodeViewer code={activeBlock.code} filename={activeBlock.filename} />
+              </>
+            ) : (
+              <div style={{ padding:"40px 20px", textAlign:"center", color:"var(--text3)" }}>
+                Geen code blokken
               </div>
-              <button onClick={() => setFullField("code")} style={{ background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:20, padding:"4px 12px", fontSize:12, fontWeight:700, color:"var(--text2)", cursor:"pointer" }}>
-                ⛶ Volledig scherm
-              </button>
-            </div>
-
-            {/* Kopieer knop */}
-            <button onClick={() => copyAction("code", activeBlock)} style={{
-              display:"flex", alignItems:"center", justifyContent:"center",
-              gap:8, padding:"13px", borderRadius:12, border:"none",
-              width:"100%", marginBottom:10,
-              background: copyState === (activeBlock || "code") ? "var(--green)" : "var(--accent)",
-              color: copyState === (activeBlock || "code") ? "#fff" : "#000",
-              fontSize:15, fontWeight:700, cursor:"pointer",
-              transition:"background 0.2s",
-            }}>
-              {copyState === (activeBlock || "code") ? "✓ Gekopieerd!" : "⎘ Kopieer " + (currentFilename || "Code")}
-            </button>
-
-            <CodeBlock code={currentCode} filename={currentFilename} />
+            )}
           </div>
         )}
       </div>
@@ -391,34 +426,6 @@ export default function DetailView({
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-function FullScreenView({ label, value, isCode, copied, onCopy, onClose }: {
-  label:string; value:string; isCode:boolean;
-  copied:boolean; onCopy:()=>void; onClose:()=>void;
-}) {
-  return (
-    <div style={{ position:"fixed", inset:0, background: isCode ? "#0d1117" : "var(--bg)", zIndex:500, display:"flex", flexDirection:"column" }}>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid var(--border)", background: isCode ? "#161b22" : "var(--bg)", flexShrink:0 }}>
-        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onClose}>← Terug</button>
-        <span style={{ fontSize:15, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)" }}>{label}</span>
-        {isCode
-          ? <button onClick={onCopy} style={{ background: copied ? "#10b981" : "var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color: copied ? "#fff" : "#000", fontSize:14, fontWeight:700, cursor:"pointer" }}>
-              {copied ? "✓" : "Copy"}
-            </button>
-          : <div style={{ width:60 }} />
-        }
-      </div>
-      <div style={{ flex:1, overflow:"auto" }}>
-        {isCode
-          ? <div style={{ padding:"12px" }}><CodeBlock code={value} /></div>
-          : <div style={{ padding:"20px" }}>
-              <p style={{ fontSize:17, color:"var(--text)", lineHeight:1.7, margin:0, whiteSpace:"pre-wrap" }}>{value}</p>
-            </div>
-        }
-      </div>
     </div>
   );
 }

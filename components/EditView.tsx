@@ -36,15 +36,16 @@ const LANG_COLORS: Record<string,string> = {
   ts:"#3178c6", tsx:"#3178c6", jsx:"#61dafb",
   json:"#10b981", sql:"#336791", py:"#3572A5",
   md:"#6b7280", env:"#ef4444", sh:"#89e051",
+  code:"#8b949e",
 };
 
-function getLangFromFilename(filename: string): string {
+function getLang(filename: string): string {
   const ext = filename.split(".").pop()?.toLowerCase() || "";
   const map: Record<string,string> = {
     html:"html", css:"css", js:"js", ts:"ts",
     tsx:"tsx", jsx:"jsx", json:"json", sql:"sql",
     py:"python", md:"md", env:"env", sh:"bash",
-    gitignore:"git", eslintrc:"json",
+    code:"code",
   };
   return map[ext] || ext || "code";
 }
@@ -76,13 +77,12 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
   });
 
   const [activeField, setActiveField] = useState<Field>(null);
-  const [editingBlock, setEditingBlock] = useState<string|null>(null);
+  const [editingBlockId, setEditingBlockId] = useState<string|null>(null);
   const [showPopup, setShowPopup] = useState<PopupType>(null);
   const [newTag, setNewTag] = useState("");
   const [newCat, setNewCat] = useState("");
   const [newFilename, setNewFilename] = useState("");
   const [customCats, setCustomCats] = useState<string[]>([]);
-  const [expandedBlock, setExpandedBlock] = useState<string|null>(null);
 
   const set = (k: string, v: unknown) => setForm(f => ({ ...f, [k]: v }));
 
@@ -108,24 +108,23 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
     setNewCat("");
   };
 
-  const openBestandPopup = () => setShowPopup("bestand");
-
   const addCodeBlock = (filename: string) => {
     const block: CodeBlock = { id: uid(), filename, code: "" };
-    const updated = [...form.codeBlocks, block];
-    set("codeBlocks", updated);
+    setForm(f => ({ ...f, codeBlocks: [...f.codeBlocks, block] }));
     setShowPopup(null);
     setNewFilename("");
-    setEditingBlock(block.id);
+    setEditingBlockId(block.id);
   };
 
   const updateBlock = (id: string, code: string) => {
-    set("codeBlocks", form.codeBlocks.map(b => b.id === id ? { ...b, code } : b));
+    setForm(f => ({
+      ...f,
+      codeBlocks: f.codeBlocks.map(b => b.id === id ? { ...b, code } : b)
+    }));
   };
 
   const deleteBlock = (id: string) => {
-    set("codeBlocks", form.codeBlocks.filter(b => b.id !== id));
-    if (expandedBlock === id) setExpandedBlock(null);
+    setForm(f => ({ ...f, codeBlocks: f.codeBlocks.filter(b => b.id !== id) }));
   };
 
   const save = () => {
@@ -133,7 +132,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
     onSave({ ...form });
   };
 
-  // Volledig scherm tekst velden
+  // Volledig scherm tekst
   if (activeField) {
     return (
       <FullScreenField
@@ -151,31 +150,24 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
   }
 
   // Volledig scherm code blok
-  if (editingBlock) {
-    const isMain = editingBlock === "main";
-    const block = isMain ? null : form.codeBlocks.find(b => b.id === editingBlock);
-    const currentCode = isMain ? form.code : (block?.code || "");
-    const currentFilename = isMain ? "Hoofd code" : (block?.filename || "");
-
-    return (
-      <FullScreenField
-        label={currentFilename.toUpperCase()}
-        value={currentCode}
-        isCode={true}
-        onDone={(val) => {
-          if (isMain) set("code", val);
-          else if (block) updateBlock(block.id, val);
-          setEditingBlock(null);
-        }}
-        onCancel={() => setEditingBlock(null)}
-        onNextBestand={() => {
-          if (isMain) set("code", currentCode);
-          else if (block) updateBlock(block.id, currentCode);
-          setEditingBlock(null);
-          setShowPopup("bestand");
-        }}
-      />
-    );
+  if (editingBlockId) {
+    const block = form.codeBlocks.find(b => b.id === editingBlockId);
+    if (block) {
+      return (
+        <FullScreenField
+          label={block.filename.toUpperCase()}
+          value={block.code}
+          isCode={true}
+          onDone={(val) => { updateBlock(block.id, val); setEditingBlockId(null); }}
+          onCancel={() => setEditingBlockId(null)}
+          onNextBestand={() => {
+            updateBlock(block.id, block.code);
+            setEditingBlockId(null);
+            setTimeout(() => setShowPopup("bestand"), 100);
+          }}
+        />
+      );
+    }
   }
 
   const allCats = [...ALL_CATS, ...customCats];
@@ -239,91 +231,89 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
         <FieldRow label="BESCHRIJVING" field="description" preview={form.description} />
         <FieldRow label="NOTITIES" field="notes" preview={form.notes ? form.notes.slice(0,60) + (form.notes.length > 60 ? "..." : "") : ""} />
 
-        {/* CODE SECTIE */}
+        {/* CODE BLOKKEN */}
         <div style={{ marginBottom:16 }}>
           <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:8, paddingLeft:2 }}>
-            CODE BLOKKEN
+            CODE {form.codeBlocks.length > 0 && <span style={{ color:"var(--accent)" }}>· {form.codeBlocks.length} {form.codeBlocks.length === 1 ? "bestand" : "bestanden"}</span>}
           </div>
 
-          {/* Hoofd code */}
-          <div style={{ marginBottom:8 }}>
+          {form.codeBlocks.length === 0 ? (
+            /* Lege staat -- grote knop */
             <button
-              style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", width:"100%", cursor:"pointer", boxSizing:"border-box", textAlign:"left" }}
-              onClick={() => setEditingBlock("main")}
+              style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, width:"100%", padding:"20px", borderRadius:12, border:"1px dashed var(--border2)", background:"transparent", cursor:"pointer" }}
+              onClick={() => setShowPopup("bestand")}
             >
-              <div style={{ display:"flex", alignItems:"center", gap:10, flex:1, minWidth:0 }}>
-                <div style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20, background: LANG_COLORS[getLangFromFilename("main.code")] + "22" || "var(--bg3)", color: LANG_COLORS[getLangFromFilename("main.code")] || "var(--text3)", flexShrink:0 }}>
-                  code
-                </div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:12, color:"var(--text3)", fontWeight:700, marginBottom:2 }}>HOOFD CODE</div>
-                  <div style={{ fontSize:13, color: form.code ? "var(--text2)" : "var(--text3)", fontFamily:"monospace", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                    {form.code ? form.code.slice(0,50) + (form.code.length > 50 ? "..." : "") : "Tik om code toe te voegen..."}
-                  </div>
-                </div>
-              </div>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0, marginLeft:8 }}>
-                <path d="m9 18 6-6-6-6"/>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
+                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
               </svg>
-            </button>
-          </div>
-
-          {/* Extra code blokken -- ingeklapt */}
-          {form.codeBlocks.map(block => {
-            const lang = getLangFromFilename(block.filename);
-            const langColor = LANG_COLORS[lang] || "var(--text3)";
-            const isExpanded = expandedBlock === block.id;
-
-            return (
-              <div key={block.id} style={{ marginBottom:8 }}>
-                <div style={{ display:"flex", gap:8, alignItems:"stretch" }}>
-                  <button
-                    style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"space-between", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", cursor:"pointer", textAlign:"left" }}
-                    onClick={() => setEditingBlock(block.id)}
-                  >
-                    <div style={{ display:"flex", alignItems:"center", gap:10, flex:1, minWidth:0 }}>
-                      {/* Taal badge */}
-                      <div style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20, background: langColor + "22", color: langColor, flexShrink:0, fontFamily:"monospace" }}>
-                        {lang}
-                      </div>
-                      <div style={{ flex:1, minWidth:0 }}>
-                        <div style={{ fontSize:12, color:"var(--accent)", fontWeight:700, marginBottom:2, fontFamily:"monospace" }}>
-                          {block.filename}
-                        </div>
-                        <div style={{ fontSize:13, color: block.code ? "var(--text2)" : "var(--text3)", fontFamily:"monospace", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                          {block.code ? block.code.slice(0,50) + (block.code.length > 50 ? "..." : "") : "Leeg -- tik om te bewerken"}
-                        </div>
-                      </div>
-                    </div>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0, marginLeft:8 }}>
-                      <path d="m9 18 6-6-6-6"/>
-                    </svg>
-                  </button>
-
-                  {/* Verwijder knop */}
-                  <button
-                    style={{ width:40, borderRadius:12, background:"var(--red)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
-                    onClick={() => deleteBlock(block.id)}
-                  >
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
-                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                    </svg>
-                  </button>
-                </div>
+              <div style={{ textAlign:"left" }}>
+                <div style={{ fontSize:15, color:"var(--accent)", fontWeight:700 }}>Bestand toevoegen</div>
+                <div style={{ fontSize:12, color:"var(--text3)", marginTop:2 }}>Tik om code blok te starten</div>
               </div>
-            );
-          })}
+            </button>
+          ) : (
+            <>
+              {/* Code blokken lijst */}
+              <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:8 }}>
+                {form.codeBlocks.map((block, index) => {
+                  const lang = getLang(block.filename);
+                  const langColor = LANG_COLORS[lang] || "#8b949e";
+                  return (
+                    <div key={block.id} style={{ display:"flex", gap:8, alignItems:"stretch" }}>
+                      <button
+                        style={{ flex:1, display:"flex", alignItems:"center", gap:10, background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", cursor:"pointer", textAlign:"left" }}
+                        onClick={() => setEditingBlockId(block.id)}
+                      >
+                        {/* Nummer */}
+                        <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, flexShrink:0, width:16 }}>
+                          {index + 1}
+                        </div>
+                        {/* Taal badge */}
+                        <div style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20, background: langColor + "22", color: langColor, flexShrink:0, fontFamily:"monospace" }}>
+                          {lang}
+                        </div>
+                        {/* Info */}
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:13, color:"var(--accent)", fontWeight:700, fontFamily:"monospace", marginBottom:2 }}>
+                            {block.filename}
+                          </div>
+                          <div style={{ fontSize:12, color: block.code ? "var(--text3)" : "var(--text3)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                            {block.code
+                              ? block.code.split("\n").length + " regels · " + block.code.length + " tekens"
+                              : "Leeg -- tik om te bewerken"
+                            }
+                          </div>
+                        </div>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0 }}>
+                          <path d="m9 18 6-6-6-6"/>
+                        </svg>
+                      </button>
+                      {/* Verwijder */}
+                      <button
+                        style={{ width:40, borderRadius:12, background:"var(--red)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
+                        onClick={() => deleteBlock(block.id)}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
+                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
 
-          {/* + Bestand toevoegen */}
-          <button
-            style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%", padding:"12px", borderRadius:12, border:"1px dashed var(--border2)", background:"transparent", color:"var(--accent)", fontSize:14, fontWeight:700, cursor:"pointer", marginTop:4 }}
-            onClick={openBestandPopup}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-            </svg>
-            Bestand toevoegen
-          </button>
+              {/* + Volgend bestand */}
+              <button
+                style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%", padding:"11px", borderRadius:12, border:"1px dashed var(--border2)", background:"transparent", color:"var(--accent)", fontSize:13, fontWeight:700, cursor:"pointer" }}
+                onClick={() => setShowPopup("bestand")}
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+                Bestand toevoegen
+              </button>
+            </>
+          )}
         </div>
 
         {/* CATEGORIE */}
@@ -394,19 +384,21 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
               <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
                 onClick={() => setShowPopup(null)}>Annuleer</button>
             </div>
-            <div style={{ maxHeight:300, overflowY:"auto" }}>
+            <div style={{ maxHeight:320, overflowY:"auto" }}>
               {FILE_TEMPLATES.map(file => {
-                const lang = getLangFromFilename(file);
-                const langColor = LANG_COLORS[lang] || "var(--text3)";
+                const lang = getLang(file);
+                const langColor = LANG_COLORS[lang] || "#8b949e";
+                const alreadyAdded = form.codeBlocks.some(b => b.filename === file);
                 return (
                   <button key={file}
-                    style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"12px 16px", background:"transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
-                    onClick={() => addCodeBlock(file)}
+                    style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"12px 16px", background: alreadyAdded ? "var(--bg3)" : "transparent", border:"none", cursor: alreadyAdded ? "default" : "pointer", borderBottom:"1px solid var(--border)", opacity: alreadyAdded ? 0.5 : 1 }}
+                    onClick={() => { if (!alreadyAdded) addCodeBlock(file); }}
                   >
                     <div style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20, background: langColor + "22", color: langColor, flexShrink:0, fontFamily:"monospace", minWidth:36, textAlign:"center" }}>
                       {lang}
                     </div>
-                    <span style={{ fontSize:15, color:"var(--text)", fontFamily:"monospace", fontWeight:500 }}>{file}</span>
+                    <span style={{ fontSize:15, color:"var(--text)", fontFamily:"monospace", fontWeight:500, flex:1, textAlign:"left" }}>{file}</span>
+                    {alreadyAdded && <span style={{ fontSize:11, color:"var(--text3)" }}>✓</span>}
                   </button>
                 );
               })}
@@ -525,7 +517,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
             <div style={{ maxHeight:200, overflowY:"auto" }}>
               {ALL_TAGS.filter(t => !form.tags.includes(t)).map(tag => (
                 <button key={tag}
-                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"12px 16px", background:"transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                  style={{ display:"flex", alignItems:"center", width:"100%", padding:"12px 16px", background:"transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
                   onClick={() => toggleTag(tag)}
                 >
                   <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -575,10 +567,10 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
   };
 
   return (
-    <div style={{ position:"fixed", inset:0, background:"var(--bg)", zIndex:500, display:"flex", flexDirection:"column" }}>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid var(--border)", background:"var(--bg)" }}>
+    <div style={{ position:"fixed", inset:0, background: isCode ? "#0d1117" : "var(--bg)", zIndex:500, display:"flex", flexDirection:"column" }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid var(--border)", background: isCode ? "#161b22" : "var(--bg)" }}>
         <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onCancel}>Annuleer</button>
-        <span style={{ fontSize:17, fontWeight:600, color:"var(--text)" }}>{label}</span>
+        <span style={{ fontSize:15, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)", fontFamily: isCode ? "monospace" : "inherit" }}>{label}</span>
         <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, fontWeight:700, cursor:"pointer" }} onClick={() => onDone(text)}>Klaar</button>
       </div>
 
@@ -589,18 +581,22 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
         onChange={e => setText(e.target.value)}
       />
 
-      <div style={{ padding:"10px 16px 34px", background: isCode ? "#0d1117" : "var(--bg)", borderTop:"1px solid var(--border)", display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }}>
+      <div style={{ padding:"10px 16px 34px", background: isCode ? "#0d1117" : "var(--bg)", borderTop:"1px solid " + (isCode ? "#21262d" : "var(--border)"), display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }}>
         <span style={{ fontSize:12, color: isCode ? "#484f58" : "var(--text3)", flexShrink:0 }}>
-          {text.split("\n").length} regels
+          {text.split("\n").length} regels · {text.length} tekens
         </span>
         <div style={{ display:"flex", gap:8 }}>
-          <button style={{ background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:10, padding:"8px 14px", color:"var(--text2)", fontSize:13, fontWeight:700, cursor:"pointer" }}
-            onClick={pasteFromClipboard}>
+          <button
+            style={{ background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:10, padding:"8px 14px", color:"var(--text2)", fontSize:13, fontWeight:700, cursor:"pointer" }}
+            onClick={pasteFromClipboard}
+          >
             ⎘ Plak
           </button>
           {isCode && onNextBestand && (
-            <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"8px 14px", color:"#000", fontSize:13, fontWeight:700, cursor:"pointer" }}
-              onClick={() => onNextBestand()}>
+            <button
+              style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"8px 14px", color:"#000", fontSize:13, fontWeight:700, cursor:"pointer" }}
+              onClick={() => onNextBestand()}
+            >
               + Volgend bestand
             </button>
           )}

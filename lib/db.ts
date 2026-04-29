@@ -10,22 +10,40 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { db } from "./firebase";
-import { Snippet } from "./types";
+import { Snippet, CodeBlock } from "./types";
 
 const COL = "snippets";
 
+function migrateSnippet(id: string, data: Record<string, unknown>): Snippet {
+  const codeBlocks = (data.codeBlocks as CodeBlock[]) || [];
+
+  // Migreer oude code naar eerste codeBlock
+  if (data.code && typeof data.code === "string" && data.code.trim() && codeBlocks.length === 0) {
+    codeBlocks.push({
+      id: "migrated",
+      filename: "main.code",
+      code: data.code as string,
+    });
+  }
+
+  return {
+    id,
+    title: (data.title as string) || "",
+    description: (data.description as string) || "",
+    code: (data.code as string) || "",
+    codeBlocks,
+    notes: (data.notes as string) || "",
+    snippetType: (data.snippetType as Snippet["snippetType"]) || "code",
+    category: (data.category as string) || "",
+    tags: (data.tags as string[]) || [],
+    favorite: (data.favorite as boolean) || false,
+  };
+}
+
 export function listenSnippets(callback: (snips: Snippet[]) => void) {
-  const q = query(
-    collection(db, COL),
-    orderBy("createdAt", "desc")
-  );
+  const q = query(collection(db, COL), orderBy("createdAt", "desc"));
   return onSnapshot(q, (snap) => {
-    const data = snap.docs.map((d) => ({
-      id: d.id,
-      ...d.data(),
-      codeBlocks: d.data().codeBlocks || [],
-      notes: d.data().notes || "",
-    })) as Snippet[];
+    const data = snap.docs.map((d) => migrateSnippet(d.id, d.data()));
     callback(data);
   }, (error) => {
     console.error("Firestore error:", error);
