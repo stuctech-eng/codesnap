@@ -1,6 +1,6 @@
 "use client";
 import { useState, useRef, useEffect } from "react";
-import { Snippet, SnippetType } from "@/lib/types";
+import { Snippet, SnippetType, CodeBlock } from "@/lib/types";
 
 const TYPES: { value: SnippetType; label: string; icon: string; desc: string }[] = [
   { value:"code",       icon:"🔧", label:"Code Snippet",      desc:"Pure code om te gebruiken" },
@@ -19,6 +19,20 @@ const ALL_TAGS = [
   "debug","node","bash","json",
 ];
 
+const FILE_TEMPLATES = [
+  "index.html","style.css","script.js",
+  "app.tsx","page.tsx","layout.tsx","component.tsx",
+  "package.json",".env","README.md",
+  "next.config.js","tsconfig.json","tailwind.config.js",
+  "globals.css","middleware.ts",
+  "firebase.ts","supabase.ts",
+  "schema.sql","queries.sql",
+  ".gitignore",".eslintrc.json",
+  "Dockerfile","requirements.txt",
+];
+
+const uid = () => Math.random().toString(36).slice(2, 8);
+
 interface Props {
   snip: Snippet | null;
   theme: "dark"|"light";
@@ -26,8 +40,9 @@ interface Props {
   onCancel: () => void;
 }
 
-type Field = "title"|"description"|"code"|"notes"|null;
-type PopupType = "categorie"|"tags"|null;
+type Field = "title"|"description"|"notes"|null;
+type PopupType = "categorie"|"tags"|"bestand"|null;
+type EditingBlock = { blockId: string } | null;
 
 export default function EditView({ snip, theme, onSave, onCancel }: Props) {
   const isNew = !snip;
@@ -40,11 +55,15 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
     category: snip?.category || ALL_CATS[0],
     tags: snip?.tags || [] as string[],
     favorite: snip?.favorite || false,
+    codeBlocks: snip?.codeBlocks || [] as CodeBlock[],
   });
+
   const [activeField, setActiveField] = useState<Field>(null);
+  const [editingBlock, setEditingBlock] = useState<EditingBlock>(null);
   const [showPopup, setShowPopup] = useState<PopupType>(null);
   const [newTag, setNewTag] = useState("");
   const [newCat, setNewCat] = useState("");
+  const [newFilename, setNewFilename] = useState("");
   const [customCats, setCustomCats] = useState<string[]>([]);
 
   const set = (k: string, v: unknown) => setForm(f => ({ ...f, [k]: v }));
@@ -60,9 +79,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
 
   const addCustomTag = () => {
     const t = newTag.trim().toLowerCase();
-    if (t && !form.tags.includes(t)) {
-      set("tags", [...form.tags, t]);
-    }
+    if (t && !form.tags.includes(t)) set("tags", [...form.tags, t]);
     setNewTag("");
   };
 
@@ -76,54 +93,77 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
     setNewCat("");
   };
 
+  const addCodeBlock = (filename: string) => {
+    const block: CodeBlock = { id: uid(), filename, code: "" };
+    set("codeBlocks", [...form.codeBlocks, block]);
+    setShowPopup(null);
+    setNewFilename("");
+    // Direct bewerken
+    setTimeout(() => setEditingBlock({ blockId: block.id }), 100);
+  };
+
+  const updateBlock = (id: string, code: string) => {
+    set("codeBlocks", form.codeBlocks.map(b => b.id === id ? { ...b, code } : b));
+  };
+
+  const deleteBlock = (id: string) => {
+    set("codeBlocks", form.codeBlocks.filter(b => b.id !== id));
+  };
+
   const save = () => {
     if (!form.title.trim()) { alert("Titel is verplicht"); return; }
     onSave({ ...form });
   };
 
+  // Volledig scherm voor tekst velden
   if (activeField) {
     return (
       <FullScreenField
         label={
           activeField === "title" ? "TITEL" :
-          activeField === "description" ? "BESCHRIJVING" :
-          activeField === "code" ? "CODE" : "NOTITIES"
+          activeField === "description" ? "BESCHRIJVING" : "NOTITIES"
         }
         value={form[activeField] as string}
-        isCode={activeField === "code"}
+        isCode={false}
         onDone={(val) => { set(activeField, val); setActiveField(null); }}
         onCancel={() => setActiveField(null)}
       />
     );
   }
 
+  // Volledig scherm voor hoofd code
+  if (editingBlock === null && form.code !== undefined && showPopup === null) {
+    // geen speciale state nodig
+  }
+
+  // Volledig scherm voor code blok
+  if (editingBlock) {
+    const block = form.codeBlocks.find(b => b.id === editingBlock.blockId);
+    if (block) {
+      return (
+        <FullScreenField
+          label={block.filename.toUpperCase()}
+          value={block.code}
+          isCode={true}
+          onDone={(val) => { updateBlock(block.id, val); setEditingBlock(null); }}
+          onCancel={() => setEditingBlock(null)}
+        />
+      );
+    }
+  }
+
   const allCats = [...ALL_CATS, ...customCats];
 
-  // Uniforme rij -- zelfde stijl overal
-  const FieldRow = ({ label, field, preview, isCode = false }: {
-    label: string; field: Field; preview: string; isCode?: boolean;
+  const FieldRow = ({ label, field, preview }: {
+    label: string; field: Field; preview: string;
   }) => (
     <button
-      style={{
-        display:"flex", alignItems:"center", justifyContent:"space-between",
-        background:"var(--bg2)", border:"1px solid var(--border2)",
-        borderRadius:12, padding:"13px 14px", width:"100%",
-        cursor:"pointer", marginBottom:12, boxSizing:"border-box",
-        textAlign:"left",
-      }}
+      style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"13px 14px", width:"100%", cursor:"pointer", marginBottom:12, boxSizing:"border-box", textAlign:"left" }}
       onClick={() => setActiveField(field)}
     >
       <div style={{ flex:1, minWidth:0 }}>
-        <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:5 }}>
-          {label}
-        </div>
-        <div style={{
-          fontSize:15,
-          color: preview ? "var(--text)" : "var(--text3)",
-          fontFamily: isCode ? "'Fira Code','JetBrains Mono',monospace" : "inherit",
-          overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap",
-          fontWeight: preview ? 500 : 400,
-        }}>
+        <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:5 }}>{label}</div>
+        <div style={{ fontSize:15, color: preview ? "var(--text)" : "var(--text3)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontWeight: preview ? 500 : 400 }}>
           {preview || "Tik om in te voeren..."}
         </div>
       </div>
@@ -169,11 +209,75 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
           </div>
         </div>
 
-        {/* VELDEN */}
         <FieldRow label="TITEL" field="title" preview={form.title} />
         <FieldRow label="BESCHRIJVING" field="description" preview={form.description} />
-        <FieldRow label="CODE" field="code" isCode preview={form.code ? form.code.slice(0,60) + (form.code.length > 60 ? "..." : "") : ""} />
         <FieldRow label="NOTITIES" field="notes" preview={form.notes ? form.notes.slice(0,60) + (form.notes.length > 60 ? "..." : "") : ""} />
+
+        {/* HOOFD CODE */}
+        <button
+          style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"13px 14px", width:"100%", cursor:"pointer", marginBottom:12, boxSizing:"border-box", textAlign:"left" }}
+          onClick={() => setEditingBlock({ blockId: "main" })}
+        >
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:5 }}>CODE</div>
+            <div style={{ fontSize:15, color: form.code ? "var(--text)" : "var(--text3)", fontFamily:"'Fira Code',monospace", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontWeight: form.code ? 500 : 400 }}>
+              {form.code ? form.code.slice(0,60) + (form.code.length > 60 ? "..." : "") : "Tik om in te voeren..."}
+            </div>
+          </div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0, marginLeft:10 }}>
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
+        </button>
+
+        {/* EXTRA CODE BLOKKEN */}
+        {form.codeBlocks.length > 0 && (
+          <div style={{ marginBottom:12 }}>
+            <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:8, paddingLeft:2 }}>
+              EXTRA BESTANDEN
+            </div>
+            <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+              {form.codeBlocks.map(block => (
+                <div key={block.id} style={{ display:"flex", gap:8, alignItems:"center" }}>
+                  <button
+                    style={{ flex:1, display:"flex", alignItems:"center", justifyContent:"space-between", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"11px 14px", cursor:"pointer", textAlign:"left" }}
+                    onClick={() => setEditingBlock({ blockId: block.id })}
+                  >
+                    <div style={{ flex:1, minWidth:0 }}>
+                      <div style={{ fontSize:12, color:"var(--accent)", fontWeight:700, marginBottom:3, fontFamily:"monospace" }}>
+                        {block.filename}
+                      </div>
+                      <div style={{ fontSize:13, color: block.code ? "var(--text2)" : "var(--text3)", fontFamily:"'Fira Code',monospace", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                        {block.code ? block.code.slice(0,50) + (block.code.length > 50 ? "..." : "") : "Leeg -- tik om code toe te voegen"}
+                      </div>
+                    </div>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0, marginLeft:8 }}>
+                      <path d="m9 18 6-6-6-6"/>
+                    </svg>
+                  </button>
+                  <button
+                    style={{ width:36, height:36, borderRadius:"50%", background:"var(--red)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
+                    onClick={() => deleteBlock(block.id)}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
+                      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* + BESTAND TOEVOEGEN */}
+        <button
+          style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%", padding:"12px", borderRadius:12, border:"1px dashed var(--border2)", background:"transparent", color:"var(--accent)", fontSize:14, fontWeight:700, cursor:"pointer", marginBottom:16 }}
+          onClick={() => setShowPopup("bestand")}
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          Bestand toevoegen
+        </button>
 
         {/* CATEGORIE */}
         <div style={{ marginBottom:12 }}>
@@ -201,11 +305,9 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
           >
             <div style={{ display:"flex", flexWrap:"wrap", gap:6, flex:1 }}>
               {form.tags.length === 0
-                ? <span style={{ fontSize:15, color:"var(--text3)", lineHeight:"24px", fontWeight:400 }}>Tik om tags te kiezen...</span>
+                ? <span style={{ fontSize:15, color:"var(--text3)", lineHeight:"24px" }}>Tik om tags te kiezen...</span>
                 : form.tags.map(t => (
-                  <span key={t} style={{ background:"var(--accent)", color:"#000", padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:700 }}>
-                    #{t}
-                  </span>
+                  <span key={t} style={{ background:"var(--accent)", color:"#000", padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:700 }}>#{t}</span>
                 ))
               }
             </div>
@@ -234,21 +336,63 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
         </button>
       </div>
 
+      {/* BESTAND POPUP */}
+      {showPopup === "bestand" && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:300, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 8px 34px" }}
+          onClick={() => setShowPopup(null)}>
+          <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }}
+            onClick={e => e.stopPropagation()}>
+
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
+              <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Bestand kiezen</span>
+              <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
+                onClick={() => setShowPopup(null)}>Annuleer</button>
+            </div>
+
+            {/* Templates */}
+            <div style={{ maxHeight:300, overflowY:"auto" }}>
+              {FILE_TEMPLATES.map(file => (
+                <button key={file}
+                  style={{ display:"flex", alignItems:"center", gap:10, width:"100%", padding:"13px 16px", background:"transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                  onClick={() => addCodeBlock(file)}
+                >
+                  <span style={{ fontSize:14, color:"#484f58", fontFamily:"monospace" }}>📄</span>
+                  <span style={{ fontSize:15, color:"var(--text)", fontFamily:"monospace", fontWeight:500 }}>{file}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Eigen bestandsnaam */}
+            <div style={{ padding:"10px 14px 14px", borderTop:"1px solid var(--border2)" }}>
+              <div style={{ display:"flex", gap:8 }}>
+                <input
+                  style={{ flex:1, background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:10, color:"var(--text)", fontSize:14, padding:"10px 12px", outline:"none", fontFamily:"monospace" }}
+                  placeholder="Eigen bestandsnaam..."
+                  value={newFilename}
+                  onChange={e => setNewFilename(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && newFilename.trim()) addCodeBlock(newFilename.trim()); }}
+                />
+                <button
+                  style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#000", fontSize:18, fontWeight:700, cursor:"pointer" }}
+                  onClick={() => { if (newFilename.trim()) addCodeBlock(newFilename.trim()); }}
+                >+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CATEGORIE POPUP */}
       {showPopup === "categorie" && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:300, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 8px 34px" }}
           onClick={() => setShowPopup(null)}>
           <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }}
             onClick={e => e.stopPropagation()}>
-
-            {/* Header */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
               <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Categorie kiezen</span>
               <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
                 onClick={() => setShowPopup(null)}>Klaar</button>
             </div>
-
-            {/* Lijst */}
             <div style={{ maxHeight:300, overflowY:"auto" }}>
               {allCats.map(cat => (
                 <button key={cat}
@@ -268,11 +412,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                     {customCats.includes(cat) && (
                       <button
                         style={{ background:"var(--red)", border:"none", borderRadius:"50%", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
-                        onClick={e => {
-                          e.stopPropagation();
-                          setCustomCats(prev => prev.filter(c => c !== cat));
-                          if (form.category === cat) set("category", ALL_CATS[0]);
-                        }}
+                        onClick={e => { e.stopPropagation(); setCustomCats(prev => prev.filter(c => c !== cat)); if (form.category === cat) set("category", ALL_CATS[0]); }}
                       >
                         <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round">
                           <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
@@ -283,8 +423,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                 </button>
               ))}
             </div>
-
-            {/* Eigen categorie */}
             <div style={{ padding:"10px 14px 14px", borderTop:"1px solid var(--border2)" }}>
               <div style={{ display:"flex", gap:8 }}>
                 <input
@@ -302,14 +440,12 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
         </div>
       )}
 
-      {/* TAGS POPUP -- identiek aan categorie */}
+      {/* TAGS POPUP */}
       {showPopup === "tags" && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:300, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 8px 34px" }}
           onClick={() => setShowPopup(null)}>
           <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }}
             onClick={e => e.stopPropagation()}>
-
-            {/* Header */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
               <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Tags kiezen</span>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
@@ -320,8 +456,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   onClick={() => setShowPopup(null)}>Klaar</button>
               </div>
             </div>
-
-            {/* Geselecteerde tags bovenaan -- zelfde stijl als categorie lijst */}
             {form.tags.length > 0 && (
               <div style={{ maxHeight:150, overflowY:"auto" }}>
                 {form.tags.map(tag => (
@@ -340,8 +474,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                 ))}
               </div>
             )}
-
-            {/* Beschikbare tags -- zelfde stijl */}
             <div style={{ maxHeight:200, overflowY:"auto" }}>
               {ALL_TAGS.filter(t => !form.tags.includes(t)).map(tag => (
                 <button key={tag}
@@ -355,10 +487,8 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                 </button>
               ))}
             </div>
-
-            {/* Eigen tag */}
-            <div style={{ padding:"10px 14px 14px", borderTop:"1px solid var(--border2)" }}>
-              <div style={{ display:"flex", gap:8 }}>
+            <div style={{ padding:"0 14px 14px", borderTop:"1px solid var(--border2)" }}>
+              <div style={{ display:"flex", gap:8, marginTop:10 }}>
                 <input
                   style={{ flex:1, background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:10, color:"var(--text)", fontSize:14, padding:"10px 12px", outline:"none" }}
                   placeholder="Eigen tag typen..."

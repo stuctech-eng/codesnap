@@ -15,7 +15,8 @@ const DetailView = dynamic(() => import("@/components/DetailView"), { ssr: false
 const EditView = dynamic(() => import("@/components/EditView"), { ssr: false });
 
 // Auto versie -- datum van vandaag
-const VERSION = new Date().toLocaleDateString("nl-NL", {
+const VERSION = "29.04";
+ Date().toLocaleDateString("nl-NL", {
   day:"2-digit", month:"2-digit", year:"2-digit"
 }).replace(/\//g, ".");
 
