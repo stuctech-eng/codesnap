@@ -46,7 +46,6 @@ function detectLanguage(code: string): string {
 function buildCopyText(snip: Snippet, action: string, blockId?: string): string {
   const fence = "```";
 
-  // Kopieer specifiek blok
   if (blockId) {
     const block = snip.codeBlocks?.find(b => b.id === blockId);
     if (block) {
@@ -76,7 +75,6 @@ function buildCopyText(snip: Snippet, action: string, blockId?: string): string 
     const tags = snip.tags?.length ? "\n**Tags:** " + snip.tags.join(", ") : "";
     const label = type === "instructie" ? "Instructie" : "Beschrijving";
     const descPart = snip.description ? "\n\n---\n\n### " + label + "\n" + snip.description : "";
-
     let allCode = "";
     if (snip.codeBlocks && snip.codeBlocks.length > 0) {
       snip.codeBlocks.forEach((b, i) => {
@@ -87,7 +85,6 @@ function buildCopyText(snip: Snippet, action: string, blockId?: string): string 
     } else {
       allCode = "### Code\n" + fence + lang + "\n" + mainCode + "\n" + fence;
     }
-
     return "## CodeSnap -- " + snip.title + "\n\n**Categorie:** " + snip.category + tags + descPart + "\n\n---\n\n" + allCode;
   }
 
@@ -192,6 +189,7 @@ export default function DetailView({
   const [activeBlockId, setActiveBlockId] = useState<string|null>(
     snip.codeBlocks?.[0]?.id || null
   );
+  const [showBlockMenu, setShowBlockMenu] = useState(false);
   const [fullScreen, setFullScreen] = useState(false);
   const [copyState, setCopyState] = useState<string|null>(null);
 
@@ -214,6 +212,7 @@ export default function DetailView({
     });
   };
 
+  // Volledig scherm
   if (fullScreen && activeBlock) {
     return (
       <div style={{ position:"fixed", inset:0, background:"#0d1117", zIndex:500, display:"flex", flexDirection:"column" }}>
@@ -351,49 +350,55 @@ export default function DetailView({
         {tab === "code" && (
           <div style={{ padding:"12px" }}>
 
-            {/* Bestand tabs */}
-            {blocks.length > 1 && (
-              <div style={{ display:"flex", gap:6, overflowX:"auto", marginBottom:10, paddingBottom:2 }}>
-                {blocks.map(block => {
-                  const lang = getLang(block.filename);
-                  const langColor = LANG_COLORS[lang] || "#8b949e";
-                  const isActive = activeBlock?.id === block.id;
-                  return (
-                    <button key={block.id}
-                      style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 12px", borderRadius:20, border:"1px solid " + (isActive ? "var(--accent)" : "var(--border2)"), background: isActive ? "var(--accent)" : "var(--bg2)", color: isActive ? "#000" : "var(--text2)", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}
-                      onClick={() => setActiveBlockId(block.id)}
-                    >
-                      <span style={{ fontSize:10, padding:"1px 5px", borderRadius:10, background: langColor + (isActive ? "44" : "22"), color: isActive ? "#000" : langColor, fontFamily:"monospace" }}>
-                        {lang}
-                      </span>
-                      {block.filename}
-                    </button>
-                  );
-                })}
-              </div>
+            {/* Actief bestand knop -- opent popup */}
+            {blocks.length > 0 && (
+              <button
+                style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", cursor:"pointer", marginBottom:10, boxSizing:"border-box" }}
+                onClick={() => setShowBlockMenu(true)}
+              >
+                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                  {activeBlock && (
+                    <div style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20, background: (LANG_COLORS[getLang(activeBlock.filename)] || "#8b949e") + "22", color: LANG_COLORS[getLang(activeBlock.filename)] || "#8b949e", fontFamily:"monospace" }}>
+                      {getLang(activeBlock.filename)}
+                    </div>
+                  )}
+                  <span style={{ fontSize:15, color:"var(--text)", fontWeight:600, fontFamily:"monospace" }}>
+                    {activeBlock?.filename || "Geen bestand"}
+                  </span>
+                  {blocks.length > 1 && (
+                    <span style={{ fontSize:12, color:"var(--text3)" }}>
+                      ({blocks.indexOf(activeBlock!) + 1}/{blocks.length})
+                    </span>
+                  )}
+                </div>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round">
+                  <path d="m6 9 6 6 6-6"/>
+                </svg>
+              </button>
             )}
 
             {activeBlock ? (
               <>
-                {/* Volledig scherm knop */}
-                <div style={{ display:"flex", justifyContent:"flex-end", marginBottom:8 }}>
-                  <button onClick={() => setFullScreen(true)} style={{ background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:20, padding:"4px 12px", fontSize:12, fontWeight:700, color:"var(--text2)", cursor:"pointer" }}>
-                    ⛶ Volledig scherm
+                {/* Volledig scherm + kopieer */}
+                <div style={{ display:"flex", gap:8, marginBottom:10 }}>
+                  <button onClick={() => copyAction("code", activeBlock.id)} style={{
+                    flex:2, display:"flex", alignItems:"center", justifyContent:"center",
+                    gap:8, padding:"12px", borderRadius:12, border:"none",
+                    background: copyState === activeBlock.id ? "var(--green)" : "var(--accent)",
+                    color: copyState === activeBlock.id ? "#fff" : "#000",
+                    fontSize:14, fontWeight:700, cursor:"pointer",
+                    transition:"background 0.2s",
+                  }}>
+                    {copyState === activeBlock.id ? "✓ Gekopieerd!" : "⎘ Kopieer " + activeBlock.filename}
+                  </button>
+                  <button onClick={() => setFullScreen(true)} style={{
+                    flex:1, padding:"12px", borderRadius:12,
+                    border:"1px solid var(--border2)", background:"var(--bg2)",
+                    fontSize:13, fontWeight:600, cursor:"pointer", color:"var(--text2)",
+                  }}>
+                    ⛶ Volledig
                   </button>
                 </div>
-
-                {/* Kopieer knop */}
-                <button onClick={() => copyAction("code", activeBlock.id)} style={{
-                  display:"flex", alignItems:"center", justifyContent:"center",
-                  gap:8, padding:"13px", borderRadius:12, border:"none",
-                  width:"100%", marginBottom:10,
-                  background: copyState === activeBlock.id ? "var(--green)" : "var(--accent)",
-                  color: copyState === activeBlock.id ? "#fff" : "#000",
-                  fontSize:15, fontWeight:700, cursor:"pointer",
-                  transition:"background 0.2s",
-                }}>
-                  {copyState === activeBlock.id ? "✓ Gekopieerd!" : "⎘ Kopieer " + activeBlock.filename}
-                </button>
 
                 <CodeViewer code={activeBlock.code} filename={activeBlock.filename} />
               </>
@@ -405,6 +410,57 @@ export default function DetailView({
           </div>
         )}
       </div>
+
+      {/* BESTAND POPUP -- zoals categorie */}
+      {showBlockMenu && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:200, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 8px 34px" }}
+          onClick={() => setShowBlockMenu(false)}>
+          <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }}
+            onClick={e => e.stopPropagation()}>
+
+            {/* Header */}
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
+              <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Bestand kiezen</span>
+              <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
+                onClick={() => setShowBlockMenu(false)}>Klaar</button>
+            </div>
+
+            {/* Bestanden lijst */}
+            <div style={{ maxHeight:350, overflowY:"auto" }}>
+              {blocks.map(block => {
+                const lang = getLang(block.filename);
+                const langColor = LANG_COLORS[lang] || "#8b949e";
+                const isActive = activeBlock?.id === block.id;
+                return (
+                  <button key={block.id}
+                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"14px 16px", background: isActive ? "var(--bg3)" : "transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                    onClick={() => { setActiveBlockId(block.id); setShowBlockMenu(false); }}
+                  >
+                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                      <div style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20, background: langColor + "22", color: langColor, fontFamily:"monospace", minWidth:32, textAlign:"center" }}>
+                        {lang}
+                      </div>
+                      <div>
+                        <div style={{ fontSize:15, color:"var(--text)", fontWeight: isActive ? 700 : 400, fontFamily:"monospace" }}>
+                          {block.filename}
+                        </div>
+                        <div style={{ fontSize:11, color:"var(--text3)", marginTop:2 }}>
+                          {block.code ? block.code.split("\n").length + " regels · " + block.code.length + " tekens" : "Leeg"}
+                        </div>
+                      </div>
+                    </div>
+                    {isActive && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ACTION SHEET */}
       {showSheet && (

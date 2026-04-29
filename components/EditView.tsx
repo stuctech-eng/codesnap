@@ -158,10 +158,13 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
           label={block.filename.toUpperCase()}
           value={block.code}
           isCode={true}
-          onDone={(val) => { updateBlock(block.id, val); setEditingBlockId(null); }}
+          onDone={(val) => {
+            updateBlock(block.id, val);
+            setEditingBlockId(null);
+          }}
           onCancel={() => setEditingBlockId(null)}
-          onNextBestand={() => {
-            updateBlock(block.id, block.code);
+          onNextBestand={(currentText) => {
+            updateBlock(block.id, currentText);
             setEditingBlockId(null);
             setTimeout(() => setShowPopup("bestand"), 100);
           }}
@@ -234,11 +237,14 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
         {/* CODE BLOKKEN */}
         <div style={{ marginBottom:16 }}>
           <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:8, paddingLeft:2 }}>
-            CODE {form.codeBlocks.length > 0 && <span style={{ color:"var(--accent)" }}>· {form.codeBlocks.length} {form.codeBlocks.length === 1 ? "bestand" : "bestanden"}</span>}
+            CODE {form.codeBlocks.length > 0 && (
+              <span style={{ color:"var(--accent)" }}>
+                · {form.codeBlocks.length} {form.codeBlocks.length === 1 ? "bestand" : "bestanden"}
+              </span>
+            )}
           </div>
 
           {form.codeBlocks.length === 0 ? (
-            /* Lege staat -- grote knop */
             <button
               style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, width:"100%", padding:"20px", borderRadius:12, border:"1px dashed var(--border2)", background:"transparent", cursor:"pointer" }}
               onClick={() => setShowPopup("bestand")}
@@ -253,7 +259,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
             </button>
           ) : (
             <>
-              {/* Code blokken lijst */}
               <div style={{ display:"flex", flexDirection:"column", gap:8, marginBottom:8 }}>
                 {form.codeBlocks.map((block, index) => {
                   const lang = getLang(block.filename);
@@ -264,20 +269,17 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                         style={{ flex:1, display:"flex", alignItems:"center", gap:10, background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", cursor:"pointer", textAlign:"left" }}
                         onClick={() => setEditingBlockId(block.id)}
                       >
-                        {/* Nummer */}
                         <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, flexShrink:0, width:16 }}>
                           {index + 1}
                         </div>
-                        {/* Taal badge */}
                         <div style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20, background: langColor + "22", color: langColor, flexShrink:0, fontFamily:"monospace" }}>
                           {lang}
                         </div>
-                        {/* Info */}
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ fontSize:13, color:"var(--accent)", fontWeight:700, fontFamily:"monospace", marginBottom:2 }}>
                             {block.filename}
                           </div>
-                          <div style={{ fontSize:12, color: block.code ? "var(--text3)" : "var(--text3)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                          <div style={{ fontSize:12, color:"var(--text3)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
                             {block.code
                               ? block.code.split("\n").length + " regels · " + block.code.length + " tekens"
                               : "Leeg -- tik om te bewerken"
@@ -288,7 +290,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                           <path d="m9 18 6-6-6-6"/>
                         </svg>
                       </button>
-                      {/* Verwijder */}
                       <button
                         style={{ width:40, borderRadius:12, background:"var(--red)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
                         onClick={() => deleteBlock(block.id)}
@@ -302,7 +303,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                 })}
               </div>
 
-              {/* + Volgend bestand */}
               <button
                 style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%", padding:"11px", borderRadius:12, border:"1px dashed var(--border2)", background:"transparent", color:"var(--accent)", fontSize:13, fontWeight:700, cursor:"pointer" }}
                 onClick={() => setShowPopup("bestand")}
@@ -550,7 +550,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
 function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand }: {
   label:string; value:string; isCode:boolean;
   onDone:(val:string)=>void; onCancel:()=>void;
-  onNextBestand: (() => void) | null;
+  onNextBestand: ((text: string) => void) | null;
 }) {
   const [text, setText] = useState(value);
   const ref = useRef<HTMLTextAreaElement>(null);
@@ -568,7 +568,7 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
 
   return (
     <div style={{ position:"fixed", inset:0, background: isCode ? "#0d1117" : "var(--bg)", zIndex:500, display:"flex", flexDirection:"column" }}>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid var(--border)", background: isCode ? "#161b22" : "var(--bg)" }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid " + (isCode ? "#21262d" : "var(--border)"), background: isCode ? "#161b22" : "var(--bg)" }}>
         <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onCancel}>Annuleer</button>
         <span style={{ fontSize:15, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)", fontFamily: isCode ? "monospace" : "inherit" }}>{label}</span>
         <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, fontWeight:700, cursor:"pointer" }} onClick={() => onDone(text)}>Klaar</button>
@@ -595,7 +595,7 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
           {isCode && onNextBestand && (
             <button
               style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"8px 14px", color:"#000", fontSize:13, fontWeight:700, cursor:"pointer" }}
-              onClick={() => onNextBestand()}
+              onClick={() => onNextBestand(text)}
             >
               + Volgend bestand
             </button>
