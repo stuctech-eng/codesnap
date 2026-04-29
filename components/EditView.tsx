@@ -78,6 +78,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
 
   const [activeField, setActiveField] = useState<Field>(null);
   const [editingBlockId, setEditingBlockId] = useState<string|null>(null);
+  const [renamingBlock, setRenamingBlock] = useState<{ id: string; name: string }|null>(null);
   const [showPopup, setShowPopup] = useState<PopupType>(null);
   const [newTag, setNewTag] = useState("");
   const [newCat, setNewCat] = useState("");
@@ -123,6 +124,14 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
     }));
   };
 
+  const renameBlock = (id: string, filename: string) => {
+    setForm(f => ({
+      ...f,
+      codeBlocks: f.codeBlocks.map(b => b.id === id ? { ...b, filename } : b)
+    }));
+    setRenamingBlock(null);
+  };
+
   const deleteBlock = (id: string) => {
     setForm(f => ({ ...f, codeBlocks: f.codeBlocks.filter(b => b.id !== id) }));
   };
@@ -132,7 +141,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
     onSave({ ...form });
   };
 
-  // Volledig scherm tekst
   if (activeField) {
     return (
       <FullScreenField
@@ -149,7 +157,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
     );
   }
 
-  // Volledig scherm code blok
   if (editingBlockId) {
     const block = form.codeBlocks.find(b => b.id === editingBlockId);
     if (block) {
@@ -158,10 +165,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
           label={block.filename.toUpperCase()}
           value={block.code}
           isCode={true}
-          onDone={(val) => {
-            updateBlock(block.id, val);
-            setEditingBlockId(null);
-          }}
+          onDone={(val) => { updateBlock(block.id, val); setEditingBlockId(null); }}
           onCancel={() => setEditingBlockId(null)}
           onNextBestand={(currentText) => {
             updateBlock(block.id, currentText);
@@ -265,6 +269,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   const langColor = LANG_COLORS[lang] || "#8b949e";
                   return (
                     <div key={block.id} style={{ display:"flex", gap:8, alignItems:"stretch" }}>
+                      {/* Hoofd knop -- tik om te bewerken */}
                       <button
                         style={{ flex:1, display:"flex", alignItems:"center", gap:10, background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", cursor:"pointer", textAlign:"left" }}
                         onClick={() => setEditingBlockId(block.id)}
@@ -290,6 +295,19 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                           <path d="m9 18 6-6-6-6"/>
                         </svg>
                       </button>
+
+                      {/* Potlood -- hernoemen */}
+                      <button
+                        style={{ width:40, borderRadius:12, background:"var(--bg2)", border:"1px solid var(--border2)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
+                        onClick={() => setRenamingBlock({ id: block.id, name: block.filename })}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" strokeWidth="2" strokeLinecap="round">
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                        </svg>
+                      </button>
+
+                      {/* Verwijder */}
                       <button
                         style={{ width:40, borderRadius:12, background:"var(--red)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
                         onClick={() => deleteBlock(block.id)}
@@ -372,6 +390,37 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
           {isNew ? "Snippet Opslaan" : "Wijzigingen Opslaan"}
         </button>
       </div>
+
+      {/* HERNOEM POPUP */}
+      {renamingBlock && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:400, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 8px 34px" }}
+          onClick={() => setRenamingBlock(null)}>
+          <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }}
+            onClick={e => e.stopPropagation()}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
+              <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Bestand hernoemen</span>
+              <button
+                style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
+                onClick={() => renameBlock(renamingBlock.id, renamingBlock.name)}
+              >
+                Opslaan
+              </button>
+            </div>
+            <div style={{ padding:"16px" }}>
+              <input
+                autoFocus
+                style={{ width:"100%", boxSizing:"border-box", background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:10, color:"var(--text)", fontSize:16, padding:"12px 14px", outline:"none", fontFamily:"monospace" }}
+                value={renamingBlock.name}
+                onChange={e => setRenamingBlock({ ...renamingBlock, name: e.target.value })}
+                onKeyDown={e => { if (e.key === "Enter") renameBlock(renamingBlock.id, renamingBlock.name); }}
+              />
+              <p style={{ fontSize:12, color:"var(--text3)", margin:"8px 0 0" }}>
+                Bijv: index.html, style.css, app.tsx
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* BESTAND POPUP */}
       {showPopup === "bestand" && (
