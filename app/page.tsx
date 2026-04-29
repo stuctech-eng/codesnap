@@ -13,12 +13,10 @@ import dynamic from "next/dynamic";
 const ListView = dynamic(() => import("@/components/ListView"), { ssr: false });
 const DetailView = dynamic(() => import("@/components/DetailView"), { ssr: false });
 const EditView = dynamic(() => import("@/components/EditView"), { ssr: false });
-
-// Auto versie -- datum van vandaag
+const EditView = dynamic(() => import("@/components/EditView"), { ssr: false });
 const VERSION = "29.04";
- Date().toLocaleDateString("nl-NL", {
-  day:"2-digit", month:"2-digit", year:"2-digit"
-}).replace(/\//g, ".");
+
+
 
 type View = "list" | "detail" | "edit" | "new";
 
