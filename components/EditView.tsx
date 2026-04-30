@@ -44,7 +44,6 @@ function getLang(filename: string): string {
   return map[ext] || ext || "code";
 }
 
-// Auto detectie type -- geen handmatige keuze meer
 function detectType(codeBlocks: CodeBlock[], description: string): SnippetType {
   if (codeBlocks.length === 0 && description.trim()) return "prompt";
   if (codeBlocks.length > 0 && description.trim()) return "instructie";
@@ -520,7 +519,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   onClick={() => setShowPopup(null)}>Klaar</button>
               </div>
             </div>
-
             <div style={{ flex:1, overflowY:"auto" }}>
               {form.tags.length > 0 && (
                 <>
@@ -553,8 +551,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                 </button>
               ))}
             </div>
-
-            {/* Eigen tag -- vast onderaan */}
             <div style={{ padding:"10px 14px 14px", borderTop:"1px solid var(--border2)", flexShrink:0, background:"var(--bg2)" }}>
               <div style={{ display:"flex", gap:8 }}>
                 <input
@@ -596,14 +592,14 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
 
   return (
     <div style={{ position:"fixed", inset:0, background: isCode ? "#0d1117" : "var(--bg)", zIndex:500, display:"flex", flexDirection:"column" }}>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid " + (isCode ? "#21262d" : "var(--border)"), background: isCode ? "#161b22" : "var(--bg)", flexShrink:0 }}>
-        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:16, cursor:"pointer", minWidth:70, textAlign:"left" }} onClick={onCancel}>
-          Annuleer
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 8px 12px", borderBottom:"1px solid " + (isCode ? "#21262d" : "var(--border)"), background: isCode ? "#161b22" : "var(--bg)", flexShrink:0 }}>
+        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:15, cursor:"pointer", minWidth:55, textAlign:"left", paddingLeft:8 }} onClick={onCancel}>
+          Terug
         </button>
-        <span style={{ fontSize:14, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)", fontFamily: isCode ? "monospace" : "inherit", flex:1, textAlign:"center", padding:"0 8px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+        <span style={{ fontSize:14, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)", fontFamily: isCode ? "monospace" : "inherit", flex:1, textAlign:"center", padding:"0 4px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
           {label}
         </span>
-        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:16, fontWeight:700, cursor:"pointer", minWidth:70, textAlign:"right" }} onClick={() => onDone(text)}>
+        <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer", marginRight:8, flexShrink:0 }} onClick={() => onDone(text)}>
           Klaar
         </button>
       </div>
