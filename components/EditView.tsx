@@ -609,9 +609,10 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
         <span style={{ fontSize:14, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)", fontFamily: isCode ? "monospace" : "inherit", flex:1, textAlign:"center", padding:"0 4px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
           {label}
         </span>
-        <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer", marginRight:8, flexShrink:0 }} onClick={() => onDone(text)}>
-          Klaar
-        </button>
+        <button style={{ background:"var(--accent)", border:"none", borderRadius:8, padding:"6px 10px", color:"#000", fontSize:13, fontWeight:700, cursor:"pointer", marginRight:4, flexShrink:0 }} onClick={() => onDone(text)}>
+  ✓
+</button>
+
       </div>
 
       <textarea ref={ref}
