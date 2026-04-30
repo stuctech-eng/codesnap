@@ -14,7 +14,7 @@ const ListView = dynamic(() => import("@/components/ListView"), { ssr: false });
 const DetailView = dynamic(() => import("@/components/DetailView"), { ssr: false });
 const EditView = dynamic(() => import("@/components/EditView"), { ssr: false });
 
-const VERSION = "29.04";
+const VERSION = "30.04";
 
 
 

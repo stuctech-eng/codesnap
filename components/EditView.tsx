@@ -2,12 +2,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Snippet, SnippetType, CodeBlock } from "@/lib/types";
 
-const TYPES: { value: SnippetType; label: string; icon: string; desc: string }[] = [
-  { value:"code",       icon:"🔧", label:"Code Snippet",      desc:"Pure code om te gebruiken" },
-  { value:"prompt",     icon:"🤖", label:"AI Prompt",         desc:"Prompt voor Claude/GPT/Gemini" },
-  { value:"instructie", icon:"📋", label:"Instructie + Code", desc:"Uitleg met bijbehorende code" },
-];
-
 const ALL_CATS = ["AI Prompts","Snippets","Config","UI","Machines","Ideeën"];
 
 const ALL_TAGS = [
@@ -48,6 +42,13 @@ function getLang(filename: string): string {
     code:"code",
   };
   return map[ext] || ext || "code";
+}
+
+// Auto detectie type -- geen handmatige keuze meer
+function detectType(codeBlocks: CodeBlock[], description: string): SnippetType {
+  if (codeBlocks.length === 0 && description.trim()) return "prompt";
+  if (codeBlocks.length > 0 && description.trim()) return "instructie";
+  return "code";
 }
 
 const uid = () => Math.random().toString(36).slice(2, 8);
@@ -138,7 +139,8 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
 
   const save = () => {
     if (!form.title.trim()) { alert("Titel is verplicht"); return; }
-    onSave({ ...form });
+    const autoType = detectType(form.codeBlocks, form.description);
+    onSave({ ...form, snippetType: autoType });
   };
 
   if (activeField) {
@@ -203,36 +205,12 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
 
       {/* NAV */}
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", background:"var(--bg)", borderBottom:"1px solid var(--border)", position:"sticky", top:0, zIndex:10 }}>
-        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onCancel}>Cancel</button>
+        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer", minWidth:60 }} onClick={onCancel}>Cancel</button>
         <span style={{ fontSize:17, fontWeight:600, color:"var(--text)" }}>{isNew ? "Add Snippet" : "Edit Snippet"}</span>
-        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, fontWeight:700, cursor:"pointer" }} onClick={save}>Save</button>
+        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, fontWeight:700, cursor:"pointer", minWidth:60, textAlign:"right" }} onClick={save}>Save</button>
       </div>
 
       <div style={{ flex:1, overflowY:"auto", padding:"16px 16px 60px" }}>
-
-        {/* TYPE */}
-        <div style={{ marginBottom:16 }}>
-          <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:8, paddingLeft:2 }}>TYPE</div>
-          <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
-            {TYPES.map(t => (
-              <button key={t.value}
-                style={{ display:"flex", alignItems:"center", gap:12, background: form.snippetType===t.value ? "var(--accent)" : "var(--bg2)", border:"1px solid " + (form.snippetType===t.value ? "var(--accent)" : "var(--border2)"), borderRadius:12, padding:"12px 14px", cursor:"pointer", textAlign:"left" }}
-                onClick={() => set("snippetType", t.value)}
-              >
-                <span style={{ fontSize:22 }}>{t.icon}</span>
-                <div style={{ flex:1 }}>
-                  <div style={{ fontSize:15, fontWeight:700, color: form.snippetType===t.value ? "#000" : "var(--text)" }}>{t.label}</div>
-                  <div style={{ fontSize:12, color: form.snippetType===t.value ? "#000" : "var(--text3)", marginTop:2 }}>{t.desc}</div>
-                </div>
-                {form.snippetType===t.value && (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round">
-                    <polyline points="20 6 9 17 4 12"/>
-                  </svg>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
 
         <FieldRow label="TITEL" field="title" preview={form.title} />
         <FieldRow label="BESCHRIJVING" field="description" preview={form.description} />
@@ -269,7 +247,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   const langColor = LANG_COLORS[lang] || "#8b949e";
                   return (
                     <div key={block.id} style={{ display:"flex", gap:8, alignItems:"stretch" }}>
-                      {/* Hoofd knop -- tik om te bewerken */}
                       <button
                         style={{ flex:1, display:"flex", alignItems:"center", gap:10, background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", cursor:"pointer", textAlign:"left" }}
                         onClick={() => setEditingBlockId(block.id)}
@@ -296,7 +273,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                         </svg>
                       </button>
 
-                      {/* Potlood -- hernoemen */}
                       <button
                         style={{ width:40, borderRadius:12, background:"var(--bg2)", border:"1px solid var(--border2)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
                         onClick={() => setRenamingBlock({ id: block.id, name: block.filename })}
@@ -307,7 +283,6 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                         </svg>
                       </button>
 
-                      {/* Verwijder */}
                       <button
                         style={{ width:40, borderRadius:12, background:"var(--red)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
                         onClick={() => deleteBlock(block.id)}
@@ -533,9 +508,9 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
       {showPopup === "tags" && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:300, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 8px 34px" }}
           onClick={() => setShowPopup(null)}>
-          <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }}
+          <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)", maxHeight:"70vh", display:"flex", flexDirection:"column" }}
             onClick={e => e.stopPropagation()}>
-            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)", flexShrink:0 }}>
               <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Tags kiezen</span>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                 {form.tags.length > 0 && (
@@ -545,25 +520,27 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   onClick={() => setShowPopup(null)}>Klaar</button>
               </div>
             </div>
-            {form.tags.length > 0 && (
-              <div style={{ maxHeight:150, overflowY:"auto" }}>
-                {form.tags.map(tag => (
-                  <button key={tag}
-                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"12px 16px", background:"var(--bg3)", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
-                    onClick={() => toggleTag(tag)}
-                  >
-                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                      <div style={{ width:8, height:8, borderRadius:"50%", background:"var(--accent)", flexShrink:0 }} />
-                      <span style={{ fontSize:15, color:"var(--text)", fontWeight:700 }}>#{tag}</span>
-                    </div>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
-                      <polyline points="20 6 9 17 4 12"/>
-                    </svg>
-                  </button>
-                ))}
-              </div>
-            )}
-            <div style={{ maxHeight:200, overflowY:"auto" }}>
+
+            <div style={{ flex:1, overflowY:"auto" }}>
+              {form.tags.length > 0 && (
+                <>
+                  {form.tags.map(tag => (
+                    <button key={tag}
+                      style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"12px 16px", background:"var(--bg3)", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                      onClick={() => toggleTag(tag)}
+                    >
+                      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                        <div style={{ width:8, height:8, borderRadius:"50%", background:"var(--accent)", flexShrink:0 }} />
+                        <span style={{ fontSize:15, color:"var(--text)", fontWeight:700 }}>#{tag}</span>
+                      </div>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
+                        <polyline points="20 6 9 17 4 12"/>
+                      </svg>
+                    </button>
+                  ))}
+                  <div style={{ height:1, background:"var(--border2)" }} />
+                </>
+              )}
               {ALL_TAGS.filter(t => !form.tags.includes(t)).map(tag => (
                 <button key={tag}
                   style={{ display:"flex", alignItems:"center", width:"100%", padding:"12px 16px", background:"transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
@@ -576,8 +553,10 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                 </button>
               ))}
             </div>
-            <div style={{ padding:"0 14px 14px", borderTop:"1px solid var(--border2)" }}>
-              <div style={{ display:"flex", gap:8, marginTop:10 }}>
+
+            {/* Eigen tag -- vast onderaan */}
+            <div style={{ padding:"10px 14px 14px", borderTop:"1px solid var(--border2)", flexShrink:0, background:"var(--bg2)" }}>
+              <div style={{ display:"flex", gap:8 }}>
                 <input
                   style={{ flex:1, background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:10, color:"var(--text)", fontSize:14, padding:"10px 12px", outline:"none" }}
                   placeholder="Eigen tag typen..."
@@ -585,7 +564,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   onChange={e => setNewTag(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") addCustomTag(); }}
                 />
-                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#000", fontSize:18, fontWeight:700, cursor:"pointer" }}
+                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#000", fontSize:18, fontWeight:700, cursor:"pointer", flexShrink:0 }}
                   onClick={addCustomTag}>+</button>
               </div>
             </div>
@@ -617,10 +596,16 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
 
   return (
     <div style={{ position:"fixed", inset:0, background: isCode ? "#0d1117" : "var(--bg)", zIndex:500, display:"flex", flexDirection:"column" }}>
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid " + (isCode ? "#21262d" : "var(--border)"), background: isCode ? "#161b22" : "var(--bg)" }}>
-        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onCancel}>Annuleer</button>
-        <span style={{ fontSize:15, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)", fontFamily: isCode ? "monospace" : "inherit" }}>{label}</span>
-        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, fontWeight:700, cursor:"pointer" }} onClick={() => onDone(text)}>Klaar</button>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid " + (isCode ? "#21262d" : "var(--border)"), background: isCode ? "#161b22" : "var(--bg)", flexShrink:0 }}>
+        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:16, cursor:"pointer", minWidth:70, textAlign:"left" }} onClick={onCancel}>
+          Annuleer
+        </button>
+        <span style={{ fontSize:14, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)", fontFamily: isCode ? "monospace" : "inherit", flex:1, textAlign:"center", padding:"0 8px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+          {label}
+        </span>
+        <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:16, fontWeight:700, cursor:"pointer", minWidth:70, textAlign:"right" }} onClick={() => onDone(text)}>
+          Klaar
+        </button>
       </div>
 
       <textarea ref={ref}
@@ -630,7 +615,7 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
         onChange={e => setText(e.target.value)}
       />
 
-      <div style={{ padding:"10px 16px 34px", background: isCode ? "#0d1117" : "var(--bg)", borderTop:"1px solid " + (isCode ? "#21262d" : "var(--border)"), display:"flex", justifyContent:"space-between", alignItems:"center", gap:8 }}>
+      <div style={{ padding:"10px 16px 34px", background: isCode ? "#0d1117" : "var(--bg)", borderTop:"1px solid " + (isCode ? "#21262d" : "var(--border)"), display:"flex", justifyContent:"space-between", alignItems:"center", gap:8, flexShrink:0 }}>
         <span style={{ fontSize:12, color: isCode ? "#484f58" : "var(--text3)", flexShrink:0 }}>
           {text.split("\n").length} regels · {text.length} tekens
         </span>
@@ -646,7 +631,7 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
               style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"8px 14px", color:"#000", fontSize:13, fontWeight:700, cursor:"pointer" }}
               onClick={() => onNextBestand(text)}
             >
-              + Volgend bestand
+              + Volgend
             </button>
           )}
         </div>
