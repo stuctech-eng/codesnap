@@ -581,16 +581,6 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
 
   useEffect(() => { setTimeout(() => ref.current?.focus(), 100); }, []);
 
-  useEffect(() => {
-    if (!isCode) return;
-    const handleResize = () => {
-      window.scrollTo(0, 0);
-      document.documentElement.scrollTop = 0;
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, [isCode]);
-
   const pasteFromClipboard = async () => {
     try {
       const t = await navigator.clipboard.readText();
@@ -610,19 +600,15 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
           {label}
         </span>
         <button style={{ background:"var(--accent)", border:"none", borderRadius:8, padding:"6px 10px", color:"#000", fontSize:13, fontWeight:700, cursor:"pointer", marginRight:4, flexShrink:0 }} onClick={() => onDone(text)}>
-  ✓
-</button>
-
+          ✓
+        </button>
       </div>
 
       <textarea ref={ref}
-        style={{ flex:1, padding:20, fontSize: isCode ? 14 : 17, lineHeight: isCode ? 1.7 : 1.6, background: isCode ? "#0d1117" : "var(--bg)", border:"none", outline:"none", color: isCode ? "#d4d4d4" : "var(--text)", fontFamily: isCode ? "'Fira Code','JetBrains Mono',monospace" : "inherit", resize:"none" }}
+        style={{ flex:1, padding:20, fontSize:16, lineHeight: isCode ? 1.7 : 1.6, background: isCode ? "#0d1117" : "var(--bg)", border:"none", outline:"none", color: isCode ? "#d4d4d4" : "var(--text)", fontFamily: isCode ? "'Fira Code','JetBrains Mono',monospace" : "inherit", resize:"none" }}
         placeholder={isCode ? "Plak hier je code..." : "Voer " + label.toLowerCase() + " in..."}
         value={text}
         onChange={e => setText(e.target.value)}
-        onFocus={() => {
-          if (isCode) setTimeout(() => { window.scrollTo(0,0); document.documentElement.scrollTop = 0; }, 300);
-        }}
       />
 
       <div style={{ padding:"10px 16px 34px", background: isCode ? "#0d1117" : "var(--bg)", borderTop:"1px solid " + (isCode ? "#21262d" : "var(--border)"), display:"flex", justifyContent:"space-between", alignItems:"center", gap:8, flexShrink:0 }}>
