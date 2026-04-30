@@ -581,6 +581,16 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
 
   useEffect(() => { setTimeout(() => ref.current?.focus(), 100); }, []);
 
+  useEffect(() => {
+    if (!isCode) return;
+    const handleResize = () => {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [isCode]);
+
   const pasteFromClipboard = async () => {
     try {
       const t = await navigator.clipboard.readText();
@@ -591,7 +601,7 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
   };
 
   return (
-    <div style={{ position:"fixed", inset:0, background: isCode ? "#0d1117" : "var(--bg)", zIndex:500, display:"flex", flexDirection:"column" }}>
+    <div style={{ position:"fixed", top:0, left:0, right:0, bottom:0, background: isCode ? "#0d1117" : "var(--bg)", zIndex:500, display:"flex", flexDirection:"column", overflow:"hidden" }}>
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 8px 12px", borderBottom:"1px solid " + (isCode ? "#21262d" : "var(--border)"), background: isCode ? "#161b22" : "var(--bg)", flexShrink:0 }}>
         <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:15, cursor:"pointer", minWidth:55, textAlign:"left", paddingLeft:8 }} onClick={onCancel}>
           Terug
@@ -609,6 +619,9 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
         placeholder={isCode ? "Plak hier je code..." : "Voer " + label.toLowerCase() + " in..."}
         value={text}
         onChange={e => setText(e.target.value)}
+        onFocus={() => {
+          if (isCode) setTimeout(() => { window.scrollTo(0,0); document.documentElement.scrollTop = 0; }, 300);
+        }}
       />
 
       <div style={{ padding:"10px 16px 34px", background: isCode ? "#0d1117" : "var(--bg)", borderTop:"1px solid " + (isCode ? "#21262d" : "var(--border)"), display:"flex", justifyContent:"space-between", alignItems:"center", gap:8, flexShrink:0 }}>
