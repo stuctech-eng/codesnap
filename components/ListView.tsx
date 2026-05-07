@@ -12,6 +12,15 @@ const CAT_COLORS: Record<string, string> = {
   "Ideeën":     "#8b5cf6",
 };
 
+const DEFAULT_COLORS = [
+  "#f59e0b","#6366f1","#10b981","#ec4899",
+  "#3b82f6","#8b5cf6","#ef4444","#06b6d4",
+];
+
+function getCatColor(cat: string, index: number): string {
+  return CAT_COLORS[cat] || DEFAULT_COLORS[index % DEFAULT_COLORS.length];
+}
+
 const initials = (t = "") => t.slice(0, 2).toUpperCase();
 const avColor  = (t = "") => {
   const c = ["#f59e0b","#d97706","#b45309","#78350f"];
@@ -43,7 +52,6 @@ export default function ListView({
     setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  // Zoekresultaten
   const filtered = search
     ? allSnips.filter(s =>
         s.title.toLowerCase().includes(search.toLowerCase()) ||
@@ -52,10 +60,7 @@ export default function ListView({
       )
     : [];
 
-  // Favorieten
   const favorites = allSnips.filter(s => s.favorite);
-
-  // Per categorie
   const categories = Array.from(new Set(allSnips.map(s => s.category))).filter(Boolean);
 
   return (
@@ -78,7 +83,6 @@ export default function ListView({
           </button>
         </div>
 
-        {/* Zoekbalk */}
         <div style={{ background:"var(--bg2)", borderRadius:10, display:"flex", alignItems:"center", padding:"0 12px", gap:8, border:"1px solid var(--border2)" }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -96,13 +100,14 @@ export default function ListView({
         </div>
       </div>
 
-      {/* LIJST */}
-      <div style={{ flex:1, overflowY:"auto", paddingBottom:110 }}>
+      <div style={{ flex:1, overflowY:"auto", paddingBottom:110, padding:"0 12px 110px" }}>
 
         {/* ZOEKRESULTATEN */}
         {search && (
-          <div>
-            <SectionHeader title={"Resultaten (" + filtered.length + ")"} isOpen={true} onToggle={() => {}} noToggle />
+          <div style={{ paddingTop:12 }}>
+            <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8, paddingLeft:4 }}>
+              Resultaten ({filtered.length})
+            </div>
             {filtered.length === 0
               ? <div style={{ padding:"20px", textAlign:"center", color:"var(--text3)", fontSize:14 }}>Geen resultaten</div>
               : filtered.map(s => (
@@ -112,47 +117,62 @@ export default function ListView({
           </div>
         )}
 
-        {/* GEEN ZOEKOPDRACHT */}
         {!search && (
-          <>
+          <div style={{ paddingTop:12 }}>
+
             {/* LAATST GEOPEND */}
             {lastOpened && (
-              <div>
-                <SectionHeader title="Laatst geopend" isOpen={true} onToggle={() => {}} noToggle icon="🕐" />
+              <>
+                <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8, paddingLeft:4, display:"flex", alignItems:"center", gap:6 }}>
+                  🕐 Laatst geopend
+                </div>
                 <SnapRow snip={lastOpened} onOpen={() => onOpen(lastOpened.id!)} onFav={() => onFav(lastOpened.id!, lastOpened.favorite)} />
-              </div>
+                <div style={{ height:16 }} />
+              </>
             )}
 
-            {/* FAVORIETEN */}
+            {/* FAVORIETEN -- kaart stijl B */}
             {favorites.length > 0 && (
-              <div>
-                <SectionHeader
-                  title={"Favorieten (" + favorites.length + ")"}
+              <>
+                <CategoryCard
+                  label="Favorieten"
+                  count={favorites.length}
+                  color="#f59e0b"
+                  icon="⭐"
                   isOpen={!!openSections["favorieten"]}
                   onToggle={() => toggleSection("favorieten")}
-                  icon="⭐"
                 />
-                {openSections["favorieten"] && favorites.map(s => (
-                  <SnapRow key={s.id} snip={s} onOpen={() => onOpen(s.id!)} onFav={() => onFav(s.id!, s.favorite)} />
-                ))}
-              </div>
+                {openSections["favorieten"] && (
+                  <div style={{ marginBottom:8 }}>
+                    {favorites.map(s => (
+                      <SnapRow key={s.id} snip={s} onOpen={() => onOpen(s.id!)} onFav={() => onFav(s.id!, s.favorite)} />
+                    ))}
+                  </div>
+                )}
+              </>
             )}
 
-            {/* PER CATEGORIE */}
-            {categories.map(cat => {
+            {/* CATEGORIEËN -- kaart stijl B */}
+            {categories.map((cat, index) => {
               const catSnips = allSnips.filter(s => s.category === cat);
+              const color = getCatColor(cat, index);
               const isOpen = !!openSections[cat];
               return (
                 <div key={cat}>
-                  <SectionHeader
-                    title={cat + " (" + catSnips.length + ")"}
+                  <CategoryCard
+                    label={cat}
+                    count={catSnips.length}
+                    color={color}
                     isOpen={isOpen}
                     onToggle={() => toggleSection(cat)}
-                    color={CAT_COLORS[cat]}
                   />
-                  {isOpen && catSnips.map(s => (
-                    <SnapRow key={s.id} snip={s} onOpen={() => onOpen(s.id!)} onFav={() => onFav(s.id!, s.favorite)} />
-                  ))}
+                  {isOpen && (
+                    <div style={{ marginBottom:8 }}>
+                      {catSnips.map(s => (
+                        <SnapRow key={s.id} snip={s} onOpen={() => onOpen(s.id!)} onFav={() => onFav(s.id!, s.favorite)} />
+                      ))}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -168,7 +188,7 @@ export default function ListView({
                 </button>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
 
@@ -185,31 +205,34 @@ export default function ListView({
   );
 }
 
-function SectionHeader({ title, isOpen, onToggle, icon, color, noToggle }: {
-  title: string;
+function CategoryCard({ label, count, color, icon, isOpen, onToggle }: {
+  label: string;
+  count: number;
+  color: string;
+  icon?: string;
   isOpen: boolean;
   onToggle: () => void;
-  icon?: string;
-  color?: string;
-  noToggle?: boolean;
 }) {
   return (
     <button
-      style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"12px 20px 8px", background:"transparent", border:"none", cursor: noToggle ? "default" : "pointer" }}
-      onClick={noToggle ? undefined : onToggle}
+      style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"14px 16px", cursor:"pointer", marginBottom: isOpen ? 0 : 8, boxSizing:"border-box", borderBottomLeftRadius: isOpen ? 0 : 12, borderBottomRightRadius: isOpen ? 0 : 12 }}
+      onClick={onToggle}
     >
-      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-        {icon && <span style={{ fontSize:13 }}>{icon}</span>}
-        {color && <div style={{ width:8, height:8, borderRadius:"50%", background:color }} />}
-        <span style={{ fontSize:12, fontWeight:700, color:"var(--text3)", letterSpacing:"0.08em", textTransform:"uppercase" }}>
-          {title}
-        </span>
+      <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+        {icon
+          ? <span style={{ fontSize:16 }}>{icon}</span>
+          : <div style={{ width:10, height:10, borderRadius:"50%", background:color, flexShrink:0 }} />
+        }
+        <span style={{ fontSize:15, fontWeight:600, color:"var(--text)" }}>{label}</span>
       </div>
-      {!noToggle && (
+      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+        <span style={{ fontSize:12, color:"var(--text3)", background:"var(--bg3)", padding:"2px 10px", borderRadius:20, fontWeight:600, border:"1px solid var(--border2)" }}>
+          {count}
+        </span>
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round">
           <path d={isOpen ? "m18 15-6-6-6 6" : "m6 9 6 6 6-6"}/>
         </svg>
-      )}
+      </div>
     </button>
   );
 }
@@ -222,7 +245,7 @@ function SnapRow({ snip, onOpen, onFav }: {
   const catColor = CAT_COLORS[snip.category] || "var(--accent)";
   return (
     <div
-      style={{ display:"flex", alignItems:"center", padding:"12px 16px", margin:"4px 12px", background:"var(--bg2)", borderRadius:12, border:"1px solid var(--border2)", cursor:"pointer" }}
+      style={{ display:"flex", alignItems:"center", padding:"12px 16px", marginBottom:4, background:"var(--bg2)", borderRadius:12, border:"1px solid var(--border2)", cursor:"pointer" }}
       onClick={onOpen}
     >
       <div style={{ position:"relative", flexShrink:0, marginRight:12 }}>
@@ -231,7 +254,6 @@ function SnapRow({ snip, onOpen, onFav }: {
         </div>
         <div style={{ position:"absolute", bottom:-1, right:-1, width:10, height:10, borderRadius:"50%", background:catColor, border:"2px solid var(--bg2)" }} />
       </div>
-
       <div style={{ flex:1, minWidth:0 }}>
         <div style={{ fontSize:15, fontWeight:600, color:"var(--text)", marginBottom:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
           {snip.title}
@@ -242,7 +264,6 @@ function SnapRow({ snip, onOpen, onFav }: {
           </div>
         )}
       </div>
-
       <button
         style={{ background:"none", border:"none", cursor:"pointer", padding:"4px 0 4px 8px", flexShrink:0 }}
         onClick={e => { e.stopPropagation(); onFav(); }}

@@ -45,7 +45,6 @@ function detectLanguage(code: string): string {
 
 function buildCopyText(snip: Snippet, action: string, blockId?: string): string {
   const fence = "```";
-
   if (blockId) {
     const block = snip.codeBlocks?.find(b => b.id === blockId);
     if (block) {
@@ -53,7 +52,6 @@ function buildCopyText(snip: Snippet, action: string, blockId?: string): string 
       return fence + lang + "\n" + block.code + "\n" + fence;
     }
   }
-
   const firstBlock = snip.codeBlocks?.[0];
   const mainCode = firstBlock?.code || snip.code || "";
   const lang = firstBlock ? getLang(firstBlock.filename) : detectLanguage(mainCode);
@@ -193,10 +191,17 @@ export default function DetailView({
   const [fullScreen, setFullScreen] = useState(false);
   const [copyState, setCopyState] = useState<string|null>(null);
 
-  // Scroll naar top bij openen
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
+
+  // Popup automatisch bij Code tab met meerdere blokken
+  const handleTabClick = (t: MainTab) => {
+    setTab(t);
+    if (t === "code" && blocks.length > 1) {
+      setShowBlockMenu(true);
+    }
+  };
 
   const catColor = CAT_COLORS[snip.category] || "var(--accent)";
   const snippetType = snip.snippetType || "code";
@@ -272,7 +277,7 @@ export default function DetailView({
       <div style={{ padding:"10px 14px 0", background:"var(--bg)" }}>
         <div style={{ background:"var(--bg2)", borderRadius:10, padding:3, display:"flex", border:"1px solid var(--border2)" }}>
           {(["about","code"] as MainTab[]).map(t => (
-            <button key={t} onClick={() => setTab(t)} style={{
+            <button key={t} onClick={() => handleTabClick(t)} style={{
               flex:1, padding:"7px 0", borderRadius:8, border:"none", cursor:"pointer",
               fontSize:14, fontWeight: tab===t ? 700 : 500,
               background: tab===t ? "var(--accent)" : "transparent",
@@ -353,34 +358,6 @@ export default function DetailView({
         {/* CODE TAB */}
         {tab === "code" && (
           <div style={{ padding:"12px" }}>
-
-            {/* Bestand selector */}
-            {blocks.length > 0 && (
-              <button
-                style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", cursor:"pointer", marginBottom:10, boxSizing:"border-box" }}
-                onClick={() => setShowBlockMenu(true)}
-              >
-                <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                  {activeBlock && (
-                    <div style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20, background: (LANG_COLORS[getLang(activeBlock.filename)] || "#8b949e") + "22", color: LANG_COLORS[getLang(activeBlock.filename)] || "#8b949e", fontFamily:"monospace" }}>
-                      {getLang(activeBlock.filename)}
-                    </div>
-                  )}
-                  <span style={{ fontSize:15, color:"var(--text)", fontWeight:600, fontFamily:"monospace" }}>
-                    {activeBlock?.filename || "Geen bestand"}
-                  </span>
-                  {blocks.length > 1 && (
-                    <span style={{ fontSize:12, color:"var(--text3)" }}>
-                      ({blocks.indexOf(activeBlock!) + 1}/{blocks.length})
-                    </span>
-                  )}
-                </div>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round">
-                  <path d="m6 9 6 6 6-6"/>
-                </svg>
-              </button>
-            )}
-
             {activeBlock ? (
               <>
                 <div style={{ display:"flex", gap:8, marginBottom:10 }}>
@@ -402,7 +379,6 @@ export default function DetailView({
                     ⛶ Volledig
                   </button>
                 </div>
-
                 <CodeViewer code={activeBlock.code} filename={activeBlock.filename} />
               </>
             ) : (
@@ -414,7 +390,7 @@ export default function DetailView({
         )}
       </div>
 
-      {/* BESTAND POPUP */}
+      {/* BESTAND POPUP -- opent automatisch bij Code tab */}
       {showBlockMenu && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:200, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 8px 34px" }}
           onClick={() => setShowBlockMenu(false)}>

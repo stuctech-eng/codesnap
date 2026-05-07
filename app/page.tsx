@@ -14,7 +14,7 @@ const ListView = dynamic(() => import("@/components/ListView"), { ssr: false });
 const DetailView = dynamic(() => import("@/components/DetailView"), { ssr: false });
 const EditView = dynamic(() => import("@/components/EditView"), { ssr: false });
 
-const VERSION = "30.04";
+const VERSION = "07.05";
 
 type View = "list" | "detail" | "edit" | "new";
 
@@ -27,7 +27,6 @@ export default function Page() {
   const [showSheet, setShowSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [filterCat, setFilterCat] = useState("Alles");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   const active = snips.find((s) => s.id === activeId);
@@ -42,7 +41,6 @@ export default function Page() {
     return () => unsub();
   }, []);
 
-  // Onthoud laatste geopende snippet
   useEffect(() => {
     const saved = localStorage.getItem("lastOpenedId");
     if (saved) setLastOpenedId(saved);
@@ -114,15 +112,6 @@ export default function Page() {
     localStorage.setItem("lastOpenedId", id);
     setView("detail");
   };
-
-  const filtered = useMemo(() =>
-    snips.filter((s) =>
-      !search ||
-      s.title.toLowerCase().includes(search.toLowerCase()) ||
-      s.description?.toLowerCase().includes(search.toLowerCase()) ||
-      s.tags?.some((t) => t.includes(search.toLowerCase()))
-    ),
-    [snips, search]);
 
   const toggleTheme = () =>
     setTheme(t => t === "dark" ? "light" : "dark");
