@@ -16,14 +16,13 @@ const EditView = dynamic(() => import("@/components/EditView"), { ssr: false });
 
 const VERSION = "30.04";
 
-
-
 type View = "list" | "detail" | "edit" | "new";
 
 export default function Page() {
   const [snips, setSnips] = useState<Snippet[]>([]);
   const [view, setView] = useState<View>("list");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [lastOpenedId, setLastOpenedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -32,6 +31,7 @@ export default function Page() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
 
   const active = snips.find((s) => s.id === activeId);
+  const lastOpened = snips.find((s) => s.id === lastOpenedId);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -40,6 +40,12 @@ export default function Page() {
   useEffect(() => {
     const unsub = listenSnippets(setSnips);
     return () => unsub();
+  }, []);
+
+  // Onthoud laatste geopende snippet
+  useEffect(() => {
+    const saved = localStorage.getItem("lastOpenedId");
+    if (saved) setLastOpenedId(saved);
   }, []);
 
   const flash = (msg: string) => {
@@ -102,20 +108,21 @@ export default function Page() {
     setShowSheet(false);
   };
 
-  const filtered = useMemo(() =>
-    snips
-      .filter((s) => filterCat === "Alles" || s.category === filterCat)
-      .filter((s) =>
-        !search ||
-        s.title.toLowerCase().includes(search.toLowerCase()) ||
-        s.description?.toLowerCase().includes(search.toLowerCase()) ||
-        s.tags?.some((t) => t.includes(search.toLowerCase()))
-      ),
-    [snips, search, filterCat]);
+  const openSnippet = (id: string) => {
+    setActiveId(id);
+    setLastOpenedId(id);
+    localStorage.setItem("lastOpenedId", id);
+    setView("detail");
+  };
 
-  const featured = useMemo(() =>
-    snips.filter((s) => s.favorite),
-    [snips]);
+  const filtered = useMemo(() =>
+    snips.filter((s) =>
+      !search ||
+      s.title.toLowerCase().includes(search.toLowerCase()) ||
+      s.description?.toLowerCase().includes(search.toLowerCase()) ||
+      s.tags?.some((t) => t.includes(search.toLowerCase()))
+    ),
+    [snips, search]);
 
   const toggleTheme = () =>
     setTheme(t => t === "dark" ? "light" : "dark");
@@ -169,15 +176,12 @@ export default function Page() {
       )}
       {view === "list" && (
         <ListView
-          mySnips={filtered}
-          featured={featured}
           allSnips={snips}
+          lastOpened={lastOpened || null}
           search={search}
-          filterCat={filterCat}
           theme={theme}
           onSearch={setSearch}
-          onFilterCat={setFilterCat}
-          onOpen={(id) => { setActiveId(id); setView("detail"); }}
+          onOpen={openSnippet}
           onFav={(id, current) => handleToggleFav(id, current)}
           onAdd={() => setView("new")}
           onEdit={(id) => { setActiveId(id); setView("edit"); }}

@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Snippet } from "@/lib/types";
 
 const initials = (t = "") => t.slice(0, 2).toUpperCase();
@@ -193,6 +193,11 @@ export default function DetailView({
   const [fullScreen, setFullScreen] = useState(false);
   const [copyState, setCopyState] = useState<string|null>(null);
 
+  // Scroll naar top bij openen
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
   const catColor = CAT_COLORS[snip.category] || "var(--accent)";
   const snippetType = snip.snippetType || "code";
   const blocks = snip.codeBlocks || [];
@@ -212,7 +217,6 @@ export default function DetailView({
     });
   };
 
-  // Volledig scherm
   if (fullScreen && activeBlock) {
     return (
       <div style={{ position:"fixed", inset:0, background:"#0d1117", zIndex:500, display:"flex", flexDirection:"column" }}>
@@ -350,7 +354,7 @@ export default function DetailView({
         {tab === "code" && (
           <div style={{ padding:"12px" }}>
 
-            {/* Actief bestand knop -- opent popup */}
+            {/* Bestand selector */}
             {blocks.length > 0 && (
               <button
                 style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", cursor:"pointer", marginBottom:10, boxSizing:"border-box" }}
@@ -379,7 +383,6 @@ export default function DetailView({
 
             {activeBlock ? (
               <>
-                {/* Volledig scherm + kopieer */}
                 <div style={{ display:"flex", gap:8, marginBottom:10 }}>
                   <button onClick={() => copyAction("code", activeBlock.id)} style={{
                     flex:2, display:"flex", alignItems:"center", justifyContent:"center",
@@ -411,21 +414,17 @@ export default function DetailView({
         )}
       </div>
 
-      {/* BESTAND POPUP -- zoals categorie */}
+      {/* BESTAND POPUP */}
       {showBlockMenu && (
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:200, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 8px 34px" }}
           onClick={() => setShowBlockMenu(false)}>
           <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }}
             onClick={e => e.stopPropagation()}>
-
-            {/* Header */}
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
               <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Bestand kiezen</span>
               <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
                 onClick={() => setShowBlockMenu(false)}>Klaar</button>
             </div>
-
-            {/* Bestanden lijst */}
             <div style={{ maxHeight:350, overflowY:"auto" }}>
               {blocks.map(block => {
                 const lang = getLang(block.filename);
