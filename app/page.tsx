@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Snippet } from "@/lib/types";
 import {
   listenSnippets,
@@ -125,21 +125,13 @@ export default function Page() {
       position: "relative",
     }}>
       {view === "new" && (
-        <EditView
-          snip={null}
-          theme={theme}
-          onSave={handleAdd}
-          onCancel={goList}
-        />
+        <EditView snip={null} theme={theme} onSave={handleAdd} onCancel={goList} />
       )}
       {view === "edit" && active && (
         <EditView
           snip={active}
           theme={theme}
-          onSave={(data) => {
-            handleUpdate(active.id!, data);
-            setView("detail");
-          }}
+          onSave={(data) => { handleUpdate(active.id!, data); setView("detail"); }}
           onCancel={() => setView("detail")}
         />
       )}
@@ -152,9 +144,7 @@ export default function Page() {
           onBack={goList}
           onDots={() => setShowSheet(true)}
           onEdit={() => { setShowSheet(false); setView("edit"); }}
-          onDelete={() => {
-            if (window.confirm("Verwijderen?")) handleDelete(active.id!);
-          }}
+          onDelete={() => { if (window.confirm("Verwijderen?")) handleDelete(active.id!); }}
           onCopy={() => copyCode(active.code)}
           onFav={() => handleToggleFav(active.id!, active.favorite)}
           onShare={() => shareSnippet(active)}

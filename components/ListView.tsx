@@ -44,7 +44,7 @@ interface Props {
 
 export default function ListView({
   allSnips, lastOpened, search, theme, version,
-  onSearch, onOpen, onFav, onAdd, onEdit, onDelete, onToggleTheme,
+  onSearch, onOpen, onFav, onAdd, onToggleTheme,
 }: Props) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
 
@@ -66,13 +66,10 @@ export default function ListView({
   return (
     <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"var(--bg)" }}>
 
-      {/* HEADER */}
       <div style={{ padding:"52px 20px 14px", background:"var(--bg)", borderBottom:"1px solid var(--border)", position:"sticky", top:0, zIndex:10 }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
           <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
-            <h1 style={{ fontSize:28, fontWeight:800, margin:0, letterSpacing:"-0.04em", color:"var(--text)" }}>
-              CodeSnap
-            </h1>
+            <h1 style={{ fontSize:28, fontWeight:800, margin:0, letterSpacing:"-0.04em", color:"var(--text)" }}>CodeSnap</h1>
             <span style={{ fontSize:12, color:"var(--text3)", fontWeight:600 }}>v{version}</span>
           </div>
           <button onClick={onToggleTheme} style={{ width:36, height:36, borderRadius:"50%", background:"var(--bg2)", border:"1px solid var(--border2)", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
@@ -102,7 +99,6 @@ export default function ListView({
 
       <div style={{ flex:1, overflowY:"auto", paddingBottom:110, padding:"0 12px 110px" }}>
 
-        {/* ZOEKRESULTATEN */}
         {search && (
           <div style={{ paddingTop:12 }}>
             <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8, paddingLeft:4 }}>
@@ -120,7 +116,6 @@ export default function ListView({
         {!search && (
           <div style={{ paddingTop:12 }}>
 
-            {/* LAATST GEOPEND */}
             {lastOpened && (
               <>
                 <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8, paddingLeft:4, display:"flex", alignItems:"center", gap:6 }}>
@@ -131,7 +126,6 @@ export default function ListView({
               </>
             )}
 
-            {/* FAVORIETEN -- kaart stijl B */}
             {favorites.length > 0 && (
               <>
                 <CategoryCard
@@ -152,7 +146,6 @@ export default function ListView({
               </>
             )}
 
-            {/* CATEGORIEËN -- kaart stijl B */}
             {categories.map((cat, index) => {
               const catSnips = allSnips.filter(s => s.category === cat);
               const color = getCatColor(cat, index);
@@ -177,7 +170,6 @@ export default function ListView({
               );
             })}
 
-            {/* LEEG */}
             {allSnips.length === 0 && (
               <div style={{ padding:"48px 20px", textAlign:"center" }}>
                 <div style={{ fontSize:40, marginBottom:12 }}>✂️</div>
@@ -192,7 +184,6 @@ export default function ListView({
         )}
       </div>
 
-      {/* BOTTOM */}
       <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, background:"var(--bg)", borderTop:"1px solid var(--border)", padding:"10px 20px 34px", zIndex:50 }}>
         <button onClick={onAdd} style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, background:"var(--accent)", border:"none", borderRadius:14, padding:"14px", width:"100%", color:"#000", fontSize:16, fontWeight:700, cursor:"pointer", boxShadow:"0 4px 16px rgba(245,158,11,0.3)" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round">
@@ -206,12 +197,8 @@ export default function ListView({
 }
 
 function CategoryCard({ label, count, color, icon, isOpen, onToggle }: {
-  label: string;
-  count: number;
-  color: string;
-  icon?: string;
-  isOpen: boolean;
-  onToggle: () => void;
+  label: string; count: number; color: string; icon?: string;
+  isOpen: boolean; onToggle: () => void;
 }) {
   return (
     <button
@@ -238,9 +225,7 @@ function CategoryCard({ label, count, color, icon, isOpen, onToggle }: {
 }
 
 function SnapRow({ snip, onOpen, onFav }: {
-  snip: Snippet;
-  onOpen: () => void;
-  onFav: () => void;
+  snip: Snippet; onOpen: () => void; onFav: () => void;
 }) {
   const catColor = CAT_COLORS[snip.category] || "var(--accent)";
   return (

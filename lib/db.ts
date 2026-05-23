@@ -8,16 +8,17 @@ import {
   serverTimestamp,
   query,
   orderBy,
+  getDoc,
+  setDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { Snippet, CodeBlock } from "./types";
 
 const COL = "snippets";
+const SETTINGS_DOC = "settings/categories";
 
 function migrateSnippet(id: string, data: Record<string, unknown>): Snippet {
   const codeBlocks = (data.codeBlocks as CodeBlock[]) || [];
-
-  // Migreer oude code naar eerste codeBlock
   if (data.code && typeof data.code === "string" && data.code.trim() && codeBlocks.length === 0) {
     codeBlocks.push({
       id: "migrated",
@@ -25,7 +26,6 @@ function migrateSnippet(id: string, data: Record<string, unknown>): Snippet {
       code: data.code as string,
     });
   }
-
   return {
     id,
     title: (data.title as string) || "",
@@ -70,4 +70,25 @@ export async function updateSnippet(id: string, data: Partial<Snippet>) {
 
 export async function deleteSnippet(id: string) {
   return await deleteDoc(doc(db, COL, id));
+}
+
+// Custom categorieën in Firebase
+export async function loadCustomCats(): Promise<string[]> {
+  try {
+    const snap = await getDoc(doc(db, SETTINGS_DOC));
+    if (snap.exists()) {
+      return (snap.data().customCats as string[]) || [];
+    }
+    return [];
+  } catch {
+    return [];
+  }
+}
+
+export async function saveCustomCats(cats: string[]): Promise<void> {
+  try {
+    await setDoc(doc(db, SETTINGS_DOC), { customCats: cats });
+  } catch (e) {
+    console.error("saveCustomCats error:", e);
+  }
 }
