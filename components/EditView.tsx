@@ -64,7 +64,7 @@ type Field = "title"|"description"|"notes"|null;
 type PopupType = "categorie"|"tags"|"bestand"|null;
 
 export default function EditView({ snip, theme, onSave, onCancel }: Props) {
-  const isNew = !snip;
+  const isNew = !snip?.id;
   const [form, setForm] = useState({
     title: snip?.title || "",
     description: snip?.description || "",
