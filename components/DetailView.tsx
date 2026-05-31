@@ -18,6 +18,15 @@ const LANG_COLORS: Record<string,string> = {
   code:"#8b949e",
 };
 
+
+function formatDate(dateStr?: string): string {
+  if (!dateStr) return "";
+  try {
+    const d = new Date(dateStr);
+    return d.toLocaleDateString("nl-NL", { day:"numeric", month:"long", year:"numeric" });
+  } catch { return ""; }
+}
+
 function getLang(filename: string): string {
   const ext = filename.split(".").pop()?.toLowerCase() || "";
   const map: Record<string,string> = {
@@ -263,6 +272,24 @@ export default function DetailView({
                 {snip.tags.map(t => (
                   <span key={t} style={{ background:"var(--bg3)", color:"var(--text3)", padding:"3px 10px", borderRadius:20, fontSize:12, border:"1px solid var(--border2)" }}>#{t}</span>
                 ))}
+              </div>
+            )}
+
+            {/* DATUM */}
+            {(snip.createdAt || snip.updatedAt) && (
+              <div style={{ display:"flex", gap:8, marginBottom:14 }}>
+                {snip.createdAt && (
+                  <div style={{ flex:1, background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:10, padding:"8px 12px" }}>
+                    <div style={{ fontSize:10, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:3 }}>AANGEMAAKT</div>
+                    <div style={{ fontSize:12, color:"var(--text2)", fontWeight:500 }}>{formatDate(snip.createdAt)}</div>
+                  </div>
+                )}
+                {snip.updatedAt && snip.updatedAt !== snip.createdAt && (
+                  <div style={{ flex:1, background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:10, padding:"8px 12px" }}>
+                    <div style={{ fontSize:10, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:3 }}>BIJGEWERKT</div>
+                    <div style={{ fontSize:12, color:"var(--text2)", fontWeight:500 }}>{formatDate(snip.updatedAt)}</div>
+                  </div>
+                )}
               </div>
             )}
 

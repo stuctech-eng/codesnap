@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Snippet } from "@/lib/types";
 
 const CAT_COLORS: Record<string, string> = {
@@ -27,6 +27,8 @@ const avColor  = (t = "") => {
   return c[t.charCodeAt(0) % c.length];
 };
 
+type SortType = "nieuwste" | "oudste" | "az";
+
 interface Props {
   allSnips: Snippet[];
   lastOpened: Snippet | null;
@@ -47,25 +49,75 @@ export default function ListView({
   onSearch, onOpen, onFav, onAdd, onToggleTheme,
 }: Props) {
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [showFilter, setShowFilter] = useState(false);
+  const [sort, setSort] = useState<SortType>("nieuwste");
+  const [activeTags, setActiveTags] = useState<string[]>([]);
 
   const toggleSection = (key: string) => {
     setOpenSections(prev => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const filtered = search
-    ? allSnips.filter(s =>
+  const toggleTag = (tag: string) => {
+    setActiveTags(prev =>
+      prev.includes(tag) ? prev.filter(t => t !== tag) : [...prev, tag]
+    );
+  };
+
+  // Alle unieke tags
+  const allTags = useMemo(() => {
+    const tags = new Set<string>();
+    allSnips.forEach(s => s.tags?.forEach(t => tags.add(t)));
+    return Array.from(tags).sort();
+  }, [allSnips]);
+
+  // Gesorteerde + gefilterde snippets
+  const processed = useMemo(() => {
+    let snips = [...allSnips];
+
+    // Tag filter
+    if (activeTags.length > 0) {
+      snips = snips.filter(s =>
+        activeTags.every(tag => s.tags?.includes(tag))
+      );
+    }
+
+    // Zoek filter
+    if (search) {
+      snips = snips.filter(s =>
         s.title.toLowerCase().includes(search.toLowerCase()) ||
         s.description?.toLowerCase().includes(search.toLowerCase()) ||
         s.tags?.some(t => t.includes(search.toLowerCase()))
-      )
-    : [];
+      );
+    }
 
-  const favorites = allSnips.filter(s => s.favorite);
-  const categories = Array.from(new Set(allSnips.map(s => s.category))).filter(Boolean);
+    // Sorteren
+    if (sort === "nieuwste") {
+      snips.sort((a, b) => {
+        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return db - da;
+      });
+    } else if (sort === "oudste") {
+      snips.sort((a, b) => {
+        const da = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const db = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return da - db;
+      });
+    } else if (sort === "az") {
+      snips.sort((a, b) => a.title.localeCompare(b.title));
+    }
+
+    return snips;
+  }, [allSnips, search, sort, activeTags]);
+
+  const favorites = processed.filter(s => s.favorite);
+  const categories = Array.from(new Set(processed.map(s => s.category))).filter(Boolean);
+  const isFiltering = activeTags.length > 0 || sort !== "nieuwste";
 
   return (
     <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"var(--bg)" }}>
 
+      {/* HEADER */}
       <div style={{ padding:"52px 20px 14px", background:"var(--bg)", borderBottom:"1px solid var(--border)", position:"sticky", top:0, zIndex:10 }}>
         <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", marginBottom:16 }}>
           <div style={{ display:"flex", alignItems:"baseline", gap:8 }}>
@@ -80,33 +132,89 @@ export default function ListView({
           </button>
         </div>
 
-        <div style={{ background:"var(--bg2)", borderRadius:10, display:"flex", alignItems:"center", padding:"0 12px", gap:8, border:"1px solid var(--border2)" }}>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            style={{ flex:1, background:"transparent", border:"none", outline:"none", color:"var(--text)", fontSize:15, padding:"10px 0" }}
-            placeholder="Zoek snippets..."
-            value={search}
-            onChange={e => onSearch(e.target.value)}
-          />
-          {search && (
-            <button style={{ background:"none", border:"none", color:"var(--text3)", fontSize:14, cursor:"pointer" }}
-              onClick={() => onSearch("")}>✕</button>
-          )}
+        {/* ZOEKBALK + FILTER KNOP */}
+        <div style={{ display:"flex", gap:8 }}>
+          <div style={{ flex:1, background:"var(--bg2)", borderRadius:10, display:"flex", alignItems:"center", padding:"0 12px", gap:8, border:"1px solid var(--border2)" }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round">
+              <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input
+              style={{ flex:1, background:"transparent", border:"none", outline:"none", color:"var(--text)", fontSize:15, padding:"10px 0" }}
+              placeholder="Zoek snippets..."
+              value={search}
+              onChange={e => onSearch(e.target.value)}
+            />
+            {search && (
+              <button style={{ background:"none", border:"none", color:"var(--text3)", fontSize:14, cursor:"pointer" }}
+                onClick={() => onSearch("")}>✕</button>
+            )}
+          </div>
+
+          {/* FILTER KNOP */}
+          <button
+            style={{ width:42, height:42, borderRadius:10, background: isFiltering ? "var(--accent)" : "var(--bg2)", border:"1px solid " + (isFiltering ? "var(--accent)" : "var(--border2)"), display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
+            onClick={() => setShowFilter(!showFilter)}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={isFiltering ? "#000" : "var(--text2)"} strokeWidth="2" strokeLinecap="round">
+              <line x1="4" y1="6" x2="20" y2="6"/>
+              <line x1="8" y1="12" x2="16" y2="12"/>
+              <line x1="11" y1="18" x2="13" y2="18"/>
+            </svg>
+          </button>
         </div>
+
+        {/* FILTER BALK */}
+        {showFilter && (
+          <div style={{ marginTop:10, display:"flex", flexDirection:"column", gap:10 }}>
+
+            {/* SORTEER */}
+            <div style={{ display:"flex", gap:6 }}>
+              {(["nieuwste","oudste","az"] as SortType[]).map(s => (
+                <button key={s}
+                  style={{ flex:1, padding:"7px 0", borderRadius:8, border:"1px solid " + (sort===s ? "var(--accent)" : "var(--border2)"), background: sort===s ? "var(--accent)" : "var(--bg2)", color: sort===s ? "#000" : "var(--text2)", fontSize:12, fontWeight:700, cursor:"pointer" }}
+                  onClick={() => setSort(s)}
+                >
+                  {s === "nieuwste" ? "↓ Nieuwste" : s === "oudste" ? "↑ Oudste" : "A→Z"}
+                </button>
+              ))}
+            </div>
+
+            {/* TAG FILTER */}
+            {allTags.length > 0 && (
+              <div style={{ display:"flex", flexWrap:"wrap", gap:6 }}>
+                {allTags.map(tag => (
+                  <button key={tag}
+                    style={{ padding:"4px 10px", borderRadius:20, border:"1px solid " + (activeTags.includes(tag) ? "var(--accent)" : "var(--border2)"), background: activeTags.includes(tag) ? "var(--accent)" : "var(--bg2)", color: activeTags.includes(tag) ? "#000" : "var(--text2)", fontSize:12, fontWeight:600, cursor:"pointer" }}
+                    onClick={() => toggleTag(tag)}
+                  >
+                    #{tag}
+                  </button>
+                ))}
+                {activeTags.length > 0 && (
+                  <button
+                    style={{ padding:"4px 10px", borderRadius:20, border:"1px solid var(--red)", background:"transparent", color:"var(--red)", fontSize:12, fontWeight:600, cursor:"pointer" }}
+                    onClick={() => setActiveTags([])}
+                  >
+                    Wis filters
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       <div style={{ flex:1, overflowY:"auto", paddingBottom:110, padding:"0 12px 110px" }}>
 
+        {/* ZOEKRESULTATEN */}
         {search && (
           <div style={{ paddingTop:12 }}>
             <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8, paddingLeft:4 }}>
-              Resultaten ({filtered.length})
+              Resultaten ({processed.length})
             </div>
-            {filtered.length === 0
+            {processed.length === 0
               ? <div style={{ padding:"20px", textAlign:"center", color:"var(--text3)", fontSize:14 }}>Geen resultaten</div>
-              : filtered.map(s => (
+              : processed.map(s => (
                 <SnapRow key={s.id} snip={s} onOpen={() => onOpen(s.id!)} onFav={() => onFav(s.id!, s.favorite)} />
               ))
             }
@@ -116,74 +224,93 @@ export default function ListView({
         {!search && (
           <div style={{ paddingTop:12 }}>
 
-            {lastOpened && (
+            {/* TAG FILTER ACTIEF — platte lijst */}
+            {activeTags.length > 0 ? (
               <>
-                <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8, paddingLeft:4, display:"flex", alignItems:"center", gap:6 }}>
-                  🕐 Laatst geopend
+                <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8, paddingLeft:4 }}>
+                  Gefilterd ({processed.length})
                 </div>
-                <SnapRow snip={lastOpened} onOpen={() => onOpen(lastOpened.id!)} onFav={() => onFav(lastOpened.id!, lastOpened.favorite)} />
-                <div style={{ height:16 }} />
+                {processed.map(s => (
+                  <SnapRow key={s.id} snip={s} onOpen={() => onOpen(s.id!)} onFav={() => onFav(s.id!, s.favorite)} />
+                ))}
               </>
-            )}
-
-            {favorites.length > 0 && (
+            ) : (
               <>
-                <CategoryCard
-                  label="Favorieten"
-                  count={favorites.length}
-                  color="#f59e0b"
-                  icon="⭐"
-                  isOpen={!!openSections["favorieten"]}
-                  onToggle={() => toggleSection("favorieten")}
-                />
-                {openSections["favorieten"] && (
-                  <div style={{ marginBottom:8 }}>
-                    {favorites.map(s => (
-                      <SnapRow key={s.id} snip={s} onOpen={() => onOpen(s.id!)} onFav={() => onFav(s.id!, s.favorite)} />
-                    ))}
+                {/* LAATST GEOPEND */}
+                {lastOpened && (
+                  <>
+                    <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", marginBottom:8, paddingLeft:4, display:"flex", alignItems:"center", gap:6 }}>
+                      🕐 Laatst geopend
+                    </div>
+                    <SnapRow snip={lastOpened} onOpen={() => onOpen(lastOpened.id!)} onFav={() => onFav(lastOpened.id!, lastOpened.favorite)} />
+                    <div style={{ height:16 }} />
+                  </>
+                )}
+
+                {/* FAVORIETEN */}
+                {favorites.length > 0 && (
+                  <>
+                    <CategoryCard
+                      label="Favorieten"
+                      count={favorites.length}
+                      color="#f59e0b"
+                      icon="⭐"
+                      isOpen={!!openSections["favorieten"]}
+                      onToggle={() => toggleSection("favorieten")}
+                    />
+                    {openSections["favorieten"] && (
+                      <div style={{ marginBottom:8 }}>
+                        {favorites.map(s => (
+                          <SnapRow key={s.id} snip={s} onOpen={() => onOpen(s.id!)} onFav={() => onFav(s.id!, s.favorite)} />
+                        ))}
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* CATEGORIEËN */}
+                {categories.map((cat, index) => {
+                  const catSnips = processed.filter(s => s.category === cat);
+                  const color = getCatColor(cat, index);
+                  const isOpen = !!openSections[cat];
+                  return (
+                    <div key={cat}>
+                      <CategoryCard
+                        label={cat}
+                        count={catSnips.length}
+                        color={color}
+                        isOpen={isOpen}
+                        onToggle={() => toggleSection(cat)}
+                      />
+                      {isOpen && (
+                        <div style={{ marginBottom:8 }}>
+                          {catSnips.map(s => (
+                            <SnapRow key={s.id} snip={s} onOpen={() => onOpen(s.id!)} onFav={() => onFav(s.id!, s.favorite)} />
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {/* LEEG */}
+                {allSnips.length === 0 && (
+                  <div style={{ padding:"48px 20px", textAlign:"center" }}>
+                    <div style={{ fontSize:40, marginBottom:12 }}>✂️</div>
+                    <p style={{ color:"var(--text2)", fontSize:16, fontWeight:600, margin:"0 0 6px" }}>Nog geen snippets</p>
+                    <p style={{ color:"var(--text3)", fontSize:13, margin:"0 0 20px" }}>Tik op + om je eerste snippet toe te voegen</p>
+                    <button onClick={onAdd} style={{ background:"var(--accent)", color:"#000", border:"none", padding:"10px 20px", borderRadius:10, fontSize:15, fontWeight:700, cursor:"pointer" }}>
+                      + Eerste snippet
+                    </button>
                   </div>
                 )}
               </>
-            )}
-
-            {categories.map((cat, index) => {
-              const catSnips = allSnips.filter(s => s.category === cat);
-              const color = getCatColor(cat, index);
-              const isOpen = !!openSections[cat];
-              return (
-                <div key={cat}>
-                  <CategoryCard
-                    label={cat}
-                    count={catSnips.length}
-                    color={color}
-                    isOpen={isOpen}
-                    onToggle={() => toggleSection(cat)}
-                  />
-                  {isOpen && (
-                    <div style={{ marginBottom:8 }}>
-                      {catSnips.map(s => (
-                        <SnapRow key={s.id} snip={s} onOpen={() => onOpen(s.id!)} onFav={() => onFav(s.id!, s.favorite)} />
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {allSnips.length === 0 && (
-              <div style={{ padding:"48px 20px", textAlign:"center" }}>
-                <div style={{ fontSize:40, marginBottom:12 }}>✂️</div>
-                <p style={{ color:"var(--text2)", fontSize:16, fontWeight:600, margin:"0 0 6px" }}>Nog geen snippets</p>
-                <p style={{ color:"var(--text3)", fontSize:13, margin:"0 0 20px" }}>Tik op + om je eerste snippet toe te voegen</p>
-                <button onClick={onAdd} style={{ background:"var(--accent)", color:"#000", border:"none", padding:"10px 20px", borderRadius:10, fontSize:15, fontWeight:700, cursor:"pointer" }}>
-                  + Eerste snippet
-                </button>
-              </div>
             )}
           </div>
         )}
       </div>
 
+      {/* BOTTOM */}
       <div style={{ position:"fixed", bottom:0, left:"50%", transform:"translateX(-50%)", width:"100%", maxWidth:430, background:"var(--bg)", borderTop:"1px solid var(--border)", padding:"10px 20px 34px", zIndex:50 }}>
         <button onClick={onAdd} style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, background:"var(--accent)", border:"none", borderRadius:14, padding:"14px", width:"100%", color:"#000", fontSize:16, fontWeight:700, cursor:"pointer", boxShadow:"0 4px 16px rgba(245,158,11,0.3)" }}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#000" strokeWidth="2.5" strokeLinecap="round">
