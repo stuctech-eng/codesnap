@@ -1,15 +1,7 @@
 import {
-  collection,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  serverTimestamp,
-  query,
-  orderBy,
-  getDoc,
-  setDoc,
+  collection, addDoc, updateDoc, deleteDoc,
+  doc, onSnapshot, serverTimestamp,
+  query, orderBy, getDoc, setDoc,
 } from "firebase/firestore";
 import { db } from "./firebase";
 import { Snippet, CodeBlock } from "./types";
@@ -20,11 +12,7 @@ const SETTINGS_DOC = "settings/categories";
 function migrateSnippet(id: string, data: Record<string, unknown>): Snippet {
   const codeBlocks = (data.codeBlocks as CodeBlock[]) || [];
   if (data.code && typeof data.code === "string" && data.code.trim() && codeBlocks.length === 0) {
-    codeBlocks.push({
-      id: "migrated",
-      filename: "main.code",
-      code: data.code as string,
-    });
+    codeBlocks.push({ id: "migrated", filename: "main.code", code: data.code as string });
   }
   return {
     id,
@@ -37,6 +25,9 @@ function migrateSnippet(id: string, data: Record<string, unknown>): Snippet {
     category: (data.category as string) || "",
     tags: (data.tags as string[]) || [],
     favorite: (data.favorite as boolean) || false,
+    archived: (data.archived as boolean) || false,
+    createdAt: data.createdAt ? new Date((data.createdAt as { toDate(): Date }).toDate()).toISOString() : undefined,
+    updatedAt: data.updatedAt ? new Date((data.updatedAt as { toDate(): Date }).toDate()).toISOString() : undefined,
   };
 }
 
@@ -56,6 +47,7 @@ export async function addSnippet(data: Omit<Snippet, "id">) {
     ...data,
     codeBlocks: data.codeBlocks || [],
     notes: data.notes || "",
+    archived: false,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -72,23 +64,30 @@ export async function deleteSnippet(id: string) {
   return await deleteDoc(doc(db, COL, id));
 }
 
-// Custom categorieën in Firebase
+export async function archiveSnippet(id: string) {
+  return await updateDoc(doc(db, COL, id), {
+    archived: true,
+    updatedAt: serverTimestamp(),
+  });
+}
+
+export async function restoreSnippet(id: string) {
+  return await updateDoc(doc(db, COL, id), {
+    archived: false,
+    updatedAt: serverTimestamp(),
+  });
+}
+
 export async function loadCustomCats(): Promise<string[]> {
   try {
     const snap = await getDoc(doc(db, SETTINGS_DOC));
-    if (snap.exists()) {
-      return (snap.data().customCats as string[]) || [];
-    }
+    if (snap.exists()) return (snap.data().customCats as string[]) || [];
     return [];
-  } catch {
-    return [];
-  }
+  } catch { return []; }
 }
 
 export async function saveCustomCats(cats: string[]): Promise<void> {
   try {
     await setDoc(doc(db, SETTINGS_DOC), { customCats: cats });
-  } catch (e) {
-    console.error("saveCustomCats error:", e);
-  }
+  } catch (e) { console.error("saveCustomCats error:", e); }
 }

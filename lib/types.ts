@@ -17,6 +17,7 @@ export interface Snippet {
   category: string;
   tags: string[];
   favorite: boolean;
+  archived?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

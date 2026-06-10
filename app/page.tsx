@@ -3,18 +3,16 @@
 import { useState, useEffect } from "react";
 import { Snippet } from "@/lib/types";
 import {
-  listenSnippets,
-  addSnippet,
-  updateSnippet,
-  deleteSnippet,
+  listenSnippets, addSnippet, updateSnippet,
+  deleteSnippet, archiveSnippet, restoreSnippet,
 } from "@/lib/db";
 import dynamic from "next/dynamic";
 
-const ListView = dynamic(() => import("@/components/ListView"), { ssr: false });
+const ListView   = dynamic(() => import("@/components/ListView"),   { ssr: false });
 const DetailView = dynamic(() => import("@/components/DetailView"), { ssr: false });
-const EditView = dynamic(() => import("@/components/EditView"), { ssr: false });
+const EditView   = dynamic(() => import("@/components/EditView"),   { ssr: false });
 
-const VERSION = "07.05";
+const VERSION = "08.06";
 
 type View = "list" | "detail" | "edit" | "new";
 
@@ -28,9 +26,11 @@ export default function Page() {
   const [toast, setToast] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
+  const [scrollY, setScrollY] = useState(0);
 
-  const active = snips.find((s) => s.id === activeId);
-  const lastOpened = snips.find((s) => s.id === lastOpenedId);
+  const active     = snips.find(s => s.id === activeId);
+  const lastOpened = snips.find(s => s.id === lastOpenedId);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -68,35 +68,33 @@ export default function Page() {
     goList();
   };
 
+  const handleArchive = async (id: string) => {
+    await archiveSnippet(id);
+    flash("📦 Gearchiveerd");
+    goList();
+  };
+
+  const handleRestore = async (id: string) => {
+    await restoreSnippet(id);
+    flash("✓ Teruggezet");
+  };
+
   const handleToggleFav = async (id: string, current: boolean) => {
     await updateSnippet(id, { favorite: !current });
   };
 
-  const copyCode = (code: string) => {
-    navigator.clipboard.writeText(code).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2200);
-    });
-  };
-
   const shareSnippet = (snip: Snippet) => {
     const text = snip.title + "\n\n" + snip.code;
-    if (navigator.share) {
-      navigator.share({ title: snip.title, text });
-    } else {
-      navigator.clipboard.writeText(text);
-      flash("✓ Gekopieerd naar klembord");
-    }
+    if (navigator.share) navigator.share({ title: snip.title, text });
+    else { navigator.clipboard.writeText(text); flash("✓ Gekopieerd"); }
   };
 
   const exportSnippet = (snip: Snippet) => {
     const text = "# " + snip.title + "\n\n" + snip.description + "\n\n```\n" + snip.code + "\n```\n\nTags: " + snip.tags?.join(", ");
     const blob = new Blob([text], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = snip.title.replace(/\s+/g, "-") + ".txt";
-    a.click();
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement("a");
+    a.href = url; a.download = snip.title.replace(/\s+/g, "-") + ".txt"; a.click();
     flash("✓ Geëxporteerd");
   };
 
@@ -106,46 +104,38 @@ export default function Page() {
     setShowSheet(false);
   };
 
-  const openSnippet = (id: string) => {
+  const openSnippet = (id: string, currentScrollY: number, currentOpenSections: Record<string, boolean>) => {
+    setScrollY(currentScrollY);
+    setOpenSections(currentOpenSections);
     setActiveId(id);
     setLastOpenedId(id);
     localStorage.setItem("lastOpenedId", id);
     setView("detail");
   };
 
-  const toggleTheme = () =>
-    setTheme(t => t === "dark" ? "light" : "dark");
+  const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
 
   return (
-    <main style={{
-      minHeight: "100vh",
-      background: "var(--bg)",
-      maxWidth: 430,
-      margin: "0 auto",
-      position: "relative",
-    }}>
+    <main style={{ minHeight:"100vh", background:"var(--bg)", maxWidth:430, margin:"0 auto", position:"relative" }}>
       {view === "new" && (
         <EditView snip={null} theme={theme} onSave={handleAdd} onCancel={goList} />
       )}
       {view === "edit" && active && (
         <EditView
-          snip={active}
-          theme={theme}
+          snip={active} theme={theme}
           onSave={(data) => { handleUpdate(active.id!, data); setView("detail"); }}
           onCancel={() => setView("detail")}
         />
       )}
       {view === "detail" && active && (
         <DetailView
-          snip={active}
-          copied={copied}
-          showSheet={showSheet}
-          theme={theme}
+          snip={active} copied={copied} showSheet={showSheet} theme={theme}
           onBack={goList}
           onDots={() => setShowSheet(true)}
           onEdit={() => { setShowSheet(false); setView("edit"); }}
           onDelete={() => { if (window.confirm("Verwijderen?")) handleDelete(active.id!); }}
-          onCopy={() => copyCode(active.code)}
+          onArchive={() => { setShowSheet(false); handleArchive(active.id!); }}
+          onCopy={() => { navigator.clipboard.writeText(active.code); setCopied(true); setTimeout(() => setCopied(false), 2200); }}
           onFav={() => handleToggleFav(active.id!, active.favorite)}
           onShare={() => shareSnippet(active)}
           onExport={() => exportSnippet(active)}
@@ -159,27 +149,22 @@ export default function Page() {
           lastOpened={lastOpened || null}
           search={search}
           theme={theme}
+          savedScrollY={scrollY}
+          savedOpenSections={openSections}
           onSearch={setSearch}
           onOpen={openSnippet}
           onFav={(id, current) => handleToggleFav(id, current)}
           onAdd={() => setView("new")}
           onEdit={(id) => { setActiveId(id); setView("edit"); }}
           onDelete={(id) => handleDelete(id)}
+          onArchive={(id) => handleArchive(id)}
+          onRestore={(id) => handleRestore(id)}
           onToggleTheme={toggleTheme}
           version={VERSION}
         />
       )}
       {toast && (
-        <div style={{
-          position: "fixed", bottom: 96,
-          left: "50%", transform: "translateX(-50%)",
-          background: toast.startsWith("🗑") ? "#ef4444" : "#10b981",
-          color: "#fff", padding: "9px 20px",
-          borderRadius: 20, fontSize: 14,
-          fontWeight: 600, zIndex: 300,
-          whiteSpace: "nowrap",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
-        }}>
+        <div style={{ position:"fixed", bottom:96, left:"50%", transform:"translateX(-50%)", background: toast.startsWith("🗑") ? "#ef4444" : toast.startsWith("📦") ? "#6366f1" : "#10b981", color:"#fff", padding:"9px 20px", borderRadius:20, fontSize:14, fontWeight:600, zIndex:300, whiteSpace:"nowrap", boxShadow:"0 4px 20px rgba(0,0,0,0.3)" }}>
           {toast}
         </div>
       )}

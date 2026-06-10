@@ -7,7 +7,8 @@
   --text3: #484f58;
   --border: #21262d;
   --border2: #30363d;
-  --accent: #f59e0b;
+  --accent: #3b82f6;
+  --accent-dark: #2563eb;
   --green: #10b981;
   --red: #ef4444;
 }
@@ -21,7 +22,8 @@
   --text3: #9198a1;
   --border: #d0d7de;
   --border2: #d0d7de;
-  --accent: #d97706;
+  --accent: #3b82f6;
+  --accent-dark: #2563eb;
   --green: #10b981;
   --red: #ef4444;
 }
