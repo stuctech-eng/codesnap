@@ -24,6 +24,7 @@ const FILE_TEMPLATES = [
   "schema.sql","queries.sql",
   ".gitignore",".eslintrc.json",
   "Dockerfile","requirements.txt",
+  "prompt.md","fix.tsx","hook.ts","util.ts",
 ];
 
 const LANG_COLORS: Record<string,string> = {
@@ -56,6 +57,7 @@ const uid = () => Math.random().toString(36).slice(2, 8);
 interface Props {
   snip: Snippet | null;
   theme: "dark"|"light";
+  forceNew?: boolean;
   onSave: (data: Omit<Snippet,"id">) => void;
   onCancel: () => void;
 }
@@ -63,18 +65,19 @@ interface Props {
 type Field = "title"|"description"|"notes"|null;
 type PopupType = "categorie"|"tags"|"bestand"|null;
 
-export default function EditView({ snip, theme, onSave, onCancel }: Props) {
-  const isNew = !snip?.id;
+export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Props) {
+  const isNew = forceNew || !snip?.id;
+
   const [form, setForm] = useState({
-    title: snip?.title || "",
+    title:       snip?.title || "",
     description: snip?.description || "",
-    code: snip?.code || "",
-    notes: snip?.notes || "",
+    code:        "",
+    notes:       snip?.notes || "",
     snippetType: (snip?.snippetType || "code") as SnippetType,
-    category: snip?.category || ALL_CATS[0],
-    tags: snip?.tags || [] as string[],
-    favorite: snip?.favorite || false,
-    codeBlocks: snip?.codeBlocks || [] as CodeBlock[],
+    category:    snip?.category || ALL_CATS[0],
+    tags:        snip?.tags || [] as string[],
+    favorite:    snip?.favorite || false,
+    codeBlocks:  snip?.codeBlocks || [] as CodeBlock[],
   });
 
   const [activeField, setActiveField] = useState<Field>(null);
@@ -241,11 +244,11 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                       <button style={{ flex:1, display:"flex", alignItems:"center", gap:10, background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", cursor:"pointer", textAlign:"left" }}
                         onClick={() => setEditingBlockId(block.id)}>
                         <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, flexShrink:0, width:16 }}>{index + 1}</div>
-                        <div style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20, background: langColor + "22", color: langColor, flexShrink:0, fontFamily:"monospace" }}>{lang}</div>
+                        <div style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20, background: langColor+"22", color: langColor, flexShrink:0, fontFamily:"monospace" }}>{lang}</div>
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ fontSize:13, color:"var(--accent)", fontWeight:700, fontFamily:"monospace", marginBottom:2 }}>{block.filename}</div>
                           <div style={{ fontSize:12, color:"var(--text3)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                            {block.code ? block.code.split("\n").length + " regels · " + block.code.length + " tekens" : "Leeg — tik om te bewerken"}
+                            {block.code ? block.code.split("\n").length + " regels · " + block.code.length + " tekens" : "Leeg -- tik om te bewerken"}
                           </div>
                         </div>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0 }}><path d="m9 18 6-6-6-6"/></svg>
@@ -299,7 +302,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
             <div style={{ display:"flex", flexWrap:"wrap", gap:6, flex:1 }}>
               {form.tags.length === 0
                 ? <span style={{ fontSize:15, color:"var(--text3)", lineHeight:"24px" }}>Tik om tags te kiezen...</span>
-                : form.tags.map(t => <span key={t} style={{ background:"var(--accent)", color:"#000", padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:700 }}>#{t}</span>)
+                : form.tags.map(t => <span key={t} style={{ background:"var(--accent)", color:"#fff", padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:700 }}>#{t}</span>)
               }
             </div>
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0, marginTop:6, marginLeft:8 }}><path d="m6 9 6 6 6-6"/></svg>
@@ -315,7 +318,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
           </div>
         </button>
 
-        <button style={{ width:"100%", padding:16, background:"var(--accent)", borderRadius:14, border:"none", color:"#000", fontSize:17, fontWeight:700, cursor:"pointer" }} onClick={save}>
+        <button style={{ width:"100%", padding:16, background:"var(--accent)", borderRadius:14, border:"none", color:"#fff", fontSize:17, fontWeight:700, cursor:"pointer" }} onClick={save}>
           {isNew ? "Snippet Opslaan" : "Wijzigingen Opslaan"}
         </button>
       </div>
@@ -327,7 +330,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
           <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }} onClick={e => e.stopPropagation()}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
               <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Bestand hernoemen</span>
-              <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
+              <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer" }}
                 onClick={() => renameBlock(renamingBlock.id, renamingBlock.name)}>Opslaan</button>
             </div>
             <div style={{ padding:"16px" }}>
@@ -350,7 +353,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
           <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }} onClick={e => e.stopPropagation()}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
               <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Bestand kiezen</span>
-              <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
+              <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer" }}
                 onClick={() => setShowPopup(null)}>Annuleer</button>
             </div>
             <div style={{ maxHeight:320, overflowY:"auto" }}>
@@ -362,7 +365,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   <button key={file}
                     style={{ display:"flex", alignItems:"center", gap:12, width:"100%", padding:"12px 16px", background: alreadyAdded ? "var(--bg3)" : "transparent", border:"none", cursor: alreadyAdded ? "default" : "pointer", borderBottom:"1px solid var(--border)", opacity: alreadyAdded ? 0.5 : 1 }}
                     onClick={() => { if (!alreadyAdded) addCodeBlock(file); }}>
-                    <div style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20, background: langColor + "22", color: langColor, flexShrink:0, fontFamily:"monospace", minWidth:36, textAlign:"center" }}>{lang}</div>
+                    <div style={{ fontSize:11, fontWeight:700, padding:"2px 8px", borderRadius:20, background: langColor+"22", color: langColor, flexShrink:0, fontFamily:"monospace", minWidth:36, textAlign:"center" }}>{lang}</div>
                     <span style={{ fontSize:15, color:"var(--text)", fontFamily:"monospace", fontWeight:500, flex:1, textAlign:"left" }}>{file}</span>
                     {alreadyAdded && <span style={{ fontSize:11, color:"var(--text3)" }}>✓</span>}
                   </button>
@@ -376,7 +379,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   onChange={e => setNewFilename(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter" && newFilename.trim()) addCodeBlock(newFilename.trim()); }}
                 />
-                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#000", fontSize:18, fontWeight:700, cursor:"pointer" }}
+                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#fff", fontSize:18, fontWeight:700, cursor:"pointer" }}
                   onClick={() => { if (newFilename.trim()) addCodeBlock(newFilename.trim()); }}>+</button>
               </div>
             </div>
@@ -391,7 +394,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
           <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }} onClick={e => e.stopPropagation()}>
             <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
               <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Categorie kiezen</span>
-              <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
+              <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer" }}
                 onClick={() => setShowPopup(null)}>Klaar</button>
             </div>
             <div style={{ maxHeight:300, overflowY:"auto" }}>
@@ -426,7 +429,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   onChange={e => setNewCat(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") addCustomCat(); }}
                 />
-                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#000", fontSize:18, fontWeight:700, cursor:"pointer" }}
+                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#fff", fontSize:18, fontWeight:700, cursor:"pointer" }}
                   onClick={addCustomCat}>+</button>
               </div>
             </div>
@@ -443,7 +446,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
               <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Tags kiezen</span>
               <div style={{ display:"flex", alignItems:"center", gap:10 }}>
                 {form.tags.length > 0 && <span style={{ fontSize:12, color:"var(--accent)", fontWeight:600 }}>{form.tags.length} geselecteerd</span>}
-                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#000", fontSize:14, fontWeight:700, cursor:"pointer" }}
+                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer" }}
                   onClick={() => setShowPopup(null)}>Klaar</button>
               </div>
             </div>
@@ -482,7 +485,7 @@ export default function EditView({ snip, theme, onSave, onCancel }: Props) {
                   onChange={e => setNewTag(e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") addCustomTag(); }}
                 />
-                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#000", fontSize:18, fontWeight:700, cursor:"pointer", flexShrink:0 }}
+                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#fff", fontSize:18, fontWeight:700, cursor:"pointer", flexShrink:0 }}
                   onClick={addCustomTag}>+</button>
               </div>
             </div>
@@ -515,7 +518,7 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 8px 12px", borderBottom:"1px solid " + (isCode ? "#21262d" : "var(--border)"), background: isCode ? "#161b22" : "var(--bg)", flexShrink:0 }}>
         <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:15, cursor:"pointer", minWidth:55, textAlign:"left", paddingLeft:8 }} onClick={onCancel}>Terug</button>
         <span style={{ fontSize:14, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)", fontFamily: isCode ? "monospace" : "inherit", flex:1, textAlign:"center", padding:"0 4px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{label}</span>
-        <button style={{ background:"var(--accent)", border:"none", borderRadius:8, padding:"6px 10px", color:"#000", fontSize:13, fontWeight:700, cursor:"pointer", marginRight:4, flexShrink:0 }} onClick={() => onDone(text)}>✓</button>
+        <button style={{ background:"var(--accent)", border:"none", borderRadius:8, padding:"6px 10px", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer", marginRight:4, flexShrink:0 }} onClick={() => onDone(text)}>✓</button>
       </div>
       <textarea ref={ref}
         style={{ flex:1, padding:20, fontSize:16, lineHeight: isCode ? 1.7 : 1.6, background: isCode ? "#0d1117" : "var(--bg)", border:"none", outline:"none", color: isCode ? "#d4d4d4" : "var(--text)", fontFamily: isCode ? "'Fira Code','JetBrains Mono',monospace" : "inherit", resize:"none" }}
@@ -528,7 +531,7 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
           <button style={{ background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:10, padding:"8px 14px", color:"var(--text2)", fontSize:13, fontWeight:700, cursor:"pointer" }}
             onClick={pasteFromClipboard}>⎘ Plak</button>
           {isCode && onNextBestand && (
-            <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"8px 14px", color:"#000", fontSize:13, fontWeight:700, cursor:"pointer" }}
+            <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"8px 14px", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}
               onClick={() => onNextBestand(text)}>+ Volgend</button>
           )}
         </div>
