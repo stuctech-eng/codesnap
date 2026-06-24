@@ -4,18 +4,23 @@ import { useState, useMemo, useEffect, useRef } from "react";
 import { Snippet } from "@/lib/types";
 
 const CAT_COLORS: Record<string, string> = {
-  "AI Prompts": "#6366f1",
-  "Snippets":   "#f59e0b",
-  "Config":     "#10b981",
-  "UI":         "#ec4899",
-  "Machines":   "#3b82f6",
-  "Ideeën":     "#8b5cf6",
-  "Bug Fix":    "#ef4444",
+  "AI Prompts": "#a78bfa",
+  "Snippets":   "#fb923c",
+  "Config":     "#34d399",
+  "UI":         "#f472b6",
+  "Machines":   "#60a5fa",
+  "Ideeën":     "#c084fc",
+  "Bug Fix":    "#f87171",
+  "Games":      "#2dd4bf",
+  "Game":       "#2dd4bf",
+  "Les":        "#fbbf24",
+  "Proggie":    "#818cf8",
 };
 
 const DEFAULT_COLORS = [
-  "#3b82f6","#6366f1","#10b981","#ec4899",
-  "#8b5cf6","#ef4444","#06b6d4","#f59e0b",
+  "#60a5fa","#a78bfa","#34d399","#f472b6",
+  "#c084fc","#f87171","#2dd4bf","#fb923c",
+  "#fbbf24","#818cf8","#4ade80","#f9a8d4",
 ];
 
 function getCatColor(cat: string, index: number): string {
@@ -340,9 +345,9 @@ function CatGroup({ label, count, color, icon, isOpen, onToggle, children }: {
   isOpen:boolean; onToggle:()=>void; children?: React.ReactNode;
 }) {
   return (
-    <div style={{ marginBottom:8, borderRadius:12, overflow:"hidden", border:`1px solid ${color}30` }}>
+    <div style={{ marginBottom:6, borderRadius:12, overflow:"hidden", border: isOpen ? `2px solid ${color}40` : `1px solid ${color}25` }}>
       <button
-        style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", background: isOpen ? `${color}12` : `${color}08`, padding:"13px 16px", cursor:"pointer", border:"none", borderBottom: isOpen ? `1px solid ${color}20` : "none" }}
+        style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", background: isOpen ? `${color}10` : `${color}06`, padding:"12px 14px", cursor:"pointer", border:"none", borderBottom: isOpen ? `1px solid ${color}20` : "none" }}
         onClick={onToggle}
       >
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
