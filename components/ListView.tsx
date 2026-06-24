@@ -424,15 +424,6 @@ function SnapRow({ snip, color, index, isLast, onOpen, onFav }: {
   );
 }
 
-function darken(hex: string, amount: number): string {
-  try {
-    const num = parseInt(hex.replace("#",""), 16);
-    const r = Math.max(0, (num >> 16) - amount);
-    const g = Math.max(0, ((num >> 8) & 0xff) - amount);
-    const b = Math.max(0, (num & 0xff) - amount);
-    return "#" + [r,g,b].map(v => v.toString(16).padStart(2,"0")).join("");
-  } catch { return hex; }
-}
 
 function ArchivedRow({ snip, isLast, onOpen, onRestore }: { snip:Snippet; isLast?:boolean; onOpen:()=>void; onRestore:()=>void; }) {
   return (
