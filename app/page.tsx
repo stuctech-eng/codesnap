@@ -53,30 +53,30 @@ export default function Page() {
 
   const handleAdd = async (data: Omit<Snippet, "id">) => {
     await addSnippet(data);
-    flash("✓ Snippet opgeslagen");
+    flash("Snippet opgeslagen");
     setView("list");
   };
 
   const handleUpdate = async (id: string, data: Partial<Snippet>) => {
     await updateSnippet(id, data);
-    flash("✓ Opgeslagen");
+    flash("Opgeslagen");
   };
 
   const handleDelete = async (id: string) => {
     await deleteSnippet(id);
-    flash("🗑 Verwijderd");
+    flash("Verwijderd");
     goList();
   };
 
   const handleArchive = async (id: string) => {
     await archiveSnippet(id);
-    flash("📦 Gearchiveerd");
+    flash("Gearchiveerd");
     goList();
   };
 
   const handleRestore = async (id: string) => {
     await restoreSnippet(id);
-    flash("✓ Teruggezet");
+    flash("Teruggezet");
   };
 
   const handleToggleFav = async (id: string, current: boolean) => {
@@ -86,16 +86,18 @@ export default function Page() {
   const shareSnippet = (snip: Snippet) => {
     const text = snip.title + "\n\n" + snip.code;
     if (navigator.share) navigator.share({ title: snip.title, text });
-    else { navigator.clipboard.writeText(text); flash("✓ Gekopieerd"); }
+    else { navigator.clipboard.writeText(text); flash("Gekopieerd"); }
   };
 
   const exportSnippet = (snip: Snippet) => {
-    const text = "# " + snip.title + "\n\n" + snip.description + "\n\n```\n" + snip.code + "\n```\n\nTags: " + snip.tags?.join(", ");
+    const text = "# " + snip.title + "\n\n" + snip.description;
     const blob = new Blob([text], { type: "text/plain" });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement("a");
-    a.href = url; a.download = snip.title.replace(/\s+/g, "-") + ".txt"; a.click();
-    flash("✓ Geëxporteerd");
+    a.href = url;
+    a.download = snip.title.replace(/\s+/g, "-") + ".txt";
+    a.click();
+    flash("Geexporteerd");
   };
 
   const goList = () => {
@@ -116,7 +118,7 @@ export default function Page() {
   const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
 
   return (
-    <main style={{ minHeight:"100vh", background:"var(--bg)", maxWidth:430, margin:"0 auto", position:"relative" }}>
+    <main style={{ minHeight: "100vh", background: "var(--bg)", maxWidth: 430, margin: "0 auto", position: "relative" }}>
       {view === "new" && (
         <EditView snip={null} theme={theme} onSave={handleAdd} onCancel={goList} />
       )}
@@ -164,7 +166,13 @@ export default function Page() {
         />
       )}
       {toast && (
-        <div style={{ position:"fixed", bottom:96, left:"50%", transform:"translateX(-50%)", background: toast.startsWith("🗑") ? "#ef4444" : toast.startsWith("📦") ? "#6366f1" : "#10b981", color:"#fff", padding:"9px 20px", borderRadius:20, fontSize:14, fontWeight:600, zIndex:300, whiteSpace:"nowrap", boxShadow:"0 4px 20px rgba(0,0,0,0.3)" }}>
+        <div style={{
+          position: "fixed", bottom: 96, left: "50%", transform: "translateX(-50%)",
+          background: toast.includes("Verwijderd") ? "#ef4444" : toast.includes("Gearchiveerd") ? "#6366f1" : "#10b981",
+          color: "#fff", padding: "9px 20px", borderRadius: 20, fontSize: 14,
+          fontWeight: 600, zIndex: 300, whiteSpace: "nowrap",
+          boxShadow: "0 4px 20px rgba(0,0,0,0.3)",
+        }}>
           {toast}
         </div>
       )}
