@@ -3,7 +3,18 @@ import { useState, useRef, useEffect } from "react";
 import { Snippet, SnippetType, CodeBlock } from "@/lib/types";
 import { loadCustomCats, saveCustomCats } from "@/lib/db";
 
-const ALL_CATS = ["AI Prompts","Snippets","Config","UI","Machines","Ideeën"];
+const ALL_CATS = [
+  "AI Prompts",
+  "Apps",
+  "Documentatie",
+  "Bug Fix",
+  "Ideeën",
+  "Config",
+  "Games",
+  "Scripts",
+  "UI",
+  "Code",
+];
 
 const ALL_TAGS = [
   "react","next.js","typescript","javascript",
@@ -28,20 +39,18 @@ const FILE_TEMPLATES = [
 ];
 
 const LANG_COLORS: Record<string,string> = {
-  html:"#e34c26", css:"#264de4", js:"#f7df1e",
-  ts:"#3178c6", tsx:"#3178c6", jsx:"#61dafb",
-  json:"#10b981", sql:"#336791", py:"#3572A5",
-  md:"#6b7280", env:"#ef4444", sh:"#89e051",
-  code:"#8b949e",
+  html:"#e34c26",css:"#264de4",js:"#f7df1e",
+  ts:"#3178c6",tsx:"#3178c6",jsx:"#61dafb",
+  json:"#10b981",sql:"#336791",py:"#3572A5",
+  md:"#6b7280",env:"#ef4444",sh:"#89e051",code:"#8b949e",
 };
 
 function getLang(filename: string): string {
   const ext = filename.split(".").pop()?.toLowerCase() || "";
   const map: Record<string,string> = {
-    html:"html", css:"css", js:"js", ts:"ts",
-    tsx:"tsx", jsx:"jsx", json:"json", sql:"sql",
-    py:"python", md:"md", env:"env", sh:"bash",
-    code:"code",
+    html:"html",css:"css",js:"js",ts:"ts",tsx:"tsx",
+    jsx:"jsx",json:"json",sql:"sql",py:"python",
+    md:"md",env:"env",sh:"bash",code:"code",
   };
   return map[ext] || ext || "code";
 }
@@ -89,9 +98,7 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
   const [newFilename, setNewFilename] = useState("");
   const [customCats, setCustomCats] = useState<string[]>([]);
 
-  useEffect(() => {
-    loadCustomCats().then(cats => setCustomCats(cats));
-  }, []);
+  useEffect(() => { loadCustomCats().then(cats => setCustomCats(cats)); }, []);
 
   const set = (k: string, v: unknown) => setForm(f => ({ ...f, [k]: v }));
 
@@ -185,9 +192,9 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
     }
   }
 
-  const allCats = [...ALL_CATS, ...customCats];
+  const allCats = [...ALL_CATS, ...customCats.filter(c => !ALL_CATS.includes(c))];
 
-  const FieldRow = ({ label, field, preview }: { label: string; field: Field; preview: string; }) => (
+  const FieldRow = ({ label, field, preview }: { label: string; field: Field; preview: string }) => (
     <button
       style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"13px 14px", width:"100%", cursor:"pointer", marginBottom:12, boxSizing:"border-box", textAlign:"left" }}
       onClick={() => setActiveField(field)}
@@ -217,7 +224,7 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
         <FieldRow label="BESCHRIJVING" field="description" preview={form.description} />
         <FieldRow label="NOTITIES" field="notes" preview={form.notes ? form.notes.slice(0,60) + (form.notes.length > 60 ? "..." : "") : ""} />
 
-        {/* CODE BLOKKEN */}
+        {/* CODE */}
         <div style={{ marginBottom:16 }}>
           <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:8, paddingLeft:2 }}>
             CODE {form.codeBlocks.length > 0 && <span style={{ color:"var(--accent)" }}>· {form.codeBlocks.length} {form.codeBlocks.length === 1 ? "bestand" : "bestanden"}</span>}
@@ -225,9 +232,7 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
           {form.codeBlocks.length === 0 ? (
             <button style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:10, width:"100%", padding:"20px", borderRadius:12, border:"1px dashed var(--border2)", background:"transparent", cursor:"pointer" }}
               onClick={() => setShowPopup("bestand")}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
-                <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-              </svg>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
               <div style={{ textAlign:"left" }}>
                 <div style={{ fontSize:15, color:"var(--accent)", fontWeight:700 }}>Bestand toevoegen</div>
                 <div style={{ fontSize:12, color:"var(--text3)", marginTop:2 }}>Tik om code blok te starten</div>
@@ -248,7 +253,7 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
                         <div style={{ flex:1, minWidth:0 }}>
                           <div style={{ fontSize:13, color:"var(--accent)", fontWeight:700, fontFamily:"monospace", marginBottom:2 }}>{block.filename}</div>
                           <div style={{ fontSize:12, color:"var(--text3)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                            {block.code ? block.code.split("\n").length + " regels · " + block.code.length + " tekens" : "Leeg -- tik om te bewerken"}
+                            {block.code ? block.code.split("\n").length + " regels" : "Leeg — tik om te bewerken"}
                           </div>
                         </div>
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0 }}><path d="m9 18 6-6-6-6"/></svg>
@@ -262,9 +267,7 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
                       </button>
                       <button style={{ width:40, borderRadius:12, background:"var(--red)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
                         onClick={() => deleteBlock(block.id)}>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round">
-                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                       </button>
                     </div>
                   );
@@ -272,9 +275,7 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
               </div>
               <button style={{ display:"flex", alignItems:"center", justifyContent:"center", gap:8, width:"100%", padding:"11px", borderRadius:12, border:"1px dashed var(--border2)", background:"transparent", color:"var(--accent)", fontSize:13, fontWeight:700, cursor:"pointer" }}
                 onClick={() => setShowPopup("bestand")}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
                 Bestand toevoegen
               </button>
             </>
@@ -340,7 +341,6 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
                 onChange={e => setRenamingBlock({ ...renamingBlock, name: e.target.value })}
                 onKeyDown={e => { if (e.key === "Enter") renameBlock(renamingBlock.id, renamingBlock.name); }}
               />
-              <p style={{ fontSize:12, color:"var(--text3)", margin:"8px 0 0" }}>Bijv: index.html, style.css, app.tsx</p>
             </div>
           </div>
         </div>
@@ -397,25 +397,23 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
               <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer" }}
                 onClick={() => setShowPopup(null)}>Klaar</button>
             </div>
-            <div style={{ maxHeight:300, overflowY:"auto" }}>
+            <div style={{ maxHeight:360, overflowY:"auto" }}>
               {allCats.map(cat => (
                 <button key={cat}
-                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"14px 16px", background: form.category===cat ? "var(--bg3)" : "transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"14px 16px", background: form.category === cat ? "var(--bg3)" : "transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
                   onClick={() => { set("category", cat); setShowPopup(null); }}>
                   <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-                    <div style={{ width:8, height:8, borderRadius:"50%", background: form.category===cat ? "var(--accent)" : "var(--border2)", flexShrink:0 }} />
-                    <span style={{ fontSize:15, color:"var(--text)", fontWeight: form.category===cat ? 700 : 400 }}>{cat}</span>
+                    <div style={{ width:8, height:8, borderRadius:"50%", background: form.category === cat ? "var(--accent)" : "var(--border2)", flexShrink:0 }} />
+                    <span style={{ fontSize:15, color:"var(--text)", fontWeight: form.category === cat ? 700 : 400 }}>{cat}</span>
                   </div>
                   <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                    {form.category===cat && (
+                    {form.category === cat && (
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
                     )}
-                    {customCats.includes(cat) && (
+                    {!ALL_CATS.includes(cat) && (
                       <button style={{ background:"var(--red)", border:"none", borderRadius:"50%", width:22, height:22, display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0 }}
                         onClick={e => { e.stopPropagation(); deleteCustomCat(cat); }}>
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round">
-                          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-                        </svg>
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                       </button>
                     )}
                   </div>
@@ -518,7 +516,7 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
       <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 8px 12px", borderBottom:"1px solid " + (isCode ? "#21262d" : "var(--border)"), background: isCode ? "#161b22" : "var(--bg)", flexShrink:0 }}>
         <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:15, cursor:"pointer", minWidth:55, textAlign:"left", paddingLeft:8 }} onClick={onCancel}>Terug</button>
         <span style={{ fontSize:14, fontWeight:600, color: isCode ? "#e6edf3" : "var(--text)", fontFamily: isCode ? "monospace" : "inherit", flex:1, textAlign:"center", padding:"0 4px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{label}</span>
-        <button style={{ background:"var(--accent)", border:"none", borderRadius:8, padding:"6px 10px", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer", marginRight:4, flexShrink:0 }} onClick={() => onDone(text)}>✓</button>
+        <button style={{ background:"var(--accent)", border:"none", borderRadius:8, padding:"6px 10px", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer", marginRight:4, flexShrink:0 }} onClick={() => onDone(text)}>Klaar</button>
       </div>
       <textarea ref={ref}
         style={{ flex:1, padding:20, fontSize:16, lineHeight: isCode ? 1.7 : 1.6, background: isCode ? "#0d1117" : "var(--bg)", border:"none", outline:"none", color: isCode ? "#d4d4d4" : "var(--text)", fontFamily: isCode ? "'Fira Code','JetBrains Mono',monospace" : "inherit", resize:"none" }}
@@ -529,7 +527,7 @@ function FullScreenField({ label, value, isCode, onDone, onCancel, onNextBestand
         <span style={{ fontSize:12, color: isCode ? "#484f58" : "var(--text3)", flexShrink:0 }}>{text.split("\n").length} regels · {text.length} tekens</span>
         <div style={{ display:"flex", gap:8 }}>
           <button style={{ background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:10, padding:"8px 14px", color:"var(--text2)", fontSize:13, fontWeight:700, cursor:"pointer" }}
-            onClick={pasteFromClipboard}>⎘ Plak</button>
+            onClick={pasteFromClipboard}>Plak</button>
           {isCode && onNextBestand && (
             <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"8px 14px", color:"#fff", fontSize:13, fontWeight:700, cursor:"pointer" }}
               onClick={() => onNextBestand(text)}>+ Volgend</button>

@@ -12,7 +12,7 @@ const ListView   = dynamic(() => import("@/components/ListView"),   { ssr: false
 const DetailView = dynamic(() => import("@/components/DetailView"), { ssr: false });
 const EditView   = dynamic(() => import("@/components/EditView"),   { ssr: false });
 
-const VERSION = "08.06";
+const VERSION = "09.06";
 
 type View = "list" | "detail" | "edit" | "new";
 
