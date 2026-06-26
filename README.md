@@ -2,9 +2,9 @@
 
 > Persoonlijke snippet bibliotheek — iPhone-first webapp
 
-**Live:** https://codesnap-mu.vercel.app  
-**Repo:** https://github.com/stuctech-eng/codesnap  
-**Versie:** v08.06
+**Live:** https://codesnap-mu.vercel.app
+**Repo:** https://github.com/stuctech-eng/codesnap
+**Versie:** v09.06
 
 ---
 
@@ -19,10 +19,9 @@
 7. [URL Auto-fill Systeem](#7-url-auto-fill-systeem)
 8. [iPhone-First Workflow](#8-iphone-first-workflow)
 9. [Bekende Problemen en Oplossingen](#9-bekende-problemen-en-oplossingen)
-10. [UI Redesign Plan v2](#10-ui-redesign-plan-v2)
-11. [Roadmap](#11-roadmap)
-12. [Changelog](#12-changelog)
-13. [Development Guidelines](#13-development-guidelines)
+10. [Roadmap](#10-roadmap)
+11. [Changelog](#11-changelog)
+12. [Development Guidelines](#12-development-guidelines)
 
 ---
 
@@ -32,14 +31,9 @@ CodeSnap is een persoonlijke snippet bibliotheek webapp gebouwd voor iPhone-firs
 
 **Doel:**
 - Code snippets, AI prompts en instructies opslaan
-- Snel terugvinden via categorieën en tags
-- Kopiëren naar klembord voor gebruik in andere apps
+- Snel terugvinden via categorieen en tags
+- Kopieren naar klembord voor gebruik in andere apps
 - Automatisch importeren via URL parameters
-
-**Niet bedoeld voor:**
-- Publiek delen van snippets
-- Samenwerking met anderen
-- Code uitvoeren of testen
 
 ---
 
@@ -53,7 +47,6 @@ CodeSnap is een persoonlijke snippet bibliotheek webapp gebouwd voor iPhone-firs
 | Git client | Working Copy (iPhone) |
 | Taal | TypeScript |
 | Styling | Inline styles + CSS variabelen |
-| Auth | Geen (privé gebruik) |
 
 **Firebase config:** `.env.local`
 
@@ -73,24 +66,24 @@ NEXT_PUBLIC_FIREBASE_APP_ID
 ```
 codesnap/
 ├── app/
-│   ├── globals.css          → CSS variabelen, thema
-│   ├── layout.tsx           → HTML wrapper, viewport meta
-│   ├── page.tsx             → Routing en view state
+│   ├── globals.css          CSS variabelen, thema
+│   ├── layout.tsx           HTML wrapper, viewport meta
+│   ├── page.tsx             Routing en view state
 │   └── add/
-│       └── page.tsx         → URL auto-fill route
+│       └── page.tsx         URL auto-fill route
 │
 ├── components/
-│   ├── ListView.tsx         → Snippet lijst met categorieën
-│   ├── DetailView.tsx       → Snippet bekijken
-│   └── EditView.tsx         → Snippet aanmaken/bewerken
+│   ├── ListView.tsx         Snippet lijst met categorieen
+│   ├── DetailView.tsx       Snippet bekijken
+│   └── EditView.tsx         Snippet aanmaken/bewerken
 │
 ├── lib/
-│   ├── types.ts             → TypeScript interfaces
-│   ├── firebase.ts          → Firebase initialisatie
-│   └── db.ts                → Firestore CRUD functies
+│   ├── types.ts             TypeScript interfaces
+│   ├── firebase.ts          Firebase initialisatie
+│   └── db.ts                Firestore CRUD functies
 │
 └── public/
-    └── apple-touch-icon.png → PWA icoon
+    └── apple-touch-icon.png PWA icoon
 ```
 
 ---
@@ -102,19 +95,19 @@ codesnap/
 `app/page.tsx` beheert de volledige view state:
 
 ```
-view = "list"   → ListView
-view = "detail" → DetailView
-view = "edit"   → EditView (bestaande snippet)
-view = "new"    → EditView (leeg formulier)
+view = "list"   ListView
+view = "detail" DetailView
+view = "edit"   EditView (bestaande snippet)
+view = "new"    EditView (leeg formulier)
 ```
 
 ### Data flow
 
 ```
 Firebase Firestore
-    ↓ listenSnippets() — realtime listener
-app/page.tsx — state management
-    ↓ props
+    listenSnippets() realtime listener
+app/page.tsx state management
+    props
 ListView / DetailView / EditView
 ```
 
@@ -122,15 +115,9 @@ ListView / DetailView / EditView
 
 Bij openen van een snippet wordt bewaard:
 - Scroll positie van de lijst
-- Welke categorieën open stonden
+- Welke categorieen open stonden
 
 Bij terugkeren wordt exact dezelfde staat hersteld.
-
-### Thema
-
-CSS variabelen via `data-theme` attribuut op `<html>`:
-- `data-theme="dark"` → donker thema (standaard)
-- `data-theme="light"` → licht thema
 
 ---
 
@@ -138,72 +125,54 @@ CSS variabelen via `data-theme` attribuut op `<html>`:
 
 ```typescript
 interface Snippet {
-  id?: string           // Firebase document ID
-  title: string         // Naam van de snippet
-  description: string   // Uitleg wat het doet
-  code: string          // Legacy veld (oud)
-  codeBlocks: [{        // Meerdere bestanden
+  id?: string
+  title: string
+  description: string
+  code: string
+  codeBlocks: [{
     id: string
-    filename: string    // bijv. index.html
+    filename: string
     code: string
   }]
-  notes?: string        // Extra context
-  snippetType:          // Auto-gedetecteerd
-    "code" |            // → heeft code blokken
-    "prompt" |          // → alleen beschrijving
-    "instructie"        // → beschrijving + code
-  category: string      // Één categorie
-  tags: string[]        // Meerdere tags
-  favorite: boolean     // Gemarkeerd als favoriet
-  archived: boolean     // Gearchiveerd (niet verwijderd)
-  createdAt?: string    // Firebase timestamp
-  updatedAt?: string    // Firebase timestamp
+  notes?: string
+  snippetType: "code" | "prompt" | "instructie"
+  category: string
+  tags: string[]
+  favorite: boolean
+  archived: boolean
+  createdAt?: string
+  updatedAt?: string
 }
-```
-
-### Type detectie (automatisch)
-
-```
-Geen code + beschrijving  → prompt
-Code + beschrijving       → instructie
-Alleen code               → code
 ```
 
 ---
 
 ## 6. Categorie Systeem
 
-### Standaard categorieën
+Categorieen zijn hardcoded in `components/ListView.tsx` via `CAT_CONFIG`.
 
 | Icoon | Naam | Kleur | Beschrijving |
 |-------|------|-------|--------------|
-| ✨ | AI Prompts | #a78bfa | Prompts en templates |
-| ⚙️ | Config | #34d399 | Instellingen en configuratie |
-| 🐛 | Bug Fix | #f87171 | Oplossingen en fixes |
-| 💡 | Ideeën | #c084fc | Concepten en brainstorms |
-| 🎨 | UI | #f472b6 | Interface en design |
-| 📱 | Apps | #818cf8 | Applicaties en projecten |
-| 🔧 | Snippets | #fb923c | Herbruikbare code |
-| 🖥️ | Scripts | #60a5fa | Automatisering en tools |
-| 📚 | Documentatie | #fbbf24 | Uitleg en handleidingen |
-| 🎮 | Games | #2dd4bf | Game logica en scripts |
+| AI Prompts | #a78bfa | Prompts en templates |
+| Apps | #818cf8 | Applicaties en projecten |
+| Documentatie | #fbbf24 | Uitleg en handleidingen |
+| Bug Fix | #f87171 | Oplossingen en fixes |
+| Ideeen | #c084fc | Concepten en brainstorms |
+| Config | #34d399 | Instellingen en configuratie |
+| Games | #2dd4bf | Game logica en scripts |
+| Scripts | #60a5fa | Automatisering en tools |
+| UI | #f472b6 | Interface en design |
+| Code | #fb923c | Herbruikbare code |
 
-### Custom categorieën
+### Custom categorieen
 
-Opgeslagen in Firebase: `settings/categories` document
-```
-{ customCats: ["MijnCategorie", ...] }
-```
+Opgeslagen in Firebase: `settings/categories`
 
 ---
 
 ## 7. URL Auto-fill Systeem
 
 Route: `/add`
-
-Wanneer je de URL opent vult CodeSnap automatisch het formulier in.
-
-### URL formaat
 
 ```
 https://codesnap-mu.vercel.app/add
@@ -218,10 +187,9 @@ https://codesnap-mu.vercel.app/add
 ### Regels
 
 - Alle waarden `encodeURIComponent()` encoded
-- `&code=` is optioneel — max 1200 tekens
-- Als code langer is → weglaten uit URL
-- CodeSnap toont dan `📋 Kopieer code naar klembord` knop
-- Gebruiker kopieert code uit chat → plakt in CodeSnap
+- Code langer dan 1200 tekens: weglaten uit URL
+- CodeSnap toont dan clipboard knop
+- Gebruiker kopieert code uit chat en plakt in CodeSnap
 
 ### Workflow met AI
 
@@ -230,22 +198,9 @@ https://codesnap-mu.vercel.app/add
 2. AI bouwt CodeSnap URL
 3. Gebruiker tikt op URL
 4. CodeSnap opent met alles ingevuld
-5. Tik 📋 knop → code naar klembord
-6. Tik code veld → Plak
-7. Snippet Opslaan ✅
-```
-
-### System prompt voor AI
-
-Sla op in CodeSnap als `CodeSnap System Specificatie`:
-
-```
-CodeSnap is mijn persoonlijke snippet webapp op:
-https://codesnap-mu.vercel.app
-
-Genereer altijd een CodeSnap URL onderaan je antwoord.
-Gebruik encodeURIComponent() voor alle waarden.
-Code > 1200 tekens → laat &code= weg.
+5. Tik clipboard knop
+6. Tik code veld, plak
+7. Snippet Opslaan
 ```
 
 ---
@@ -256,36 +211,44 @@ Code > 1200 tekens → laat &code= weg.
 
 ```
 iPhone (Working Copy)
-    ↓ commit + push
+    commit + push
 GitHub (stuctech-eng/codesnap)
-    ↓ auto deploy
+    auto deploy
 Vercel (codesnap-mu.vercel.app)
-    ↓ live
+    live
 iPhone (Safari PWA)
 ```
 
-### PWA installatie
-
-1. Open `codesnap-mu.vercel.app` in Safari
-2. Tik op Delen → Zet op beginscherm
-3. App opent als native PWA
-
 ### ZIP bestanden
 
-Altijd platte zip met `-j` vlag:
+Zip met mapstructuur via Python:
 
-```bash
-zip -j update.zip bestand1.tsx bestand2.tsx
+```python
+import zipfile
+
+def make_zip(file_map, output_path):
+    with zipfile.ZipFile(output_path, 'w', zipfile.ZIP_DEFLATED) as zf:
+        for local_path, repo_path in file_map.items():
+            zf.write(local_path, repo_path)
+
+make_zip({
+    '/home/claude/out/ListView.tsx': 'components/ListView.tsx',
+    '/home/claude/out/page.tsx':     'app/page.tsx',
+    '/home/claude/out/globals.css':  'app/globals.css',
+}, 'update.zip')
 ```
 
-Geen mappen in de zip — iPhone pakt anders niet goed uit.
+**Regels:**
+- Geen prefix map
+- Paden beginnen direct bij repo root
+- Correct: `app/page.tsx`
+- Fout: `codesnap/app/page.tsx`
 
 ### iOS Safari beperkingen
 
-- `fontSize` in textarea altijd ≥ 16px (anders zoom)
+- `fontSize` in textarea altijd 16px (anders zoom)
 - `position:fixed` + `overflow:hidden` voor fullscreen views
 - Clipboard API werkt alleen na gebruikersactie
-- `navigator.clipboard.writeText()` niet automatisch bij pagina laden
 
 ---
 
@@ -293,79 +256,17 @@ Geen mappen in de zip — iPhone pakt anders niet goed uit.
 
 | Probleem | Oorzaak | Oplossing |
 |----------|---------|-----------|
-| iOS zoom bij typen | `fontSize < 16px` in textarea | `fontSize: 16` instellen |
-| Viewport verschuift bij toetsenbord | `position:fixed` + iOS Safari | `overflow:hidden` op container |
-| Categorie verdwijnt na aanmaken | State verloren bij herrender | Opgeslagen in Firebase |
-| Zip pakt niet uit op iPhone | Mappen in zip | `zip -j` platte zip gebruiken |
-| Vercel cold start | App slaapt na inactiviteit | PWA eerst openen voor URL |
-| Russian doll effect bij /add | EditView laadt vorige snippet | `forceNew={true}` prop + `code: ""` |
-| Kopieer knop afgesneden | Nav te smal | Kortere tekst + kleinere padding |
+| iOS zoom bij typen | fontSize < 16px | fontSize: 16 |
+| Viewport verschuift | position:fixed iOS | overflow:hidden |
+| Categorie verdwijnt | State verloren | Firebase opslag |
+| Zip pakt niet uit | Mappen in zip | Python zip met mapstructuur |
+| Vercel build faalt | Bash heredoc encoding | Python UTF-8 schrijven |
+| Cold start Vercel | App slaapt | PWA eerst openen |
+| Russian doll /add | EditView laadt vorige | forceNew prop |
 
 ---
 
-## 10. UI Redesign Plan v2
-
-### Huidige status (v08.06)
-
-Functioneel maar visueel verbetering nodig:
-- Categoriekleuren te gelijk aan elkaar
-- Geen iconen per categorie
-- Geen beschrijving onder categorienaam
-- Stats niet zichtbaar op hoofdscherm
-
-### Geplande UI v2
-
-**Stats balk (horizontaal scrollbaar):**
-```
-[📁 35] [⭐ 7] [🕐 12] [🐛 5]
-← swipe voor meer →
-```
-
-**Categorie kaarten:**
-```
-┌────────────────────────────┐
-│ ✨ AI Prompts          12 › │
-│    Prompts en templates     │
-└────────────────────────────┘
-```
-
-**Uitgeklapt met kader:**
-```
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-┃ ⚙️ Config              5 ∨ ┃
-┣━━━━━━━━━━━━━━━━━━━━━━━━━━━━┫
-┃ [AU] Auto Clipboard        ┃
-┃ [BA] BassFlow PRO          ┃
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-```
-
-### Nieuwe categorie structuur
-
-| Oud | Nieuw |
-|-----|-------|
-| Proggie | Apps |
-| Machines | Scripts |
-| Game + Games | Games |
-| Les | Documentatie |
-
-### Implementatie stappen
-
-```
-Stap 1 → Categorieën opschonen in Firebase
-Stap 2 → ListView.tsx rebuild met nieuwe UI
-Stap 3 → Iconen + beschrijvingen per categorie
-Stap 4 → Stats balk implementeren
-Stap 5 → Testen + deployen
-```
-
----
-
-## 11. Roadmap
-
-### Nu bezig
-
-- [ ] UI Redesign v2 (zie sectie 10)
-- [ ] Categorie herstructurering
+## 10. Roadmap
 
 ### Gepland
 
@@ -373,66 +274,61 @@ Stap 5 → Testen + deployen
 - [ ] Zoeken ook in code blokken
 - [ ] Offline werken (PWA cache)
 - [ ] iPhone Share Sheet integratie
-
-### Ideeën
-
-- [ ] Export naar Markdown bestand
-- [ ] Import vanuit bestand
 - [ ] Snippet dupliceren
 
 ---
 
-## 12. Changelog
+## 11. Changelog
+
+### v09.06
+- UI redesign met stats balk
+- Iconen per categorie
+- Beschrijving onder categorienaam
+- Donkerblauwe achtergrond (#0f172a)
+- Witte rand ingeklapt, gekleurde rand uitgeklapt
+- Categorieen hardcoded in CAT_CONFIG
+- Python UTF-8 zip methode
+- Zip met mapstructuur (geen prefix)
 
 ### v08.06
 - Blauw accent thema (#3b82f6)
-- Archief systeem (archiveren + terugzetten)
-- Filter en sorteer (nieuwste/oudste/A-Z)
+- Archief systeem
+- Filter en sorteer
 - Tag filter chips
-- Notities popup in lijst (📝)
-- Datum tonen in About tab
-- Scroll positie bewaard bij terugkeren
-- Categorie blijft open bij terugkeren
-- Kopieer Alles bovenaan DetailView
+- Notities popup in lijst
+- Datum in About tab
+- Scroll positie bewaard
 - URL auto-fill /add route
 - Clipboard knop bij /add
-- Russian doll bug gefixed (forceNew prop)
+- Russian doll bug gefixed
 
 ### v07.05
-- Firebase custom categorieën
-- Bestand hernoemen (potlood knop)
-- Horizontale code tabs in DetailView
-- TYPE selector verwijderd (auto-detectie)
-- iOS Safari zoom fix (fontSize: 16)
-- Viewport fix (overflow:hidden)
-
-### v30.04
-- Stijl B lijst (kaart layout per categorie)
-- Laatst geopend bovenaan
-- Favorieten ingeklapt
-- Scroll naar top bij openen snippet
+- Firebase custom categorieen
+- Bestand hernoemen
+- Horizontale code tabs
+- TYPE selector verwijderd
+- iOS Safari zoom fix
 
 ---
 
-## 13. Development Guidelines
+## 12. Development Guidelines
 
 ### Volledige bestanden
 
-Altijd complete bestanden leveren — nooit losse stukjes.
+Altijd complete bestanden — nooit losse stukjes.
 
 ### Stijl
 
-- Inline styles (geen Tailwind, geen CSS modules)
-- CSS variabelen: `var(--bg)`, `var(--accent)`, etc.
+- Inline styles (geen Tailwind)
+- CSS variabelen: var(--bg), var(--accent)
 - Geen externe UI libraries
-- `fontSize` minimaal 16px in textareas (iOS zoom fix)
+- fontSize minimaal 16px in textareas
 
 ### Firebase
 
 - Single source of truth
-- Realtime listeners via `onSnapshot`
-- Custom settings in `settings/` collectie
-- `serverTimestamp()` voor tijdstempels
+- Realtime listeners via onSnapshot
+- serverTimestamp() voor tijdstempels
 
 ### Versienummer
 
@@ -441,23 +337,14 @@ Handmatig in `app/page.tsx`:
 const VERSION = "DD.MM";
 ```
 
-Bij elke commit datum aanpassen.
+### Bestanden schrijven
 
-### ZIP output
-
-```bash
-# Platte zip — geen mappen
-zip -j naam-update.zip bestand1.tsx bestand2.tsx
-```
-
-### Commit stijl
-
-```
-"Fix iOS zoom textarea"
-"v08.06 blauw archief filter"
-"URL auto-fill add route"
+Altijd via Python met UTF-8 encoding:
+```python
+with open(path, 'w', encoding='utf-8') as f:
+    f.write(content)
 ```
 
 ---
 
-*README bijgehouden door Claude — laatste update: juni 2026*
+*Laatste update: juni 2026*

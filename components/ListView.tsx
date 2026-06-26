@@ -5,20 +5,15 @@ import { Snippet } from "@/lib/types";
 
 const CAT_CONFIG: Record<string, { color: string; icon: string; desc: string }> = {
   "AI Prompts":   { color: "#a78bfa", icon: "✨", desc: "Prompts en templates" },
-  "Config":       { color: "#34d399", icon: "⚙️", desc: "Instellingen en configuratie" },
+  "Apps":         { color: "#818cf8", icon: "📱", desc: "Applicaties en projecten" },
+  "Documentatie": { color: "#fbbf24", icon: "📚", desc: "Uitleg en handleidingen" },
   "Bug Fix":      { color: "#f87171", icon: "🐛", desc: "Oplossingen en fixes" },
   "Ideeën":       { color: "#c084fc", icon: "💡", desc: "Concepten en brainstorms" },
-  "UI":           { color: "#f472b6", icon: "🎨", desc: "Interface en design" },
-  "Apps":         { color: "#818cf8", icon: "📱", desc: "Applicaties en projecten" },
-  "Code":         { color: "#fb923c", icon: "💻", desc: "Herbruikbare code" },
-  "Scripts":      { color: "#60a5fa", icon: "🖥️", desc: "Automatisering en tools" },
-  "Documentatie": { color: "#fbbf24", icon: "📚", desc: "Uitleg en handleidingen" },
+  "Config":       { color: "#34d399", icon: "⚙️", desc: "Instellingen en configuratie" },
   "Games":        { color: "#2dd4bf", icon: "🎮", desc: "Game logica en scripts" },
-  "Snippets":     { color: "#fb923c", icon: "🔧", desc: "Herbruikbare code" },
-  "Machines":     { color: "#60a5fa", icon: "🖥️", desc: "Scripts en automatisering" },
-  "Proggie":      { color: "#818cf8", icon: "📱", desc: "Applicaties en projecten" },
-  "Les":          { color: "#fbbf24", icon: "📚", desc: "Uitleg en handleidingen" },
-  "Game":         { color: "#2dd4bf", icon: "🎮", desc: "Game logica en scripts" },
+  "Scripts":      { color: "#60a5fa", icon: "🖥️", desc: "Automatisering en tools" },
+  "UI":           { color: "#f472b6", icon: "🎨", desc: "Interface en design" },
+  "Code":         { color: "#fb923c", icon: "💻", desc: "Herbruikbare code" },
 };
 
 const DEFAULT_COLORS = ["#60a5fa","#a78bfa","#34d399","#f472b6","#c084fc","#f87171","#2dd4bf","#fb923c","#fbbf24","#818cf8"];
@@ -111,7 +106,7 @@ export default function ListView({
     return snips;
   }, [activeSnips, search, sort, activeTags, activeFilter]);
 
-  const categories = Array.from(new Set(processed.map(s => s.category))).filter(Boolean);
+  const categories = Array.from(new Set(activeSnips.map(s => s.category))).filter(Boolean);
   const isFiltering = activeTags.length > 0 || sort !== "nieuwste" || activeFilter !== null;
 
   const catIndexMap: Record<string, number> = {};
@@ -159,14 +154,14 @@ export default function ListView({
           </button>
         </div>
 
-        {/* STATS — horizontaal scrollbaar */}
+        {/* STATS */}
         <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 2 }}>
           {[
             { key: null, icon: "📁", num: activeSnips.length, label: "Totaal" },
             { key: "favorieten", icon: "⭐", num: favorites.length, label: "Favorieten" },
           ].map(stat => (
             <button key={stat.label}
-              style={{ flexShrink: 0, background: activeFilter === stat.key ? "var(--accent)20" : "var(--bg2)", border: "1px solid " + (activeFilter === stat.key ? "var(--accent)40" : "var(--border2)"), borderRadius: 14, padding: "10px 14px", cursor: "pointer", textAlign: "center", minWidth: 80 }}
+              style={{ flexShrink: 0, background: activeFilter === stat.key ? "var(--accent)20" : "var(--bg2)", border: "1px solid " + (activeFilter === stat.key ? "var(--accent)50" : "rgba(255,255,255,0.06)"), borderRadius: 14, padding: "10px 14px", cursor: "pointer", textAlign: "center", minWidth: 80 }}
               onClick={() => setActiveFilter(prev => prev === stat.key ? null : stat.key)}
             >
               <div style={{ fontSize: 18, marginBottom: 3 }}>{stat.icon}</div>
@@ -179,8 +174,8 @@ export default function ListView({
             const count = activeSnips.filter(s => s.category === cat).length;
             return (
               <button key={cat}
-                style={{ flexShrink: 0, background: "var(--bg2)", border: "1px solid var(--border2)", borderRadius: 14, padding: "10px 14px", cursor: "pointer", textAlign: "center", minWidth: 80 }}
-                onClick={() => { setOpenSections(prev => ({ ...prev, [cat]: true })); if (scrollRef.current) scrollRef.current.scrollTop = 0; }}
+                style={{ flexShrink: 0, background: "var(--bg2)", border: "1px solid rgba(255,255,255,0.06)", borderRadius: 14, padding: "10px 14px", cursor: "pointer", textAlign: "center", minWidth: 80 }}
+                onClick={() => { setOpenSections(prev => ({ ...prev, [cat]: true })); if (scrollRef.current) scrollRef.current.scrollTop = 999; }}
               >
                 <div style={{ fontSize: 18, marginBottom: 3 }}>{cfg.icon}</div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: cfg.color, lineHeight: 1 }}>{count}</div>
@@ -190,7 +185,7 @@ export default function ListView({
           })}
         </div>
 
-        {/* FILTER BALK */}
+        {/* FILTER */}
         {showFilter && (
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 10 }}>
             <div style={{ display: "flex", gap: 6 }}>
@@ -226,7 +221,6 @@ export default function ListView({
       {/* LIJST */}
       <div ref={scrollRef} style={{ flex: 1, overflowY: "auto", padding: "12px 12px 110px" }}>
 
-        {/* ZOEKRESULTATEN */}
         {(search || activeFilter) && (
           <>
             <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8, paddingLeft: 4 }}>
@@ -244,14 +238,13 @@ export default function ListView({
 
         {!search && !activeFilter && (
           <>
-            {/* LAATSTE GEOPEND */}
             {lastOpened && !lastOpened.archived && (
               <>
                 <div style={{ fontSize: 11, color: "var(--text3)", fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8, paddingLeft: 4 }}>
                   Laatst geopend
                 </div>
                 <div
-                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--bg2)", borderRadius: 12, marginBottom: 14, border: "1px solid var(--border2)", cursor: "pointer" }}
+                  style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "var(--bg2)", borderRadius: 12, marginBottom: 14, border: "1px solid rgba(255,255,255,0.06)", cursor: "pointer" }}
                   onClick={() => handleOpen(lastOpened.id!)}
                 >
                   <div style={{ width: 36, height: 36, borderRadius: 9, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 800, color: "#fff", background: getCatConfig(lastOpened.category, 0).color, flexShrink: 0 }}>
@@ -266,7 +259,6 @@ export default function ListView({
               </>
             )}
 
-            {/* CATEGORIEËN */}
             {categories.map((cat, index) => {
               const catSnips = processed.filter(s => s.category === cat);
               const cfg = getCatConfig(cat, index);
@@ -280,7 +272,6 @@ export default function ListView({
               );
             })}
 
-            {/* ARCHIEF */}
             {archivedSnips.length > 0 && (
               <CatGroup label="Archief" desc="Gearchiveerde snippets" count={archivedSnips.length} color="#484f58" icon="📦" isOpen={!!openSections["archief"]} onToggle={() => toggleSection("archief")}>
                 {archivedSnips.map((s, i) => (
@@ -289,7 +280,6 @@ export default function ListView({
               </CatGroup>
             )}
 
-            {/* LEEG */}
             {activeSnips.length === 0 && (
               <div style={{ padding: "48px 20px", textAlign: "center" }}>
                 <div style={{ fontSize: 40, marginBottom: 12 }}>✂️</div>
@@ -321,12 +311,19 @@ function CatGroup({ label, desc, count, color, icon, isOpen, onToggle, children 
   isOpen: boolean; onToggle: () => void; children?: React.ReactNode;
 }) {
   return (
-    <div style={{ marginBottom: 6, borderRadius: 12, overflow: "hidden", border: isOpen ? "2px solid " + color + "50" : "1px solid " + color + "25" }}>
+    <div style={{
+      marginBottom: 6,
+      borderRadius: 12,
+      overflow: "hidden",
+      border: isOpen
+        ? "2px solid " + color + "50"
+        : "1px solid rgba(255,255,255,0.07)",
+    }}>
       <button
-        style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", background: isOpen ? color + "12" : color + "06", padding: "11px 14px", cursor: "pointer", border: "none", borderBottom: isOpen ? "1px solid " + color + "20" : "none" }}
+        style={{ display: "flex", alignItems: "center", gap: 12, width: "100%", background: isOpen ? color + "10" : color + "06", padding: "11px 14px", cursor: "pointer", border: "none", borderBottom: isOpen ? "1px solid " + color + "20" : "none" }}
         onClick={onToggle}
       >
-        <div style={{ width: 38, height: 38, borderRadius: 10, background: color + "22", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>
+        <div style={{ width: 38, height: 38, borderRadius: 10, background: color + "20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17, flexShrink: 0 }}>
           {icon}
         </div>
         <div style={{ flex: 1, textAlign: "left", minWidth: 0 }}>
