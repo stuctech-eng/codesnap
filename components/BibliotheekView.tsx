@@ -34,10 +34,11 @@ interface Props {
   onBack: () => void;
   onOpenSnippet: (id: string) => void;
   onOpenCategory: (cat: string) => void;
+  onOpenProjectList: (cat: string) => void; // Fase H6 — nieuw
   onFav: (id: string, cur: boolean) => void;
 }
 
-export default function BibliotheekView({ allSnips, onBack, onOpenSnippet, onOpenCategory, onFav }: Props) {
+export default function BibliotheekView({ allSnips, onBack, onOpenSnippet, onOpenCategory, onOpenProjectList, onFav }: Props) {
   const [tab, setTab] = useState<FilterTab>("alle");
   const [sort, setSort] = useState<SortType>("nieuwste");
   const [showSort, setShowSort] = useState(false);
@@ -45,6 +46,16 @@ export default function BibliotheekView({ allSnips, onBack, onOpenSnippet, onOpe
   const activeSnips = useMemo(() => allSnips.filter(s => !s.deletedAt), [allSnips]);
   const favorites = useMemo(() => activeSnips.filter(s => s.favorite), [activeSnips]);
   const categories = useMemo(() => Array.from(new Set(activeSnips.map(s => s.category))).filter(Boolean).sort(), [activeSnips]);
+
+  // Fase H6 — per categorie bepalen of drill-down naar Project-niveau
+  // relevant is. Alleen als er minstens één snippet in die categorie
+  // een project-waarde heeft; anders gedraagt de categorie zich
+  // exact zoals voorheen (direct naar CategoryView).
+  const categoriesWithProjects = useMemo(() => {
+    const set = new Set<string>();
+    activeSnips.forEach(s => { if (s.project) set.add(s.category); });
+    return set;
+  }, [activeSnips]);
 
   const list = useMemo(() => {
     let items = tab === "favorieten" ? favorites : activeSnips;
@@ -114,8 +125,9 @@ export default function BibliotheekView({ allSnips, onBack, onOpenSnippet, onOpe
           ) : (
             categories.map(cat => {
               const count = activeSnips.filter(s => s.category === cat).length;
+              const hasProjects = categoriesWithProjects.has(cat);
               return (
-                <div key={cat} onClick={() => onOpenCategory(cat)}
+                <div key={cat} onClick={() => hasProjects ? onOpenProjectList(cat) : onOpenCategory(cat)}
                   style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 4px", borderBottom: "1px solid #151D31", cursor: "pointer" }}
                 >
                   <div>

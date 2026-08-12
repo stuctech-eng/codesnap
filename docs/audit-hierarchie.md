@@ -426,7 +426,7 @@ die er gebruik van maken.
 | H3 — Routing: returnStack | ✅ Afgerond (v12.04) |
 | H4 — ProjectListView + ComponentListView | ✅ Afgerond (v12.05) |
 | H5 — Breadcrumb-component | ✅ Afgerond (v12.06) |
-| H6 — Contextuele drill-down in Bibliotheek | ⏳ Volgende |
+| H6 — Contextuele drill-down in Bibliotheek | ✅ Afgerond (v12.08) |
 
 **Fase H1 details:**
 - `lib/types.ts` — `project?: string` en `component?: string`
@@ -437,6 +437,33 @@ die er gebruik van maken.
   beide velden
 - App-gedrag na deze fase: onveranderd zichtbaar — nog geen UI om
   deze velden in te vullen of te gebruiken
+
+**Fase H6 details — LAATSTE FASE, plan H1-H6 hiermee compleet:**
+- `components/BibliotheekView.tsx` — nieuwe `onOpenProjectList`-prop,
+  plus `categoriesWithProjects`: een Set die per categorie bepaalt of
+  er minstens één snippet met een `project`-waarde in zit
+- Categorieën-tab: tik op categorie gaat nu naar `onOpenProjectList`
+  ALLEEN als die categorie projecten heeft; anders (zoals altijd)
+  naar `onOpenCategory` — de exacte contextuele regel uit
+  sectie 4.2, nu daadwerkelijk gekoppeld
+- `app/page.tsx` — bestaande `openProjectList`-functie (al gebouwd
+  in Fase H4, tot nu toe ongebruikt) wordt nu doorgegeven
+- Gesimuleerd vóór levering: categorie zonder projectgebruik (bijv.
+  "Bug Fix") gedraagt zich exact als voorheen; categorie met
+  projectgebruik (bijv. "Apps") gaat nu naar het Project-niveau
+
+**Hiermee is de volledige hiërarchische Bibliotheek-uitbreiding
+(Categorie → Project → Onderdeel → Snippet) functioneel compleet:**
+```
+Bibliotheek → Categorieën-tab → tik "Apps" (heeft projecten)
+  → Project-niveau: CoachOS, CodeSync, ORBIT
+    → tik "CoachOS" → Component-niveau: Recovery, Home, ...
+      → tik "Recovery" → platte snippet-lijst
+        → tik snippet → Detail
+
+Bibliotheek → Categorieën-tab → tik "Bug Fix" (geen projecten)
+  → direct naar CategoryView, zoals altijd — ongewijzigd
+```
 
 **Fase H5 details:**
 - `components/Breadcrumb.tsx` (nieuw) — kleine, herbruikbare
@@ -572,5 +599,26 @@ faalde. Zie onderstaande tabel.
 
 ---
 
+## 11. Plan afgerond
+
+Alle zes fasen (H1 t/m H6) zijn voltooid en gesimuleerd/getest
+vóór levering. De hiërarchische Bibliotheek-structuur uit dit
+document is nu volledig geïmplementeerd in productie (v12.08).
+
+**Bekende, bewuste beperkingen (geen bugs, ontwerpkeuzes):**
+- Geen autocomplete op Project/Onderdeel-velden in EditView —
+  gebruiker typt vrij, geen suggesties uit bestaande waarden
+  (zie sectie 4.3: "geen blokkerende vereiste voor de eerste versie")
+- `DrillDownView`'s eigen terugknop is 1-staps (via `popView`); de
+  volledige tikbare breadcrumb zit alleen op het Component-niveau
+
+Vervolgstappen (indien gewenst, niet gepland als aparte fase):
+- Autocomplete/suggesties voor Project/Onderdeel op basis van al
+  gebruikte waarden binnen dezelfde categorie (zelfde patroon als
+  bestaande `customCats`)
+- Breadcrumb ook op Project-niveau tonen
+
+---
+
 *Codebase-verificatie en implementatieplan toegevoegd: augustus 2026.
-Fase H1 t/m H5 afgerond. Volgende stap: Fase H6 na expliciete "go".**
+Fase H1 t/m H6 volledig afgerond (v12.08). Plan gesloten.**

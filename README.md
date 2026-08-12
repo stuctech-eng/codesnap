@@ -4,11 +4,12 @@
 
 **Live:** https://codesnap-mu.vercel.app
 **Repo:** https://github.com/stuctech-eng/codesnap
-**Versie:** v12.06
+**Versie:** v12.08
 **Actief ontwerp:** Design Baseline v2.0 — volledig geïmplementeerd
-**Actieve uitbreiding:** Hiërarchische Bibliotheek (Categorie → Project
-→ Onderdeel), Fase H1-H5 afgerond, Fase H6 volgende — zie
-docs/audit-hierarchie.md
+**Hiërarchische Bibliotheek:** Categorie → Project → Onderdeel →
+Snippet, Fase H1-H6 volledig afgerond — zie docs/audit-hierarchie.md
+**Beveiliging:** Firestore Rules vereisen authenticatie (anonieme
+Firebase Auth), .env.local niet meer in de repo
 
 ---
 

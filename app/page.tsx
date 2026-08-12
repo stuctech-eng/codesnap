@@ -19,7 +19,7 @@ const DrillDownView   = dynamic(() => import("@/components/DrillDownView"),   { 
 const Breadcrumb       = dynamic(() => import("@/components/Breadcrumb"),      { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "12.07";
+const VERSION = "12.08";
 
 type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "project" | "component" | "detail" | "edit" | "new";
 
@@ -236,6 +236,7 @@ export default function Page() {
           onBack={goHome}
           onOpenSnippet={openSnippet}
           onOpenCategory={openCategory}
+          onOpenProjectList={openProjectList}
           onFav={(id, current) => handleToggleFav(id, current)}
         />
       )}
