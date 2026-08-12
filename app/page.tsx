@@ -9,16 +9,17 @@ import {
 import dynamic from "next/dynamic";
 
 const ListView   = dynamic(() => import("@/components/ListView"),   { ssr: false });
+const HomeView   = dynamic(() => import("@/components/HomeView"),   { ssr: false });
 const DetailView = dynamic(() => import("@/components/DetailView"), { ssr: false });
 const EditView   = dynamic(() => import("@/components/EditView"),   { ssr: false });
 
 const VERSION = "09.06";
 
-type View = "list" | "detail" | "edit" | "new";
+type View = "list" | "home" | "detail" | "edit" | "new";
 
 export default function Page() {
   const [snips, setSnips] = useState<Snippet[]>([]);
-  const [view, setView] = useState<View>("list");
+  const [view, setView] = useState<View>("list"); // Fase 1: HomeView bereikbaar, nog niet default (zie docs/roadmap.md)
   const [activeId, setActiveId] = useState<string | null>(null);
   const [lastOpenedId, setLastOpenedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -142,6 +143,17 @@ export default function Page() {
           onShare={() => shareSnippet(active)}
           onExport={() => exportSnippet(active)}
           onCloseSheet={() => setShowSheet(false)}
+          onAdd={() => setView("new")}
+        />
+      )}
+      {view === "home" && (
+        <HomeView
+          allSnips={snips}
+          lastOpened={lastOpened || null}
+          onOpenCategory={(cat) => { setSearch(cat); setView("list"); }}
+          onOpenSnippet={(id) => openSnippet(id, 0, {})}
+          onSearch={setSearch}
+          onFav={(id, current) => handleToggleFav(id, current)}
           onAdd={() => setView("new")}
         />
       )}
