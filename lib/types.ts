@@ -17,7 +17,8 @@ export interface Snippet {
   category: string;
   tags: string[];
   favorite: boolean;
-  archived?: boolean;
+  archived?: boolean;   // legacy — wordt uitgefaseerd, zie deletedAt
+  deletedAt?: string;   // ISO timestamp — soft-delete, zie docs/design-baseline-v2.md sectie 10.3
   createdAt?: string;
   updatedAt?: string;
 }

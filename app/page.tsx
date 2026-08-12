@@ -4,19 +4,21 @@ import { useState, useEffect } from "react";
 import { Snippet } from "@/lib/types";
 import {
   listenSnippets, addSnippet, updateSnippet,
-  deleteSnippet, archiveSnippet, restoreSnippet,
+  softDeleteSnippet, deleteSnippet, restoreSnippet,
 } from "@/lib/db";
 import dynamic from "next/dynamic";
 
-const HomeView     = dynamic(() => import("@/components/HomeView"),     { ssr: false });
-const CategoryView = dynamic(() => import("@/components/CategoryView"), { ssr: false });
-const DetailView   = dynamic(() => import("@/components/DetailView"),   { ssr: false });
-const EditView     = dynamic(() => import("@/components/EditView"),     { ssr: false });
-const SearchView   = dynamic(() => import("@/components/SearchView"),   { ssr: false });
+const HomeView        = dynamic(() => import("@/components/HomeView"),        { ssr: false });
+const CategoryView    = dynamic(() => import("@/components/CategoryView"),    { ssr: false });
+const SearchView      = dynamic(() => import("@/components/SearchView"),      { ssr: false });
+const BibliotheekView = dynamic(() => import("@/components/BibliotheekView"), { ssr: false });
+const ProfielView     = dynamic(() => import("@/components/ProfielView"),     { ssr: false });
+const DetailView      = dynamic(() => import("@/components/DetailView"),      { ssr: false });
+const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "10.06";
+const VERSION = "11.06";
 
-type View = "home" | "category" | "search" | "detail" | "edit" | "new";
+type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "detail" | "edit" | "new";
 
 export default function Page() {
   const [snips, setSnips] = useState<Snippet[]>([]);
@@ -63,16 +65,11 @@ export default function Page() {
     flash("Opgeslagen");
   };
 
+  // Zachte verwijdering — snippet gaat naar Archief (Profiel), 30 dagen bewaartermijn.
+  // Zie docs/design-baseline-v2.md sectie 10.3.
   const handleDelete = async (id: string) => {
-    await deleteSnippet(id);
-    flash("Verwijderd");
-    setView(returnTo);
-    setActiveId(null);
-  };
-
-  const handleArchive = async (id: string) => {
-    await archiveSnippet(id);
-    flash("Gearchiveerd");
+    await softDeleteSnippet(id);
+    flash("Naar archief verplaatst");
     setView(returnTo);
     setActiveId(null);
   };
@@ -80,6 +77,11 @@ export default function Page() {
   const handleRestore = async (id: string) => {
     await restoreSnippet(id);
     flash("Teruggezet");
+  };
+
+  const handleDeletePermanent = async (id: string) => {
+    await deleteSnippet(id);
+    flash("Definitief verwijderd");
   };
 
   const handleToggleFav = async (id: string, current: boolean) => {
@@ -137,6 +139,27 @@ export default function Page() {
           onSearch={() => setView("search")}
           onFav={(id, current) => handleToggleFav(id, current)}
           onAdd={() => { setReturnTo("home"); setView("new"); }}
+          onOpenBibliotheek={() => setView("bibliotheek")}
+          onOpenProfiel={() => setView("profiel")}
+        />
+      )}
+
+      {view === "bibliotheek" && (
+        <BibliotheekView
+          allSnips={snips}
+          onBack={goHome}
+          onOpenSnippet={(id) => openSnippet(id, "bibliotheek")}
+          onOpenCategory={openCategory}
+          onFav={(id, current) => handleToggleFav(id, current)}
+        />
+      )}
+
+      {view === "profiel" && (
+        <ProfielView
+          allSnips={snips}
+          onBack={goHome}
+          onRestore={handleRestore}
+          onDeletePermanent={handleDeletePermanent}
         />
       )}
 
@@ -177,8 +200,8 @@ export default function Page() {
           onBack={() => { setView(returnTo); setActiveId(null); setShowSheet(false); }}
           onDots={() => setShowSheet(true)}
           onEdit={() => { setShowSheet(false); setView("edit"); }}
-          onDelete={() => { if (window.confirm("Verwijderen?")) handleDelete(active.id!); }}
-          onArchive={() => { setShowSheet(false); handleArchive(active.id!); }}
+          onDelete={() => { if (window.confirm("Naar archief verplaatsen?")) handleDelete(active.id!); }}
+          onArchive={() => { setShowSheet(false); handleDelete(active.id!); }}
           onCopy={() => { navigator.clipboard.writeText(active.code); setCopied(true); setTimeout(() => setCopied(false), 2200); }}
           onFav={() => handleToggleFav(active.id!, active.favorite)}
           onShare={() => shareSnippet(active)}
@@ -191,7 +214,7 @@ export default function Page() {
       {toast && (
         <div style={{
           position: "fixed", bottom: 96, left: "50%", transform: "translateX(-50%)",
-          background: toast.includes("Verwijderd") ? "#ef4444" : toast.includes("Gearchiveerd") ? "#6366f1" : "#10b981",
+          background: toast.includes("archief") ? "#6366f1" : toast.includes("Definitief") ? "#ef4444" : "#10b981",
           color: "#fff", padding: "9px 20px", borderRadius: 20, fontSize: 14,
           fontWeight: 600, zIndex: 300, whiteSpace: "nowrap",
           boxShadow: "0 4px 20px rgba(0,0,0,0.3)",

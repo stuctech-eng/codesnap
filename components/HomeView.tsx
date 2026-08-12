@@ -79,10 +79,13 @@ interface Props {
   onSearch: (v: string) => void;
   onFav: (id: string, cur: boolean) => void;
   onAdd: () => void;
+  onOpenBibliotheek: () => void;
+  onOpenProfiel: () => void;
 }
 
 export default function HomeView({
   allSnips, lastOpened, onOpenCategory, onOpenSnippet, onSearch, onFav, onAdd,
+  onOpenBibliotheek, onOpenProfiel,
 }: Props) {
   const activeSnips = useMemo(() => allSnips.filter(s => !s.archived), [allSnips]);
   const favorites = useMemo(() => activeSnips.filter(s => s.favorite), [activeSnips]);
@@ -97,9 +100,16 @@ export default function HomeView({
     <div style={{ minHeight: "100vh", background: "#0B1020", color: "#fff", display: "flex", flexDirection: "column" }}>
       <div style={{ flex: 1, overflowY: "auto", padding: "56px 20px 100px" }}>
 
-        {/* GROET */}
-        <div style={{ fontSize: 13, color: "#94A3B8", fontWeight: 500, marginBottom: 2 }}>{greeting} 👋</div>
-        <h1 style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 22 }}>CodeSnap</h1>
+        {/* GROET + PROFIEL */}
+        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 22 }}>
+          <div>
+            <div style={{ fontSize: 13, color: "#94A3B8", fontWeight: 500, marginBottom: 2 }}>{greeting} 👋</div>
+            <h1 style={{ fontSize: 30, fontWeight: 800, letterSpacing: "-0.03em" }}>CodeSnap</h1>
+          </div>
+          <button onClick={onOpenProfiel} style={{ width: 38, height: 38, borderRadius: "50%", background: "#151D31", border: "1px solid #202A44", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", marginTop: 4 }}>
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2" strokeLinecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </button>
+        </div>
 
         {/* ZOEKBALK */}
         <button
@@ -178,8 +188,11 @@ export default function HomeView({
 
         {/* BIBLIOTHEEK */}
         {!isEmpty && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "4px 2px 22px" }}>
-            <span style={{ fontSize: 13, fontWeight: 700 }}>Bibliotheek</span>
+          <div onClick={onOpenBibliotheek} style={{ display: "flex", flexDirection: "column", gap: 6, padding: "4px 2px 22px", cursor: "pointer" }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontSize: 13, fontWeight: 700 }}>Bibliotheek</span>
+              <span style={{ fontSize: 12, color: "#4F8CFF", fontWeight: 600 }}>Bekijk alles →</span>
+            </div>
             <span style={{ fontSize: 12, color: "#94A3B8" }}>
               <b style={{ color: "#4F8CFF" }}>{activeSnips.length}</b> snippets · <b style={{ color: "#4F8CFF" }}>{favorites.length}</b> favorieten · <b style={{ color: "#4F8CFF" }}>{categories.length}</b> categorieën
             </span>

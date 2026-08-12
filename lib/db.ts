@@ -8,12 +8,24 @@ import { Snippet, CodeBlock } from "./types";
 
 const COL = "snippets";
 const SETTINGS_DOC = "settings/categories";
+const RETENTION_DAYS = 30;
 
 function migrateSnippet(id: string, data: Record<string, unknown>): Snippet {
   const codeBlocks = (data.codeBlocks as CodeBlock[]) || [];
   if (data.code && typeof data.code === "string" && data.code.trim() && codeBlocks.length === 0) {
     codeBlocks.push({ id: "migrated", filename: "main.code", code: data.code as string });
   }
+
+  // Migratie: oude "archived: true" snippets krijgen bij eerste keer lezen
+  // een deletedAt zodat ze in het nieuwe Archief-systeem passen.
+  // Zie docs/design-baseline-v2.md sectie 10.3 — migratie-opmerking.
+  let deletedAt = data.deletedAt as string | undefined;
+  if (!deletedAt && data.archived === true) {
+    deletedAt = data.updatedAt
+      ? new Date((data.updatedAt as { toDate(): Date }).toDate()).toISOString()
+      : new Date().toISOString();
+  }
+
   return {
     id,
     title: (data.title as string) || "",
@@ -26,6 +38,7 @@ function migrateSnippet(id: string, data: Record<string, unknown>): Snippet {
     tags: (data.tags as string[]) || [],
     favorite: (data.favorite as boolean) || false,
     archived: (data.archived as boolean) || false,
+    deletedAt,
     createdAt: data.createdAt ? new Date((data.createdAt as { toDate(): Date }).toDate()).toISOString() : undefined,
     updatedAt: data.updatedAt ? new Date((data.updatedAt as { toDate(): Date }).toDate()).toISOString() : undefined,
   };
@@ -48,6 +61,7 @@ export async function addSnippet(data: Omit<Snippet, "id">) {
     codeBlocks: data.codeBlocks || [],
     notes: data.notes || "",
     archived: false,
+    deletedAt: null,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });
@@ -60,22 +74,42 @@ export async function updateSnippet(id: string, data: Partial<Snippet>) {
   });
 }
 
+// Hard delete — alleen gebruikt vanuit Archief "Nu permanent verwijderen".
+// NIET meer gebruikt voor de normale "Verwijderen" actie in DetailView.
 export async function deleteSnippet(id: string) {
   return await deleteDoc(doc(db, COL, id));
 }
 
-export async function archiveSnippet(id: string) {
+// Soft-delete — dit is wat "Verwijderen" in DetailView nu aanroept.
+// Zet deletedAt, snippet verdwijnt uit Home/Bibliotheek/CategoryView
+// maar blijft 30 dagen bereikbaar via Profiel > Archief.
+export async function softDeleteSnippet(id: string) {
   return await updateDoc(doc(db, COL, id), {
-    archived: true,
+    deletedAt: new Date().toISOString(),
     updatedAt: serverTimestamp(),
   });
 }
 
 export async function restoreSnippet(id: string) {
   return await updateDoc(doc(db, COL, id), {
+    deletedAt: null,
     archived: false,
     updatedAt: serverTimestamp(),
   });
+}
+
+// Legacy — blijven bestaan zodat oude imports niet breken,
+// maar wijzen nu naar het nieuwe soft-delete systeem.
+export async function archiveSnippet(id: string) {
+  return await softDeleteSnippet(id);
+}
+
+export function daysUntilPermanentDelete(deletedAt?: string): number {
+  if (!deletedAt) return RETENTION_DAYS;
+  const deleted = new Date(deletedAt).getTime();
+  const now = Date.now();
+  const elapsedDays = (now - deleted) / (1000 * 60 * 60 * 24);
+  return Math.max(0, Math.ceil(RETENTION_DAYS - elapsedDays));
 }
 
 export async function loadCustomCats(): Promise<string[]> {
