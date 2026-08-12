@@ -165,9 +165,9 @@ export default function HomeView({
                 const cfg = getCatConfig(snip.category, catIndexMap[snip.category] || 0);
                 return (
                   <div key={snip.id} onClick={() => onOpenSnippet(snip.id!)}
-                    style={{ flexShrink: 0, width: 130, background: "#151D31", borderRadius: 16, padding: 14, border: "1px solid rgba(255,255,255,0.04)", cursor: "pointer" }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 9, background: cfg.color + "1a", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 10 }}>
-                      <CatIcon iconKey={cfg.iconKey} color={cfg.color} size={16} />
+                    style={{ flexShrink: 0, width: 130, background: "#0B1020", borderRadius: 16, padding: 14, border: "1px solid #202A44", cursor: "pointer" }}>
+                    <div style={{ width: 20, height: 20, marginBottom: 10, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <CatIcon iconKey={cfg.iconKey} color="#94A3B8" size={18} />
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 3, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{snip.title}</div>
                     <div style={{ fontSize: 11, color: "#94A3B8" }}>{snip.category}</div>
@@ -214,12 +214,12 @@ export default function HomeView({
               const count = activeSnips.filter(s => s.category === cat).length;
               return (
                 <div key={cat} onClick={() => onOpenCategory(cat)}
-                  style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 4px", borderBottom: "1px solid rgba(255,255,255,0.04)", cursor: "pointer" }}>
-                  <div style={{ width: 40, height: 40, borderRadius: 12, background: cfg.color + "1a", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <CatIcon iconKey={cfg.iconKey} color={cfg.color} size={18} />
+                  style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 4px", borderBottom: "1px solid #151D31", cursor: "pointer" }}>
+                  <div style={{ width: 20, height: 20, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                    <CatIcon iconKey={cfg.iconKey} color="#94A3B8" size={20} />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 600 }}>{cat}</div>
+                    <div style={{ fontSize: 15, fontWeight: 600, color: "#fff" }}>{cat}</div>
                     <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 1 }}>{count} {count === 1 ? "snippet" : "snippets"}</div>
                   </div>
                   <span style={{ color: "#4A5568", fontSize: 14 }}>›</span>

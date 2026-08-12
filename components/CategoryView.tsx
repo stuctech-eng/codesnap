@@ -151,13 +151,12 @@ export default function CategoryView({ category, allSnips, onBack, onOpenSnippet
           </div>
         ) : (
           snips.map((snip, i) => {
-            const avatarColor = darken(cfg.color, i * 10);
             return (
               <div key={snip.id}
                 onClick={() => onOpenSnippet(snip.id!)}
-                style={{ display: "flex", alignItems: "center", padding: "13px 14px", background: "#151D31", borderRadius: 14, marginBottom: 8, cursor: "pointer", border: "1px solid rgba(255,255,255,0.04)" }}
+                style={{ display: "flex", alignItems: "center", padding: "13px 14px", background: "#0B1020", borderRadius: 14, marginBottom: 8, cursor: "pointer", border: "1px solid " + (snip.favorite ? "rgba(79,140,255,0.35)" : "#202A44") }}
               >
-                <div style={{ width: 38, height: 38, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 800, color: "#fff", background: avatarColor, flexShrink: 0, marginRight: 12 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#E2E8F0", border: "1px solid #2A3654", flexShrink: 0, marginRight: 12 }}>
                   {initials(snip.title)}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
@@ -169,7 +168,7 @@ export default function CategoryView({ category, allSnips, onBack, onOpenSnippet
                   onClick={e => { e.stopPropagation(); onFav(snip.id!, snip.favorite); }}
                 >
                   {snip.favorite
-                    ? <svg width="17" height="17" viewBox="0 0 24 24" fill={cfg.color} stroke={cfg.color} strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                    ? <svg width="17" height="17" viewBox="0 0 24 24" fill="#4F8CFF" stroke="#4F8CFF" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                     : <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#4A5568" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
                   }
                 </button>

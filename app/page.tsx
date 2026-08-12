@@ -16,7 +16,7 @@ const ProfielView     = dynamic(() => import("@/components/ProfielView"),     { 
 const DetailView      = dynamic(() => import("@/components/DetailView"),      { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "11.06";
+const VERSION = "11.07";
 
 type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "detail" | "edit" | "new";
 
