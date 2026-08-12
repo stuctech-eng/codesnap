@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { collection, getDocs, deleteDoc, doc, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { db, ensureAuth } from "@/lib/firebase";
 
 // Vercel Cron roept deze route dagelijks aan (zie vercel.json).
 // Verwijdert definitief alle snippets waarvan deletedAt ouder is
@@ -8,6 +8,11 @@ import { db } from "@/lib/firebase";
 //
 // Handmatig testen: GET https://codesnap-mu.vercel.app/api/cleanup-archief
 // (met CRON_SECRET header, zie onderaan)
+//
+// LET OP: sinds Firestore Rules "if request.auth != null" vereisen
+// (beveiligingsfix, zie docs/architecture.md), moet ook deze
+// server-side route eerst anoniem inloggen — anders faalt elke
+// aanroep stilletjes met een permission-denied fout.
 
 const RETENTION_DAYS = 30;
 const COL = "snippets";
@@ -22,6 +27,8 @@ export async function GET(request: Request) {
   }
 
   try {
+    await ensureAuth();
+
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - RETENTION_DAYS);
     const cutoffISO = cutoff.toISOString();

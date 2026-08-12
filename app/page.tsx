@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Snippet } from "@/lib/types";
+import { ensureAuth } from "@/lib/firebase";
 import {
   listenSnippets, addSnippet, updateSnippet,
   softDeleteSnippet, deleteSnippet, restoreSnippet,
@@ -18,11 +19,13 @@ const DrillDownView   = dynamic(() => import("@/components/DrillDownView"),   { 
 const Breadcrumb       = dynamic(() => import("@/components/Breadcrumb"),      { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "12.06";
+const VERSION = "12.07";
 
 type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "project" | "component" | "detail" | "edit" | "new";
 
 export default function Page() {
+  const [authReady, setAuthReady] = useState(false);
+  const [authError, setAuthError] = useState(false);
   const [snips, setSnips] = useState<Snippet[]>([]);
   const [view, setView] = useState<View>("home");
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -59,10 +62,23 @@ export default function Page() {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
 
+  // Beveiligingslaag — anonieme Firebase-login, vereist sinds
+  // Firestore Rules zijn aangescherpt naar "if request.auth != null".
+  // Zie docs/architecture.md voor de beveiligingscontext.
   useEffect(() => {
+    ensureAuth()
+      .then(() => setAuthReady(true))
+      .catch((err) => {
+        console.error("Auth error:", err);
+        setAuthError(true);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
     const unsub = listenSnippets(setSnips);
     return () => unsub();
-  }, []);
+  }, [authReady]);
 
   useEffect(() => {
     const saved = localStorage.getItem("lastOpenedId");
@@ -178,6 +194,24 @@ export default function Page() {
   };
 
   const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
+
+  if (authError) {
+    return (
+      <main style={{ minHeight: "100vh", background: "#0B1020", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+        <p style={{ color: "#f87171", fontSize: 14, textAlign: "center" }}>
+          Kon niet verbinden. Controleer je internetverbinding en probeer het opnieuw.
+        </p>
+      </main>
+    );
+  }
+
+  if (!authReady) {
+    return (
+      <main style={{ minHeight: "100vh", background: "#0B1020", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <p style={{ color: "#94A3B8", fontSize: 14 }}>Laden...</p>
+      </main>
+    );
+  }
 
   return (
     <main style={{ minHeight: "100vh", background: "#0B1020", maxWidth: 430, margin: "0 auto", position: "relative" }}>
