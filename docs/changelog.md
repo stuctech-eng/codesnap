@@ -13,6 +13,24 @@
 
 ---
 
+## v12.12
+
+- **Bugfix — korte "0 snippets" flits direct na app-start.** Na de
+  anonieme-authenticatie fix (v12.07) toonde de app soms even de
+  lege staat ("Begin met je eerste snippet", "0 snippets") vlak na
+  openen, ook met bestaande data — deze verdween vanzelf na een
+  herlaad. Oorzaak: de app wachtte alleen op `authReady`, niet op de
+  eerste daadwerkelijke Firestore-callback, waardoor `snips=[]`
+  (de initiële state) heel even zichtbaar was
+- `app/page.tsx`: nieuwe `dataReady`-state, wordt pas `true` bij de
+  eerste `onSnapshot`-callback (ongeacht of die leeg of gevuld is).
+  Laadscherm ("Laden...") blijft nu zichtbaar tot beide `authReady`
+  én `dataReady` waar zijn
+- Voor een écht nieuwe gebruiker (0 snippets) blijft de empty state
+  gewoon correct verschijnen — het verschil is alleen dat de app nu
+  wacht tot zeker is dat "leeg" ook echt "leeg" betekent, niet
+  "nog niet geladen"
+
 ## v12.11
 
 - **Standaard Onderdelen-patroon** — zie docs/audit-hierarchie.md

@@ -19,13 +19,14 @@ const DrillDownView   = dynamic(() => import("@/components/DrillDownView"),   { 
 const Breadcrumb       = dynamic(() => import("@/components/Breadcrumb"),      { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "12.11";
+const VERSION = "12.12";
 
 type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "project" | "component" | "detail" | "edit" | "new";
 
 export default function Page() {
   const [authReady, setAuthReady] = useState(false);
   const [authError, setAuthError] = useState(false);
+  const [dataReady, setDataReady] = useState(false);
   const [snips, setSnips] = useState<Snippet[]>([]);
   const [view, setView] = useState<View>("home");
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -76,7 +77,13 @@ export default function Page() {
 
   useEffect(() => {
     if (!authReady) return;
-    const unsub = listenSnippets(setSnips);
+    const unsub = listenSnippets((data) => {
+      setSnips(data);
+      setDataReady(true); // pas na de EERSTE callback, voorkomt korte
+                            // "0 snippets" flits tussen inloggen en de
+                            // eerste Firestore-data (zie meldingen mbt
+                            // lege staat direct na app-start)
+    });
     return () => unsub();
   }, [authReady]);
 
@@ -205,7 +212,7 @@ export default function Page() {
     );
   }
 
-  if (!authReady) {
+  if (!authReady || !dataReady) {
     return (
       <main style={{ minHeight: "100vh", background: "#0B1020", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <p style={{ color: "#94A3B8", fontSize: 14 }}>Laden...</p>
