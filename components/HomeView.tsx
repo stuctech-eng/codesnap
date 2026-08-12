@@ -87,7 +87,7 @@ export default function HomeView({
   allSnips, lastOpened, onOpenCategory, onOpenSnippet, onSearch, onFav, onAdd,
   onOpenBibliotheek, onOpenProfiel,
 }: Props) {
-  const activeSnips = useMemo(() => allSnips.filter(s => !s.archived), [allSnips]);
+  const activeSnips = useMemo(() => allSnips.filter(s => !s.deletedAt), [allSnips]);
   const favorites = useMemo(() => activeSnips.filter(s => s.favorite), [activeSnips]);
   const categories = useMemo(() => Array.from(new Set(activeSnips.map(s => s.category))).filter(Boolean), [activeSnips]);
   const isEmpty = activeSnips.length === 0;

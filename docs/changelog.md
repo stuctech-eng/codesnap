@@ -7,13 +7,62 @@
 
 ## Ongepland / In behandeling
 
-- 30-dagen automatische Archief-cleanup — vereist Firebase Cloud
-  Function of Vercel Cron Job, nog niet gebouwd (infrastructuurtaak,
-  zie docs/design-baseline-v2.md sectie 10.4)
-- Fase 5 (responsive/PWA polish) en Fase 6 (oude ListView.tsx
-  verwijderen) uit docs/roadmap.md — doorlopend/handmatig
+- Fase 5 (responsive/PWA polish) uit docs/roadmap.md — doorlopend
+- Autocomplete voor Project/Onderdeel-velden in EditView — nog niet
+  gebouwd, bewuste beperking (zie docs/audit-hierarchie.md sectie 11)
 
 ---
+
+## v12.09
+
+- **Bugfix — verwijderde snippets bleven zichtbaar.** `HomeView`,
+  `CategoryView` en `SearchView` filterden nog op het verlaten
+  `archived`-veld in plaats van `deletedAt`. Sinds de soft-delete
+  architectuur (v11.06) zet `softDeleteSnippet()` alleen `deletedAt`,
+  niet meer `archived: true` — daardoor bleven snippets na
+  verwijderen gewoon zichtbaar in drie van de vijf schermen, terwijl
+  ze wel al correct in het Archief verschenen
+- Alle vijf lijst-schermen (Home, Bibliotheek, CategoryView,
+  DrillDownView, SearchView) filteren nu consistent op
+  `!s.deletedAt`
+- `ProfielView` (het Archief-scherm zelf) was al correct en is
+  ongewijzigd — die toont juist snippets WAAR `deletedAt` gezet is
+
+## v12.08
+
+- Fase H6 (laatste fase hiërarchie-plan): contextuele drill-down in
+  Bibliotheek. Categorieën met minstens één snippet met een
+  `project`-waarde tonen nu het Project-niveau bij tikken; overige
+  categorieën blijven direct naar CategoryView gaan, ongewijzigd
+- Hiermee is de hiërarchische Bibliotheek-structuur (Categorie →
+  Project → Onderdeel → Snippet) volledig geïmplementeerd —
+  zie docs/audit-hierarchie.md
+
+## v12.07
+
+- **Beveiligingsfix.** Firestore Rules stonden open voor iedereen
+  (`allow read, write: if true`) — .env.local bleek ook per ongeluk
+  gecommit in de repo geweest te zijn
+- Anonieme Firebase Authentication toegevoegd — app en de
+  cleanup-cron-route loggen nu automatisch en onzichtbaar anoniem in
+- Firestore Rules aangescherpt naar `if request.auth != null`
+- `.env.local` verwijderd uit de repo
+
+## v12.01 t/m v12.06
+
+- Fase H1 t/m H5 van de hiërarchische Bibliotheek-uitbreiding
+  (Categorie → Project → Onderdeel → Snippet): datamodel,
+  EditView-velden, routing naar een stack-gebaseerd systeem
+  (`returnStack` i.p.v. losse `returnTo`-waarde), DrillDownView
+  (generiek component voor Project- en Onderdeel-niveau),
+  Breadcrumb-component — zie docs/audit-hierarchie.md voor de
+  volledige details en gevonden/opgeloste navigatie-bugs per fase
+
+## v11.09
+
+- 30-dagen automatische Archief-cleanup via Vercel Cron
+  (`app/api/cleanup-archief/route.ts` + `vercel.json`) —
+  zie docs/design-baseline-v2.md sectie 10.4
 
 ## v11.06
 

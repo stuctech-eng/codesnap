@@ -48,7 +48,7 @@ export default function SearchView({ allSnips, onBack, onOpenSnippet, onFav }: P
 
   const results = useMemo(() => {
     if (!query.trim()) return [];
-    const active = allSnips.filter(s => !s.archived);
+    const active = allSnips.filter(s => !s.deletedAt);
     return active.filter(s =>
       s.title.toLowerCase().includes(query.toLowerCase()) ||
       s.description?.toLowerCase().includes(query.toLowerCase()) ||

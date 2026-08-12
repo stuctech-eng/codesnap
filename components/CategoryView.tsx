@@ -71,7 +71,7 @@ export default function CategoryView({ category, allSnips, onBack, onOpenSnippet
   const cfg = getCatConfig(category, 0);
 
   const snips = useMemo(() => {
-    let list = allSnips.filter(s => !s.archived && s.category === category);
+    let list = allSnips.filter(s => !s.deletedAt && s.category === category);
     if (search) {
       list = list.filter(s =>
         s.title.toLowerCase().includes(search.toLowerCase()) ||
