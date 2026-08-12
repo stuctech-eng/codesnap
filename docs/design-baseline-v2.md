@@ -297,20 +297,24 @@ verwijderd moet worden — dat is onbetrouwbaar (als iemand de app
 weken niet opent, cleant er niets op, of erger: opent hij hem net
 op dag 31 en verwijdert de app in de UI-thread te veel tegelijk).
 
-**Vereist bij implementatie:**
-- Firebase Cloud Function (scheduled, bijv. dagelijks) DIE
-  Firestore queryt op `deletedAt < now() - 30 dagen` en die
-  documenten hard verwijdert
-- Alternatief: Vercel Cron Job die een API-route aanroept die
-  hetzelfde doet
-- Dit vereist een keuze tussen Firebase Functions (Blaze-plan,
-  mogelijk kosten) of Vercel Cron (binnen bestaande hosting) —
-  **deze keuze moet expliciet gemaakt worden vóór implementatie**,
-  niet stilzwijgend aangenomen
+**Status: GEÏMPLEMENTEERD (v11.09) — keuze: Vercel Cron.**
 
-Dit component wordt apart gepland — het hoort niet vanzelfsprekend
-bij "even het Archief-scherm bouwen", want het is infrastructuur
-buiten de Next.js request/response cyclus.
+Reden voor Vercel Cron boven Firebase Cloud Functions: geen nieuwe
+dienst/kosten nodig (Firebase Functions vereist Blaze-plan), en de
+implementatie blijft binnen de bestaande Next.js/Vercel-structuur
+van dit project.
+
+Implementatie:
+- `app/api/cleanup-archief/route.ts` — GET-route die alle snippets
+  met `deletedAt` ouder dan 30 dagen definitief verwijdert
+- `vercel.json` — cron-configuratie, draait dagelijks om 03:00 UTC
+- Beveiligd met `CRON_SECRET` environment variable (Bearer token) —
+  voorkomt dat de route door derden aangeroepen kan worden
+- Bekende beperking: query haalt alle `deletedAt != null` documenten
+  op en filtert in code op datum, i.p.v. een samengestelde Firestore
+  query. Ruim voldoende snel voor een persoonlijk archief van
+  tientallen items; zou bij duizenden items een Firestore composite
+  index vereisen.
 
 ### 10.5 Wat NIET verandert
 
