@@ -14,6 +14,15 @@ docs/audit-hierarchie.md
 
 ## Documentatie-overzicht
 
+**Regel die altijd geldt, bij elke fase/taak/uitbreiding:** zodra
+er stappen worden gepland (een fasering, een implementatieplan, een
+"eerst dit dan dat"), wordt dat vastgelegd in het relevante
+document in `docs/` — mét status per stap (afgerond/volgende/
+gepland) — en die status wordt bijgewerkt zodra een stap klaar is.
+Niet pas achteraf in één keer, maar telkens direct na afronding van
+elke stap. Zie `docs/audit-hierarchie.md` sectie 10 als voorbeeld
+van hoe dat eruitziet.
+
 Dit project houdt documentatie in `docs/` bij, volgens vaste
 prioriteitsvolgorde (zie ook standing rule "Volgorde van waarheid"):
 
