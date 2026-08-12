@@ -1,0 +1,420 @@
+# CodeSnap — Audit: Bibliotheek Hiërarchische Structuur
+
+> Audit uitgevoerd naar aanleiding van extern voorstel voor
+> Categorie → Project/App → Onderdeel → Snippet navigatie.
+> Status: AUDIT VOLTOOID + VOORSTEL DEFINITIEF VASTGESTELD.
+> Nog GEEN code gebouwd — implementatie is de volgende stap.
+
+---
+
+## 1. Bevindingen — huidige situatie
+
+### 1.1 Snippet interface (`lib/types.ts`)
+
+```typescript
+export interface Snippet {
+  id?: string;
+  title: string;
+  description: string;
+  code: string;
+  codeBlocks: CodeBlock[];
+  notes?: string;
+  snippetType?: SnippetType;
+  category: string;        // ← één plat categorie-veld
+  tags: string[];
+  favorite: boolean;
+  archived?: boolean;      // legacy
+  deletedAt?: string;      // soft-delete
+  createdAt?: string;
+  updatedAt?: string;
+}
+```
+
+**Bevinding:** er bestaat geen `project` of `component` veld
+(in het oorspronkelijke externe voorstel nog "section" genoemd,
+zie sectie 4.0 voor de terminologie-beslissing). De gevraagde
+hiërarchie (Categorie → Project → Onderdeel) heeft vandaag alleen
+het `category` veld tot z'n beschikking — plat, géén tweede of
+derde niveau.
+
+### 1.2 Categorie-implementatie (`components/HomeView.tsx`)
+
+`CAT_CONFIG` is een **hardcoded object** met 10 vaste categorieën
+(AI Prompts, Apps, Documentatie, Bug Fix, Ideeën, Config, Games,
+Scripts, UI, Code), elk met kleur + icoon. Onbekende categorieën
+vallen terug op `DEFAULT_COLORS` + een generiek icoon.
+
+**Bevinding:** categorieën zijn nu een gesloten, hardcoded lijst
+in de UI-laag — niet dynamisch uit de database opgebouwd (op
+`customCats` na, zie 1.5). Een nieuw niveau ("welke app binnen
+Apps") bestaat nergens in deze structuur.
+
+### 1.3 Bibliotheek-scherm (`components/BibliotheekView.tsx`)
+
+```typescript
+type FilterTab = "alle" | "favorieten" | "categorieen";
+```
+
+Drie platte tabs. Bij tab "categorieen" wordt een simpele lijst
+getoond van `Array.from(new Set(activeSnips.map(s => s.category)))`
+— één druk op een categorie stuurt direct door naar `CategoryView`
+met alle snippets van die categorie in een platte lijst.
+
+**Bevinding:** er is precies één navigatie-sprong tussen
+Bibliotheek en een lijst snippets. Geen tussenniveau aanwezig of
+voorbereid.
+
+### 1.4 Filtering, favorieten, sortering
+
+- Favorieten: `Snippet.favorite: boolean`, simpele filter
+- Sortering: nieuwste/oudste/A-Z, werkt op `createdAt`/`title`
+- Filtering: uitsluitend op `category` (exacte match) en vrije
+  tekst-zoekopdracht (titel/beschrijving/tags) in `SearchView.tsx`
+
+**Bevinding:** geen van deze mechanismen is voorbereid op een
+tweede filterdimensie (project) — zou overal een extra laag
+filtering moeten krijgen.
+
+### 1.5 Opslag/database (`lib/db.ts`)
+
+Relevante functies:
+```
+listenSnippets()     — realtime listener, geen niveau-logica
+addSnippet()          — schrijft plat document
+updateSnippet()       — partial update
+softDeleteSnippet()   — zet deletedAt
+restoreSnippet()      — wist deletedAt
+loadCustomCats() / saveCustomCats()
+                       — aparte Firestore document `settings/categories`
+                         met array van strings — géén structuur,
+                         géén relatie tot projecten
+```
+
+**Bevinding:** Firestore-structuur is één platte `snippets`
+collectie. Er is precedent voor een aparte settings-collectie
+(`settings/categories`), wat aangeeft dat een vergelijkbare
+aanpak (`settings/projects` ofzo) zou passen bij de bestaande
+architectuur — maar dit bestaat nog niet.
+
+### 1.6 Delete-functionaliteit
+
+Volledig soft-delete via `deletedAt`, met Archief-scherm en
+30-dagen Vercel Cron cleanup (v11.09, al afgerond). Geen
+aanpassing nodig hiervoor — dit blijft ongewijzigd bij een
+hiërarchie-uitbreiding.
+
+### 1.7 Routing (`app/page.tsx`)
+
+```typescript
+type View = "home" | "category" | "search" | "bibliotheek" |
+            "profiel" | "detail" | "edit" | "new";
+```
+
+**Bevinding:** platte view-state, geen stack/breadcrumb-mechanisme.
+Elke view kent maar één "vorig scherm" via de losse `returnTo`
+state. Een 3-niveaus-diepe navigatie (Apps → CoachOS → Recovery)
+vereist ofwel meerdere nieuwe view-types, ofwel een generieke
+"drill-down" state die het huidige patroon niet heeft.
+
+### 1.8 Categorie-invoer in EditView (`components/EditView.tsx`)
+
+`ALL_CATS` is een tweede, losse hardcoded lijst (moet in sync
+blijven met `CAT_CONFIG` in HomeView — dit is al een bestaande
+technische schuld, zie sectie 3). Custom categorieën kunnen
+worden toegevoegd via een tekstveld, opgeslagen in
+`settings/categories`.
+
+**Bevinding:** er is geen equivalent veld/invoer voor "project"
+of "onderdeel" — dat zou volledig nieuw moeten worden toegevoegd
+aan het formulier.
+
+---
+
+## 2. Samenvatting — wat ontbreekt volledig
+
+| Onderdeel gevraagd in voorstel | Bestaat vandaag? |
+|---|---|
+| `project` veld op Snippet | ❌ Nee |
+| `section` veld op Snippet | ❌ Nee |
+| Meerdere navigatie-niveaus (drill-down) | ❌ Nee — max 1 sprong |
+| Breadcrumb / "waar ben ik"-indicator | ❌ Nee |
+| Dynamische projecten-lijst per categorie | ❌ Nee |
+| Formuliervelden voor project/onderdeel | ❌ Nee |
+| Filtering op project (naast categorie) | ❌ Nee |
+
+---
+
+## 3. Bijkomende observatie — bestaande technische schuld
+
+Onafhankelijk van dit voorstel: `CAT_CONFIG` (HomeView.tsx) en
+`ALL_CATS` (EditView.tsx) zijn **twee aparte hardcoded lijsten**
+die handmatig synchroon gehouden moeten worden. Bij het toevoegen
+van een hiërarchie-niveau zou een vergelijkbare valkuil ontstaan
+tenzij er nu bewust voor een centrale bron gekozen wordt.
+
+---
+
+## 4. Voorstel — DEFINITIEF (bijgewerkt na gebruikersreview)
+
+> Deze sectie vervangt het eerdere, voorzichtigere voorstel.
+> Kernbeslissing: **generiek datamodel, contextuele UI.**
+
+### 4.0 Twee correcties op het oorspronkelijke voorstel
+
+**Correctie 1 — terminologie:** `section` is te algemeen. Het
+gaat om een onderdeel/module binnen een app/project. Definitief
+gekozen veldnaam: **`component`**.
+
+Reden voor `component` boven `subCategory`: het woord beschrijft
+directer wat het is (een bouwsteen binnen een app), en botst niet
+met het bestaande `category`-concept — `subCategory` zou suggereren
+dat het een verfijning van categorie is, terwijl het eigenlijk een
+verfijning van *project* is.
+
+**Correctie 2 — UX bij invoer:** geen "veld verschijnt pas als er
+al een project bestaat"-logica. In plaats daarvan: bij het kiezen
+van categorie "Apps" (of elke categorie waar de gebruiker ze wil
+gebruiken) zijn **Project** en **Onderdeel** gewoon direct
+zichtbare, optionele velden in het formulier — vanaf de eerste
+snippet. De structuur ontstaat organisch doordat de gebruiker ze
+invult, niet doordat het systeem wacht tot er al iets bestaat.
+
+### 4.1 Datamodel (definitief)
+
+```typescript
+export interface Snippet {
+  // ...bestaande velden ongewijzigd...
+  category: string;
+  project?: string;    // NIEUW — optioneel, geen breaking change
+  component?: string;  // NIEUW — optioneel, geen breaking change
+                        // (was "section" in eerste versie van dit voorstel)
+}
+```
+
+Beide nieuwe velden optioneel. Bestaande snippets zonder
+`project`/`component` blijven plat onder hun categorie vallen —
+geen migratie nodig.
+
+### 4.2 Navigatie — generiek mechanisme, contextueel resultaat
+
+Het navigatie-mechanisme zelf is **niet categorie-specifiek** —
+elke categorie kan in principe drie niveaus diep gaan. Maar het
+niveau dat daadwerkelijk verschijnt, hangt af van wat er is
+ingevuld:
+
+```
+Bibliotheek → Categorieën → Apps
+  → snippets hebben project ingevuld → toon projecten-lijst
+      → CoachOS → snippets hebben component ingevuld → toon lijst
+          → Recovery → platte snippet-lijst
+
+Bibliotheek → Categorieën → Bug Fix
+  → geen enkele snippet heeft project ingevuld → direct platte lijst
+      (identiek aan huidig CategoryView-gedrag, geen wijziging zichtbaar)
+
+Bibliotheek → Categorieën → Ideeën
+  → zelfde als Bug Fix — blijft plat
+```
+
+Het onderscheid zit dus niet in "welke categorie mag dit", maar in
+"heeft de gebruiker het voor déze categorie gebruikt". Dat is
+precies het "generiek datamodel, contextuele UI"-principe.
+
+### 4.3 EditView — velden altijd zichtbaar, niet voorwaardelijk
+
+Na het Categorie-veld komen direct twee nieuwe, optionele velden:
+
+```
+Categorie
+[ Apps                    ▾ ]
+
+Project
+[ Tik om in te voeren...     ]
+
+Onderdeel
+[ Tik om in te voeren...     ]
+```
+
+Beide leeg laten is toegestaan — dan gedraagt de snippet zich
+zoals nu (plat onder de categorie). Autocomplete/suggesties op
+basis van al bestaande `project`-waarden binnen dezelfde categorie
+is een logische toevoeging (zelfde patroon als `customCats` nu al
+werkt), maar geen blokkerende vereiste voor de eerste versie.
+
+### 4.4 Nieuwe componenten (schatting, ongewijzigd t.o.v. vorige versie)
+
+- `ProjectListView.tsx` — toont projecten binnen een categorie
+- `ComponentListView.tsx` — toont onderdelen binnen een project
+  (hernoemd van `SectionListView.tsx`)
+- Breadcrumb-component — toont bijv. `Apps / CoachOS / Recovery`
+  met tik-navigatie terug naar elk niveau
+
+Beide lijst-componenten zijn structureel vrijwel identiek — te
+overwegen als één generiek component met een `level`-prop, om de
+`CAT_CONFIG`/`ALL_CATS`-duplicatie-valkuil (zie audit sectie 3)
+niet te herhalen op dit nieuwe niveau.
+
+### 4.5 Routing
+
+`View` type uitbreiden met `"project"` en `"component"`. De
+huidige enkele `returnTo`-waarde wordt een simpele stack
+(bijv. `returnStack: View[]`) zodat terugnavigatie door meerdere
+niveaus correct werkt — kleine, gerichte wijziging op de
+bestaande routing, geen herbouw.
+
+---
+
+## 5. Wat dit NIET wordt (expliciet, ter voorkoming van scope creep)
+
+- Geen fysieke bestandsstructuur — blijft één platte Firestore
+  `snippets` collectie, `project`/`component` zijn gewoon extra
+  string-velden op het document
+- Geen verplichte migratie van bestaande snippets
+- Geen aparte database/tabel voor projecten — projecten worden
+  net als categorieën afgeleid uit de daadwerkelijk gebruikte
+  waarden in snippets (zelfde patroon als nu al voor categorieën)
+- Geen wijziging aan Archief, soft-delete, of de Cron-cleanup
+
+---
+
+## 6. Beantwoorde ontwerpvraag (was open, nu vastgelegd)
+
+**Antwoord:** niet beperken tot Apps. Het mechanisme is generiek
+en technisch beschikbaar voor elke categorie — maar de UI toont
+alleen extra niveaus waar de gebruiker ze daadwerkelijk gebruikt.
+Categorieën als "Bug Fix" of "Ideeën" blijven dus plat zonder dat
+daar een aparte regel voor nodig is; het is een natuurlijk gevolg
+van "geen ingevulde project-waarde → geen extra niveau te tonen".
+
+---
+
+*Audit uitgevoerd: augustus 2026. Geen productiecode aangepast.
+Volgende stap: gebruiker beoordeelt dit voorstel voordat bouwen
+begint — zie ook de instructie in het oorspronkelijke document:
+"Audit → voorstel → minimale wijziging → implementatie → testen."*
+
+---
+
+## 7. Codebase-verificatie (uitgevoerd vóór implementatie)
+
+> Uitgevoerd: opnieuw alle relevante bronbestanden opgehaald van
+> GitHub (niet vertrouwd op eerdere sessie-kennis) en vergeleken
+> met de aannames in dit document.
+
+| Bestand | Verwacht (dit document) | Werkelijk aangetroffen | Conflict? |
+|---|---|---|---|
+| `lib/types.ts` | `Snippet` zonder `project`/`component` | Exact zo, ongewijzigd | ✅ Geen |
+| `app/page.tsx` | `type View = "home" \| "category" \| ...` (8 varianten) | Exact zo, `VERSION = "11.09"` | ✅ Geen |
+| `components/BibliotheekView.tsx` | Bestaat, met `FilterTab` | Bevestigd aanwezig (HTTP 200) | ✅ Geen |
+| `components/CategoryView.tsx` | Bestaat, platte snippet-lijst per categorie | Bevestigd aanwezig (HTTP 200) | ✅ Geen |
+| `lib/db.ts` | 10 export-functies, incl. soft-delete | Exact dezelfde 10 functies aangetroffen | ✅ Geen |
+
+**Conclusie: geen conflicten.** De codebase is sinds de oorspronkelijke
+audit niet gewijzigd op een manier die dit document beïnvloedt.
+Het plan hieronder kan worden uitgevoerd zoals beschreven.
+
+---
+
+## 8. Implementatieplan per fase
+
+> De hiërarchie-uitbreiding is **geen nieuw los redesign** — het is
+> een uitbreiding van de al vastgelegde Bibliotheek-architectuur uit
+> Design Baseline v2.0 sectie 9-10. Versienummering gaat door op de
+> bestaande reeks (huidige stand: v11.09).
+
+### Fase H1 — Datamodel (kleinste, meest risicoloze stap eerst)
+
+**Bestanden:** `lib/types.ts`
+
+```typescript
+project?: string;
+component?: string;
+```
+
+Geen migratie-script nodig — bestaande documenten missen deze
+velden gewoon, wat `undefined` oplevert, wat overal al correct
+wordt afgehandeld door optionele-veld-logica elders in de app.
+
+**Test:** app moet na deze wijziging identiek functioneren aan
+v11.09 — er verandert nog niets zichtbaars.
+
+### Fase H2 — EditView: invoervelden
+
+**Bestanden:** `components/EditView.tsx`
+
+Twee nieuwe optionele tekstvelden na Categorie: "Project" en
+"Onderdeel" — altijd zichtbaar, zoals vastgelegd in sectie 4.3.
+Geen voorwaardelijke logica.
+
+**Test:** nieuwe snippet aanmaken met project+component ingevuld,
+en één zonder — beide moeten correct opslaan. Bestaande snippets
+bewerken mag niet breken.
+
+### Fase H3 — Routing: stack i.p.v. enkele returnTo
+
+**Bestanden:** `app/page.tsx`
+
+`returnTo: View` wordt `returnStack: View[]`. Kleine, geïsoleerde
+wijziging — de bestaande `goHome()`/`openSnippet()`-functies
+krijgen een `push`/`pop` in plaats van een directe toewijzing.
+
+**Test:** alle bestaande navigatie (Home → Category → Detail →
+terug, Home → Bibliotheek → Detail → terug, etc.) moet identiek
+blijven werken vóórdat er ook maar één nieuw scherm bestaat.
+Dit is de fase met het hoogste risico op regressie — apart en
+eerst getest vóórdat H4/H5 beginnen.
+
+### Fase H4 — ProjectListView + ComponentListView
+
+**Bestanden (nieuw):** `components/ProjectListView.tsx`,
+`components/ComponentListView.tsx`
+
+Beide herbruiken de visuele stijl van `BibliotheekView.tsx`
+(categorieën-tab) — geen nieuwe stijl-taal nodig. Te overwegen:
+één generiek component met een `level`-prop in plaats van twee
+bijna-identieke bestanden (voorkomt de CAT_CONFIG/ALL_CATS-valkuil
+die al in sectie 3 als bestaande schuld is benoemd).
+
+**Test:** navigeren Apps → CoachOS → Recovery → snippet-lijst,
+en terug omhoog door elk niveau.
+
+### Fase H5 — Breadcrumb-component
+
+**Bestanden (nieuw):** klein herbruikbaar component, ingezet in
+H4's schermen. Toont bijv. `Apps / CoachOS / Recovery`, elk
+segment tikbaar om direct naar dat niveau te springen (niet alleen
+één stap terug).
+
+### Fase H6 — Contextuele drill-down in Bibliotheek
+
+**Bestanden:** `components/BibliotheekView.tsx`
+
+De categorieën-tab krijgt de "heeft deze categorie snippets met
+een project-waarde?"-check uit sectie 4.2. Zo ja: tik opent
+`ProjectListView` in plaats van direct `CategoryView`. Zo nee:
+huidig gedrag blijft exact behouden.
+
+**Test:** categorie zonder projectgebruik (bijv. "Bug Fix") moet
+zich identiek gedragen aan vóór deze hele uitbreiding — dit is de
+belangrijkste regressietest van het hele plan.
+
+---
+
+## 9. Volgorde-advies
+
+```
+H1 (datamodel) → H2 (invoer) → H3 (routing-stack, apart getest)
+    → H4 (nieuwe schermen) → H5 (breadcrumb) → H6 (koppeling in Bibliotheek)
+```
+
+H3 is bewust apart en vóór H4/H5/H6 geplaatst: een routing-wijziging
+die de bestaande navigatie breekt is het duurste type fout om achteraf
+te debuggen. Eerst bewijzen dat de stack-gebaseerde navigatie voor
+*bestaande* schermen blijft werken, dan pas nieuwe schermen toevoegen
+die er gebruik van maken.
+
+---
+
+*Codebase-verificatie en implementatieplan toegevoegd: augustus 2026.
+Nog geen productiecode gewijzigd — volgende stap is Fase H1 na
+expliciete "go".*
