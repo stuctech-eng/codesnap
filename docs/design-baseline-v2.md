@@ -164,4 +164,165 @@ Geen fase mag de app tijdelijk breken.
 
 ---
 
-*Vastgelegd: augustus 2026 — dit document is leidend voor Fase 1 t/m 6*
+## 9. Bibliotheek-scherm (toegevoegd — status: GOEDGEKEURD)
+
+> Preview beoordeeld en akkoord bevonden: preview-bibliotheek.html
+> (twee varianten: "Alle" en "Filter: Favorieten actief")
+
+### 9.1 Architectuur
+
+Het Bibliotheek-scherm is een **nieuw, apart scherm** — het vervangt
+`CategoryView.tsx` niet. Onderscheid:
+
+```
+Home
+├── Continue Working
+├── Favorieten
+├── Bibliotheek-overzicht (regel met totalen)
+│     → tik "Bekijk alles" → NIEUW Bibliotheek-scherm
+└── Categorieën
+      → tik specifieke categorie → bestaande CategoryView.tsx
+```
+
+- **Bibliotheek-scherm:** alle snippets, met filtering (Alle/
+  Favorieten/Categorieën) en sortering — het algemene overzicht
+- **CategoryView.tsx:** blijft ongewijzigd, voor navigatie vanuit
+  een specifieke categorie op Home
+
+### 9.2 Visuele regel — belangrijkste wijziging t.o.v. eerdere iteratie
+
+**Geen gekleurde vierkante vlakken meer achter initialen of iconen.**
+De categorie-kleursysteem (CAT_CONFIG) blijft bestaan voor
+CategoryView en Home-categorieënlijst, maar wordt in het
+Bibliotheek-scherm NIET gebruikt als achtergrondkleur per rij.
+
+In plaats daarvan:
+- Snippet-rij: 1px rand `#202A44` (donkerblauw, subtiel)
+- Favoriete snippet-rij: iets duidelijkere rand
+  `rgba(79,140,255,0.35)` (blauw accent, nog steeds subtiel)
+- Initialen: wit/lichtgrijs tekst, dunne outline-border
+  (`1px solid #2A3654`), GEEN gevulde kleurachtergrond
+- Favoriet-indicator: altijd blauw hart/ster (`#4F8CFF`),
+  nooit categorie-kleur
+- Achtergrond van de rij zelf: `#0B1020` (zelfde als scherm-bg,
+  niet `#151D31` — het onderscheid komt van de rand, niet van vlakken)
+
+**Designregel:** minder kleur, meer structuur. Structuur komt uit
+typografie, spacing en subtiele borders — niet uit gekleurde
+vlakken per item.
+
+### 9.3 Layout Bibliotheek-scherm
+
+```
+Bibliotheek                          ← paginatitel
+
+[Alle] [Favorieten] [Categorieën ▾]  ← filter tabs
+
+42 snippets          Recent ▾  ☷     ← toolbar: teller, sort, view
+
+┌─────────────────────────────────┐
+│ CO  CodeSync — Master Architect. │
+│     Ja. Hieronder staat één...  ★│
+│     md · 2 uur geleden           │
+└─────────────────────────────────┘
+```
+
+Elke rij toont: initialen, titel, beschrijving (1 regel, ellipsis),
+taal-badge + relatieve tijd, favoriet-indicator rechts.
+
+---
+
+## 10. Profiel-scherm (toegevoegd — status: VASTGELEGD, bouwen in
+    zelfde ronde als Bibliotheek)
+
+### 10.1 Aanleiding
+
+Archief is een **account-/beheerfunctie**, geen primaire
+Bibliotheek-functie. Een tijdelijke Archief-knop los in de
+navigatie zetten is een tussenstap die we meteen overslaan —
+Profiel wordt in dezelfde bouwronde meegenomen.
+
+### 10.2 Structuur
+
+```
+Profiel
+├── Account / persoonlijke gegevens (placeholder voor nu)
+├── Instellingen (placeholder voor nu)
+├── Archief
+│     ├── Lijst van gewiste snippets
+│     ├── Per item: verwijderdatum + "X dagen resterend"
+│     ├── Actie: Herstellen
+│     └── Actie: Nu permanent verwijderen (met bevestiging)
+└── (later: overige beheeropties)
+```
+
+Geen tijdelijke Archief-knop ergens anders in de navigatie — Archief
+leeft uitsluitend onder Profiel.
+
+### 10.3 Soft-delete architectuur (vervangt huidige `archived: boolean`)
+
+**Huidig systeem (v09.06 en eerder):**
+```typescript
+archived: boolean   // true/false, geen tijdsregistratie
+```
+
+**Nieuw systeem — vereist wijziging in `lib/types.ts`:**
+```typescript
+deletedAt?: string   // ISO timestamp, undefined = niet verwijderd
+```
+
+Migratie-opmerking: bestaande snippets met `archived: true` moeten
+bij implementatie omgezet worden naar `deletedAt: <huidige datum>`
+zodat ze niet per ongeluk meteen als "30 dagen verlopen" gelden.
+Dit is een eenmalige data-migratie, geen structurele wijziging aan
+hoe nieuwe verwijderingen werken.
+
+**Gedrag:**
+- "Verwijderen" in DetailView zet `deletedAt = nu()` — geen
+  Firestore `deleteDoc` meer voor de gebruikers-actie
+- Snippet verdwijnt uit Home/Bibliotheek/CategoryView (filter op
+  `!deletedAt`, net zoals nu gefilterd wordt op `!archived`)
+- Archief-scherm (onder Profiel) toont snippets waar `deletedAt`
+  gezet is, gesorteerd op meest recent verwijderd
+- Per item: "X dagen resterend" = 30 − (vandaag − deletedAt)
+- Herstellen: `deletedAt` terug naar `undefined`
+- Nu permanent verwijderen: echte `deleteDoc()` uit Firestore,
+  met bevestigingsdialoog (zelfde patroon als huidige delete-confirm)
+
+### 10.4 30-dagen automatische cleanup — infrastructuurtaak
+
+**Dit is expliciet GEEN client-side taak.** De app zelf mag nooit
+op basis van "de gebruiker heeft de app geopend" bepalen of iets
+verwijderd moet worden — dat is onbetrouwbaar (als iemand de app
+weken niet opent, cleant er niets op, of erger: opent hij hem net
+op dag 31 en verwijdert de app in de UI-thread te veel tegelijk).
+
+**Vereist bij implementatie:**
+- Firebase Cloud Function (scheduled, bijv. dagelijks) DIE
+  Firestore queryt op `deletedAt < now() - 30 dagen` en die
+  documenten hard verwijdert
+- Alternatief: Vercel Cron Job die een API-route aanroept die
+  hetzelfde doet
+- Dit vereist een keuze tussen Firebase Functions (Blaze-plan,
+  mogelijk kosten) of Vercel Cron (binnen bestaande hosting) —
+  **deze keuze moet expliciet gemaakt worden vóór implementatie**,
+  niet stilzwijgend aangenomen
+
+Dit component wordt apart gepland — het hoort niet vanzelfsprekend
+bij "even het Archief-scherm bouwen", want het is infrastructuur
+buiten de Next.js request/response cyclus.
+
+### 10.5 Wat NIET verandert
+
+- `lib/db.ts` functienamen `archiveSnippet`/`restoreSnippet` kunnen
+  blijven bestaan als naam, maar hun implementatie verandert van
+  `archived: true` naar `deletedAt: <timestamp>`
+- Geen wijziging aan hoe CategoryView, Home of Bibliotheek
+  niet-verwijderde snippets tonen — alleen het filter-veld verandert
+  van `archived` naar `deletedAt`
+
+---
+
+*Vastgelegd: augustus 2026 — dit document is leidend voor Fase 1 t/m 6,
+inclusief de in secties 9 en 10 toegevoegde Bibliotheek- en
+Profiel/Archief-specificaties*
