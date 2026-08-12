@@ -75,6 +75,7 @@ interface Props {
   allSnips: Snippet[];
   lastOpened: Snippet | null;
   onOpenCategory: (cat: string) => void;
+  onOpenProjectList: (cat: string) => void; // Fase H6-vervolg — zie docs/audit-hierarchie.md
   onOpenSnippet: (id: string) => void;
   onSearch: (v: string) => void;
   onFav: (id: string, cur: boolean) => void;
@@ -84,10 +85,19 @@ interface Props {
 }
 
 export default function HomeView({
-  allSnips, lastOpened, onOpenCategory, onOpenSnippet, onSearch, onFav, onAdd,
+  allSnips, lastOpened, onOpenCategory, onOpenProjectList, onOpenSnippet, onSearch, onFav, onAdd,
   onOpenBibliotheek, onOpenProfiel,
 }: Props) {
   const activeSnips = useMemo(() => allSnips.filter(s => !s.deletedAt), [allSnips]);
+
+  // BUGFIX — was al aanwezig in BibliotheekView (Fase H6), maar
+  // ontbrak hier. HomeView heeft zijn eigen categorieën-lijst en
+  // moet dezelfde contextuele beslissing maken.
+  const categoriesWithProjects = useMemo(() => {
+    const set = new Set<string>();
+    activeSnips.forEach(s => { if (s.project) set.add(s.category); });
+    return set;
+  }, [activeSnips]);
   const favorites = useMemo(() => activeSnips.filter(s => s.favorite), [activeSnips]);
   const categories = useMemo(() => Array.from(new Set(activeSnips.map(s => s.category))).filter(Boolean), [activeSnips]);
   const isEmpty = activeSnips.length === 0;
@@ -212,8 +222,9 @@ export default function HomeView({
             {categories.map((cat, index) => {
               const cfg = getCatConfig(cat, index);
               const count = activeSnips.filter(s => s.category === cat).length;
+              const hasProjects = categoriesWithProjects.has(cat);
               return (
-                <div key={cat} onClick={() => onOpenCategory(cat)}
+                <div key={cat} onClick={() => hasProjects ? onOpenProjectList(cat) : onOpenCategory(cat)}
                   style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 4px", borderBottom: "1px solid #151D31", cursor: "pointer" }}>
                   <div style={{ width: 20, height: 20, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
                     <CatIcon iconKey={cfg.iconKey} color="#94A3B8" size={20} />

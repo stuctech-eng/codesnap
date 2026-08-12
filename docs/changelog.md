@@ -13,6 +13,26 @@
 
 ---
 
+## v12.14
+
+- **Bugfix — categorieën met projecten gingen vanuit Home niet naar
+  het Project-niveau.** Fase H6 had de contextuele drill-down-logica
+  ("heeft deze categorie snippets met een project-waarde? toon dan
+  eerst Project-niveau") alleen gebouwd in `BibliotheekView.tsx`.
+  `HomeView.tsx` heeft echter zijn eigen, losse categorieën-lijst en
+  miste deze logica — tikken op "Apps" vanuit Home ging daardoor
+  altijd direct naar de platte snippet-lijst, ook als er (bijv.)
+  een snippet met project "CodeSnap" tussen zat
+- `components/HomeView.tsx`: dezelfde `categoriesWithProjects`-
+  berekening en contextuele click-handler toegevoegd die
+  `BibliotheekView.tsx` al had sinds Fase H6
+- `app/page.tsx`: nieuwe `onOpenProjectList`-prop doorgegeven aan
+  `HomeView` (de onderliggende `openProjectList`-functie bestond
+  al sinds Fase H4)
+- Nu consistent: categorie met projecten gaat naar Project-niveau
+  vanuit ZOWEL Home als Bibliotheek; categorie zonder projecten
+  blijft in beide gevallen plat, zoals altijd
+
 ## v12.13
 
 - **Bugfix — verwijderde snippet bleef staan in "Verder waar je
