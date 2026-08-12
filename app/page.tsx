@@ -8,27 +8,27 @@ import {
 } from "@/lib/db";
 import dynamic from "next/dynamic";
 
-const ListView   = dynamic(() => import("@/components/ListView"),   { ssr: false });
-const HomeView   = dynamic(() => import("@/components/HomeView"),   { ssr: false });
-const DetailView = dynamic(() => import("@/components/DetailView"), { ssr: false });
-const EditView   = dynamic(() => import("@/components/EditView"),   { ssr: false });
+const HomeView     = dynamic(() => import("@/components/HomeView"),     { ssr: false });
+const CategoryView = dynamic(() => import("@/components/CategoryView"), { ssr: false });
+const DetailView   = dynamic(() => import("@/components/DetailView"),   { ssr: false });
+const EditView     = dynamic(() => import("@/components/EditView"),     { ssr: false });
+const SearchView   = dynamic(() => import("@/components/SearchView"),   { ssr: false });
 
-const VERSION = "09.06";
+const VERSION = "10.06";
 
-type View = "list" | "home" | "detail" | "edit" | "new";
+type View = "home" | "category" | "search" | "detail" | "edit" | "new";
 
 export default function Page() {
   const [snips, setSnips] = useState<Snippet[]>([]);
-  const [view, setView] = useState<View>("list"); // Fase 1: HomeView bereikbaar, nog niet default (zie docs/roadmap.md)
+  const [view, setView] = useState<View>("home");
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [lastOpenedId, setLastOpenedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [openSections, setOpenSections] = useState<Record<string, boolean>>({});
-  const [scrollY, setScrollY] = useState(0);
+  const [returnTo, setReturnTo] = useState<View>("home");
 
   const active     = snips.find(s => s.id === activeId);
   const lastOpened = snips.find(s => s.id === lastOpenedId);
@@ -55,7 +55,7 @@ export default function Page() {
   const handleAdd = async (data: Omit<Snippet, "id">) => {
     await addSnippet(data);
     flash("Snippet opgeslagen");
-    setView("list");
+    setView(returnTo);
   };
 
   const handleUpdate = async (id: string, data: Partial<Snippet>) => {
@@ -66,13 +66,15 @@ export default function Page() {
   const handleDelete = async (id: string) => {
     await deleteSnippet(id);
     flash("Verwijderd");
-    goList();
+    setView(returnTo);
+    setActiveId(null);
   };
 
   const handleArchive = async (id: string) => {
     await archiveSnippet(id);
     flash("Gearchiveerd");
-    goList();
+    setView(returnTo);
+    setActiveId(null);
   };
 
   const handleRestore = async (id: string) => {
@@ -101,28 +103,66 @@ export default function Page() {
     flash("Geexporteerd");
   };
 
-  const goList = () => {
-    setView("list");
-    setActiveId(null);
-    setShowSheet(false);
-  };
-
-  const openSnippet = (id: string, currentScrollY: number, currentOpenSections: Record<string, boolean>) => {
-    setScrollY(currentScrollY);
-    setOpenSections(currentOpenSections);
+  const openSnippet = (id: string, from: View) => {
+    setReturnTo(from);
     setActiveId(id);
     setLastOpenedId(id);
     localStorage.setItem("lastOpenedId", id);
     setView("detail");
   };
 
+  const openCategory = (cat: string) => {
+    setActiveCategory(cat);
+    setView("category");
+  };
+
+  const goHome = () => {
+    setView("home");
+    setActiveId(null);
+    setActiveCategory(null);
+    setShowSheet(false);
+  };
+
   const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
 
   return (
-    <main style={{ minHeight: "100vh", background: "var(--bg)", maxWidth: 430, margin: "0 auto", position: "relative" }}>
-      {view === "new" && (
-        <EditView snip={null} theme={theme} onSave={handleAdd} onCancel={goList} />
+    <main style={{ minHeight: "100vh", background: "#0B1020", maxWidth: 430, margin: "0 auto", position: "relative" }}>
+
+      {view === "home" && (
+        <HomeView
+          allSnips={snips}
+          lastOpened={lastOpened || null}
+          onOpenCategory={openCategory}
+          onOpenSnippet={(id) => openSnippet(id, "home")}
+          onSearch={() => setView("search")}
+          onFav={(id, current) => handleToggleFav(id, current)}
+          onAdd={() => { setReturnTo("home"); setView("new"); }}
+        />
       )}
+
+      {view === "category" && activeCategory && (
+        <CategoryView
+          category={activeCategory}
+          allSnips={snips}
+          onBack={goHome}
+          onOpenSnippet={(id) => openSnippet(id, "category")}
+          onFav={(id, current) => handleToggleFav(id, current)}
+        />
+      )}
+
+      {view === "search" && (
+        <SearchView
+          allSnips={snips}
+          onBack={goHome}
+          onOpenSnippet={(id) => openSnippet(id, "search")}
+          onFav={(id, current) => handleToggleFav(id, current)}
+        />
+      )}
+
+      {view === "new" && (
+        <EditView snip={null} theme={theme} onSave={handleAdd} onCancel={() => setView(returnTo)} />
+      )}
+
       {view === "edit" && active && (
         <EditView
           snip={active} theme={theme}
@@ -130,10 +170,11 @@ export default function Page() {
           onCancel={() => setView("detail")}
         />
       )}
+
       {view === "detail" && active && (
         <DetailView
           snip={active} copied={copied} showSheet={showSheet} theme={theme}
-          onBack={goList}
+          onBack={() => { setView(returnTo); setActiveId(null); setShowSheet(false); }}
           onDots={() => setShowSheet(true)}
           onEdit={() => { setShowSheet(false); setView("edit"); }}
           onDelete={() => { if (window.confirm("Verwijderen?")) handleDelete(active.id!); }}
@@ -143,40 +184,10 @@ export default function Page() {
           onShare={() => shareSnippet(active)}
           onExport={() => exportSnippet(active)}
           onCloseSheet={() => setShowSheet(false)}
-          onAdd={() => setView("new")}
+          onAdd={() => { setReturnTo("detail"); setView("new"); }}
         />
       )}
-      {view === "home" && (
-        <HomeView
-          allSnips={snips}
-          lastOpened={lastOpened || null}
-          onOpenCategory={(cat) => { setSearch(cat); setView("list"); }}
-          onOpenSnippet={(id) => openSnippet(id, 0, {})}
-          onSearch={setSearch}
-          onFav={(id, current) => handleToggleFav(id, current)}
-          onAdd={() => setView("new")}
-        />
-      )}
-      {view === "list" && (
-        <ListView
-          allSnips={snips}
-          lastOpened={lastOpened || null}
-          search={search}
-          theme={theme}
-          savedScrollY={scrollY}
-          savedOpenSections={openSections}
-          onSearch={setSearch}
-          onOpen={openSnippet}
-          onFav={(id, current) => handleToggleFav(id, current)}
-          onAdd={() => setView("new")}
-          onEdit={(id) => { setActiveId(id); setView("edit"); }}
-          onDelete={(id) => handleDelete(id)}
-          onArchive={(id) => handleArchive(id)}
-          onRestore={(id) => handleRestore(id)}
-          onToggleTheme={toggleTheme}
-          version={VERSION}
-        />
-      )}
+
       {toast && (
         <div style={{
           position: "fixed", bottom: 96, left: "50%", transform: "translateX(-50%)",

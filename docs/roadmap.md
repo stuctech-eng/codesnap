@@ -10,108 +10,59 @@
 | Fase | Naam | Status |
 |------|------|--------|
 | 0 | Design Baseline v2.0 vastgelegd | ✅ Klaar |
-| 1 | Nieuwe Home Screen | ⏳ Volgende |
-| 2 | Categorie-detailpagina | ⬜ Gepland |
-| 3 | Bestaande features aankoppelen | ⬜ Gepland |
-| 4 | Continue Working — echte data | ⬜ Gepland |
-| 5 | Responsive + iPhone/PWA polish | ⬜ Gepland |
-| 6 | Oude ListView opruimen | ⬜ Gepland |
+| 1 | Nieuwe Home Screen | ✅ Klaar |
+| 2 | Categorie-detailpagina | ✅ Klaar |
+| 3 | Bestaande features aankoppelen | ✅ Klaar |
+| 4 | Continue Working — echte data | ✅ Klaar |
+| 5 | Responsive + iPhone/PWA polish | ⏳ Doorlopend |
+| 6 | Oude ListView opruimen | ⚠️ Handmatige stap vereist |
 
 ---
 
-## Fase 1 — Nieuwe Home Screen
+## v10.06 — Complete v2.0 implementatie
 
-**Doel:** HomeView.tsx bouwen als nieuw, apart component.
+In één sessie afgerond (Fase 1 t/m 4), HomeView als default view:
 
-**Bevat:**
-- Dynamische groet (Goedemorgen/middag/avond)
-- Prominente zoekbalk
-- Continue Working hero (met empty state)
-- Favorieten rij (conditioneel, met empty state)
-- Bibliotheek overzichtsregel
-- Categorieën als simpele lijst (nog geen navigatie naar detail)
-- Sticky "Nieuwe Snippet" knop
-
-**Randvoorwaarden:**
-- Bestaat naast huidige ListView.tsx — vervangt niets nog
-- Gebruikt bestaande `listenSnippets()` uit lib/db.ts
-- Geen wijziging aan Firebase structuur
-- Lijn-iconen (SVG), geen emoji's
-- Kleurensysteem v2.0 (zie design-baseline-v2.md sectie 5)
-
-**Niet in scope:**
-- Categorie-detail navigatie (dat is Fase 2)
-- Zoekfunctionaliteit echt laten werken (Fase 3)
-- Filters/sorteren (Fase 3)
+- **HomeView.tsx** — dynamische groet, Continue Working (met echte
+  relatieve tijd), favorieten, bibliotheek-regel, categorieën-lijst
+- **CategoryView.tsx** (nieuw) — detailscherm per categorie met eigen
+  zoeken/sorteren, hergebruikt SnapRow-stijl uit legacy ListView
+- **SearchView.tsx** (nieuw) — volledig scherm zoeken vanuit Home,
+  doorzoekt titel/beschrijving/tags/categorie
+- **app/page.tsx** — volledig herschreven routing:
+  `home → category / search → detail → edit/new`, met `returnTo`
+  state zodat "terug" altijd naar het juiste scherm gaat
+- Favorieten, archiveren, verwijderen, bewerken — allemaal werkend
+  vanuit de nieuwe navigatiestructuur
+- HomeView is nu de **standaard view** bij openen van de app
 
 ---
 
-## Fase 2 — Categorie-detailpagina
+## Fase 6 — Opruimen (nog te doen, handmatig)
 
-**Doel:** Apart scherm per categorie, bereikbaar via tik op home.
+`components/ListView.tsx` wordt niet meer aangeroepen vanuit
+`app/page.tsx` maar staat nog in de repo. Dit is bewust:
 
-**Bevat:**
-- Terug-navigatie naar home
-- Lijst van snippets binnen die categorie
-- Hergebruik van bestaande snippet-rij weergave
+- Geen enkele import verwijst er nog naar — veilig te verwijderen
+  zodra je zelf hebt gecontroleerd dat alles werkt
+- Verwijderen kan via Working Copy: bestand selecteren → verwijderen
+  → committen
+- Dit is bewust niet automatisch gedaan, om een fallback te hebben
+  als er iets in de nieuwe flow niet blijkt te werken
 
----
-
-## Fase 3 — Bestaande features aankoppelen
-
-**Doel:** Alle functionaliteit uit v09.06 weer beschikbaar maken
-in de nieuwe navigatiestructuur.
-
-**Bevat:**
-- Zoeken (werkend maken op nieuwe home)
-- Sorteren (nieuwste/oudste/A-Z)
-- Tag filters
-- Favorieten toggle
-- Edit/delete/archiveren
-- Archief sectie
+**Aanbevolen actie:** test de app een paar dagen, verwijder dan
+`components/ListView.tsx` in een aparte commit.
 
 ---
 
-## Fase 4 — Continue Working met echte data
+## Fase 5 — Polish (doorlopend, geen blokkerende actie)
 
-**Doel:** Hero sectie op home toont daadwerkelijk laatst geopende
-snippet, niet gesimuleerd.
+Blijft aandachtspunt bij toekomstige wijzigingen:
 
-**Bevat:**
-- Hergebruik bestaande `lastOpenedId` uit localStorage
-- Relatieve tijd berekening (zojuist/min/uur/dagen geleden)
-- Taal-badge gebaseerd op eerste codeBlock filename
-- Empty state als er nog nooit iets geopend is
+- Test met 0 / 1 / 10 / 100+ snippets
+- Test met zeer lange titels/categorienamen
+- Test op verschillende iPhone schermgroottes
 
 ---
 
-## Fase 5 — Responsive + PWA polish
-
-**Doel:** Edge cases afvangen voordat oude UI verwijderd wordt.
-
-**Test:**
-- 0 snippets (nieuwe gebruiker)
-- 1 snippet
-- 10 snippets, 3 categorieën
-- 100+ snippets, 10+ categorieën
-- Zeer lange snippet titels / categorienamen
-- iPhone SE (klein scherm) tot iPhone Pro Max
-
----
-
-## Fase 6 — Opruimen
-
-**Doel:** Oude code verwijderen zodra nieuwe flow bewezen stabiel is.
-
-**Bevat:**
-- `components/ListView.tsx` verwijderen
-- `app/page.tsx` routing bijwerken naar HomeView + CategoryView
-- README.md bijwerken — v08/v09 sectie naar changelog, nieuwe
-  architectuur beschrijven
-
-**Regel:** Deze fase gebeurt pas na expliciete goedkeuring, niet
-automatisch na Fase 5.
-
----
-
-*Dit document wordt bijgewerkt na elke afgeronde fase.*
+*Bijgewerkt: augustus 2026 — v10.06 complete implementatie*
