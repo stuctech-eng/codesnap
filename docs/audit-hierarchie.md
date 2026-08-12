@@ -424,8 +424,8 @@ die er gebruik van maken.
 | H1 — Datamodel (`project`/`component` velden) | ✅ Afgerond (v12.02) |
 | H2 — EditView invoervelden | ✅ Afgerond (v12.03) |
 | H3 — Routing: returnStack | ✅ Afgerond (v12.04) |
-| H4 — ProjectListView + ComponentListView | ⏳ Volgende |
-| H5 — Breadcrumb-component | ⬜ Gepland |
+| H4 — ProjectListView + ComponentListView | ✅ Afgerond (v12.05) |
+| H5 — Breadcrumb-component | ⏳ Volgende |
 | H6 — Contextuele drill-down in Bibliotheek | ⬜ Gepland |
 
 **Fase H1 details:**
@@ -437,6 +437,47 @@ die er gebruik van maken.
   beide velden
 - App-gedrag na deze fase: onveranderd zichtbaar — nog geen UI om
   deze velden in te vullen of te gebruiken
+
+**Fase H4 details:**
+- `components/DrillDownView.tsx` (nieuw) — één generiek component
+  voor zowel het Project- als het Component-niveau, aangestuurd via
+  een `level`-prop, zoals vastgelegd in sectie 4.4 (voorkomt de
+  CAT_CONFIG/ALL_CATS-duplicatie-valkuil op dit nieuwe niveau)
+- Snippets zonder project- of component-waarde verschijnen gewoon
+  als platte lijst onderaan hetzelfde scherm ("Overig binnen X") —
+  geen aparte lege staat nodig, ze gaan simpelweg niet verloren
+- `app/page.tsx`: nieuwe view-types `"project"` en `"component"`,
+  plus `activeProject`-state naast het bestaande `activeCategory`
+- **Bijkomende, noodzakelijke correctie tijdens H4:** `CategoryView`
+  gebruikte nog `onBack={goHome}` direct, net als `openCategory` nog
+  `setView("category")` direct gebruikte i.p.v. de stack. Dit was in
+  H3 onopgemerkt gebleven omdat Categorie destijds alleen vanuit Home
+  bereikbaar was — toevallig identiek gedrag. Zodra Categorie ook
+  vanuit Bibliotheek bereikbaar wordt (H6), zou dit dezelfde bug
+  hebben veroorzaakt als eerder bij Bibliotheek/Profiel in H3. Nu
+  vooraf gecorrigeerd: beide gebruiken `pushView`/`popView`.
+- Alle navigatiepaden opnieuw gesimuleerd vóór levering, inclusief
+  het diepste pad (Bibliotheek → Project → Component → Detail →
+  meerdere keren terug) — zie tabel.
+
+| Scenario | Resultaat |
+|---|---|
+| Home → Categorie → Detail → terug | ✅ Categorie |
+| Home → Categorie → terug | ✅ Home |
+| Bibliotheek → Project → Component → terug | ✅ Project |
+| ...nog een keer terug | ✅ Bibliotheek |
+| ...nog een keer terug | ✅ Home |
+| Component → Detail → terug | ✅ Component |
+
+**Fase H4 — wat nog NIET is gedaan (bewust, hoort bij H6):**
+- `BibliotheekView.tsx` roept `openProjectList`/`openProject` nog
+  nergens aan — de categorieën-tab gaat nog altijd direct naar
+  `CategoryView`, ongeacht of er projecten zijn ingevuld. De
+  contextuele beslissing ("heeft deze categorie projecten? toon dan
+  Project-niveau, anders direct CategoryView") is expliciet Fase H6.
+- Breadcrumb met tikbare tussensegmenten (Apps / CoachOS / Recovery)
+  is Fase H5 — `DrillDownView` heeft nu alleen een simpele
+  1-stap-terug knop, consistent met de rest van de app.
 
 **Fase H3 — belangrijke correctie tijdens implementatie:**
 
@@ -505,5 +546,4 @@ faalde. Zie onderstaande tabel.
 ---
 
 *Codebase-verificatie en implementatieplan toegevoegd: augustus 2026.
-Fase H1, H2 en H3 afgerond. Volgende stap: Fase H4 na expliciete
-"go".**
+Fase H1 t/m H4 afgerond. Volgende stap: Fase H5 na expliciete "go".**

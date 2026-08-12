@@ -14,17 +14,19 @@ const SearchView      = dynamic(() => import("@/components/SearchView"),      { 
 const BibliotheekView = dynamic(() => import("@/components/BibliotheekView"), { ssr: false });
 const ProfielView     = dynamic(() => import("@/components/ProfielView"),     { ssr: false });
 const DetailView      = dynamic(() => import("@/components/DetailView"),      { ssr: false });
+const DrillDownView   = dynamic(() => import("@/components/DrillDownView"),   { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "12.04";
+const VERSION = "12.05";
 
-type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "detail" | "edit" | "new";
+type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "project" | "component" | "detail" | "edit" | "new";
 
 export default function Page() {
   const [snips, setSnips] = useState<Snippet[]>([]);
   const [view, setView] = useState<View>("home");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeProject, setActiveProject] = useState<string | null>(null);
   const [lastOpenedId, setLastOpenedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
@@ -131,7 +133,22 @@ export default function Page() {
 
   const openCategory = (cat: string) => {
     setActiveCategory(cat);
-    setView("category");
+    pushView("category");
+  };
+
+  // Fase H4 — nieuw. Wordt nog NIET automatisch aangeroepen vanuit
+  // Bibliotheek (dat is Fase H6, de contextuele koppeling). Deze
+  // functie bestaat nu al zodat H4 zelfstandig te testen is.
+  const openProject = (cat: string, project: string) => {
+    setActiveCategory(cat);
+    setActiveProject(project);
+    pushView("component");
+  };
+
+  const openProjectList = (cat: string) => {
+    setActiveCategory(cat);
+    setActiveProject(null);
+    pushView("project");
   };
 
   const goHome = () => {
@@ -139,6 +156,7 @@ export default function Page() {
     setReturnStack([]);
     setActiveId(null);
     setActiveCategory(null);
+    setActiveProject(null);
     setShowSheet(false);
   };
 
@@ -184,8 +202,33 @@ export default function Page() {
         <CategoryView
           category={activeCategory}
           allSnips={snips}
-          onBack={goHome}
+          onBack={popView}
           onOpenSnippet={openSnippet}
+          onFav={(id, current) => handleToggleFav(id, current)}
+        />
+      )}
+
+      {view === "project" && activeCategory && (
+        <DrillDownView
+          level="project"
+          category={activeCategory}
+          allSnips={snips}
+          onBack={popView}
+          onOpenSnippet={openSnippet}
+          onOpenNext={(proj) => openProject(activeCategory, proj)}
+          onFav={(id, current) => handleToggleFav(id, current)}
+        />
+      )}
+
+      {view === "component" && activeCategory && activeProject && (
+        <DrillDownView
+          level="component"
+          category={activeCategory}
+          project={activeProject}
+          allSnips={snips}
+          onBack={popView}
+          onOpenSnippet={openSnippet}
+          onOpenNext={() => {}}
           onFav={(id, current) => handleToggleFav(id, current)}
         />
       )}
