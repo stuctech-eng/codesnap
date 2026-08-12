@@ -35,6 +35,8 @@ function migrateSnippet(id: string, data: Record<string, unknown>): Snippet {
     notes: (data.notes as string) || "",
     snippetType: (data.snippetType as Snippet["snippetType"]) || "code",
     category: (data.category as string) || "",
+    project: (data.project as string) || undefined,
+    component: (data.component as string) || undefined,
     tags: (data.tags as string[]) || [],
     favorite: (data.favorite as boolean) || false,
     archived: (data.archived as boolean) || false,
