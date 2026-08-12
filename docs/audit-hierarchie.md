@@ -415,6 +415,41 @@ die er gebruik van maken.
 
 ---
 
+## 10. Voortgang
+
+| Fase | Status |
+|---|---|
+| H1 — Datamodel (`project`/`component` velden) | ✅ Afgerond (v12.02) |
+| H2 — EditView invoervelden | ✅ Afgerond (v12.03) |
+| H3 — Routing: returnStack | ⏳ Volgende |
+| H4 — ProjectListView + ComponentListView | ⬜ Gepland |
+| H5 — Breadcrumb-component | ⬜ Gepland |
+| H6 — Contextuele drill-down in Bibliotheek | ⬜ Gepland |
+
+**Fase H1 details:**
+- `lib/types.ts` — `project?: string` en `component?: string`
+  toegevoegd aan `Snippet` interface
+- `lib/db.ts` — `migrateSnippet()` uitgebreid om beide velden uit
+  Firestore te lezen
+- Geen migratie nodig — bestaande snippets krijgen `undefined` voor
+  beide velden
+- App-gedrag na deze fase: onveranderd zichtbaar — nog geen UI om
+  deze velden in te vullen of te gebruiken
+
+**Fase H2 details:**
+- `components/EditView.tsx` — twee nieuwe velden "Project" en
+  "Onderdeel" toegevoegd, direct zichtbaar na Categorie (geen
+  voorwaardelijke logica, zoals vastgelegd in sectie 4.3)
+- Beide zijn simpele tekstvelden via het bestaande FieldRow/
+  FullScreenField-patroon (zelfde als Titel/Beschrijving/Notities)
+  — geen aparte popup-selector, geen autocomplete in deze fase
+- `save()` gebruikt al `{ ...form }`, dus de nieuwe velden werden
+  automatisch meegenomen zonder die functie te hoeven wijzigen
+- App-gedrag na deze fase: velden zijn zichtbaar en werkend, maar
+  worden nog nergens in Bibliotheek/CategoryView gebruikt voor
+  navigatie — dat komt in H4/H6
+
+---
+
 *Codebase-verificatie en implementatieplan toegevoegd: augustus 2026.
-Nog geen productiecode gewijzigd — volgende stap is Fase H1 na
-expliciete "go".*
+Fase H1 en H2 afgerond. Volgende stap: Fase H3 na expliciete "go".**

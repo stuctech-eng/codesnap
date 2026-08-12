@@ -71,7 +71,7 @@ interface Props {
   onCancel: () => void;
 }
 
-type Field = "title"|"description"|"notes"|null;
+type Field = "title"|"description"|"notes"|"project"|"component"|null;
 type PopupType = "categorie"|"tags"|"bestand"|null;
 
 export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Props) {
@@ -84,6 +84,8 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
     notes:       snip?.notes || "",
     snippetType: (snip?.snippetType || "code") as SnippetType,
     category:    snip?.category || ALL_CATS[0],
+    project:     snip?.project || "",
+    component:   snip?.component || "",
     tags:        snip?.tags || [] as string[],
     favorite:    snip?.favorite || false,
     codeBlocks:  snip?.codeBlocks || [] as CodeBlock[],
@@ -162,7 +164,13 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
   if (activeField) {
     return (
       <FullScreenField
-        label={activeField === "title" ? "TITEL" : activeField === "description" ? "BESCHRIJVING" : "NOTITIES"}
+        label={
+          activeField === "title" ? "TITEL" :
+          activeField === "description" ? "BESCHRIJVING" :
+          activeField === "notes" ? "NOTITIES" :
+          activeField === "project" ? "PROJECT" :
+          "ONDERDEEL"
+        }
         value={form[activeField] as string}
         isCode={false}
         onDone={(val) => { set(activeField, val); setActiveField(null); }}
@@ -294,6 +302,10 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round"><path d="m6 9 6 6 6-6"/></svg>
           </button>
         </div>
+
+        {/* PROJECT + ONDERDEEL — Fase H2, zie docs/audit-hierarchie.md */}
+        <FieldRow label="PROJECT" field="project" preview={form.project} />
+        <FieldRow label="ONDERDEEL" field="component" preview={form.component} />
 
         {/* TAGS */}
         <div style={{ marginBottom:12 }}>
