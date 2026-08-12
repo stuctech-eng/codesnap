@@ -19,9 +19,9 @@ const DrillDownView   = dynamic(() => import("@/components/DrillDownView"),   { 
 const Breadcrumb       = dynamic(() => import("@/components/Breadcrumb"),      { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "12.14";
+const VERSION = "12.15";
 
-type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "project" | "component" | "detail" | "edit" | "new";
+type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "project" | "component" | "snippets" | "detail" | "edit" | "new";
 
 export default function Page() {
   const [authReady, setAuthReady] = useState(false);
@@ -32,6 +32,7 @@ export default function Page() {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [activeProject, setActiveProject] = useState<string | null>(null);
+  const [activeComponent, setActiveComponent] = useState<string | null>(null);
   const [lastOpenedId, setLastOpenedId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [showSheet, setShowSheet] = useState(false);
@@ -164,19 +165,32 @@ export default function Page() {
     pushView("category");
   };
 
-  // Fase H4 — nieuw. Wordt nog NIET automatisch aangeroepen vanuit
-  // Bibliotheek (dat is Fase H6, de contextuele koppeling). Deze
-  // functie bestaat nu al zodat H4 zelfstandig te testen is.
-  const openProject = (cat: string, project: string) => {
-    setActiveCategory(cat);
-    setActiveProject(project);
-    pushView("component");
-  };
-
   const openProjectList = (cat: string) => {
     setActiveCategory(cat);
     setActiveProject(null);
+    setActiveComponent(null);
     pushView("project");
+  };
+
+  // BUGFIX (augustus 2026) — dit ging voorheen direct naar het
+  // eindpunt (platte snippet-lijst). Volgens de oorspronkelijke
+  // specificatie (docs/audit-hierarchie.md sectie 4.2) moet dit
+  // niveau ZELF eerst nog kunnen groeperen op Onderdeel, als die
+  // waarden zijn ingevuld. DrillDownView regelt die beslissing nu
+  // zelf (toont groepen OF platte lijst, afhankelijk van de data) —
+  // hier hoeven we alleen naar het juiste niveau te navigeren.
+  const openProject = (cat: string, project: string) => {
+    setActiveCategory(cat);
+    setActiveProject(project);
+    setActiveComponent(null);
+    pushView("component");
+  };
+
+  const openComponent = (cat: string, project: string, comp: string) => {
+    setActiveCategory(cat);
+    setActiveProject(project);
+    setActiveComponent(comp);
+    pushView("snippets");
   };
 
   const goHome = () => {
@@ -202,6 +216,12 @@ export default function Page() {
     setReturnStack(["home", "bibliotheek"]);
     setActiveProject(null);
     setView("project");
+  };
+
+  const jumpToComponentList = () => {
+    setReturnStack(["home", "bibliotheek", "project"]);
+    setActiveComponent(null);
+    setView("component");
   };
 
   const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
@@ -292,12 +312,32 @@ export default function Page() {
           allSnips={snips}
           onBack={popView}
           onOpenSnippet={openSnippet}
-          onOpenNext={() => {}}
+          onOpenNext={(comp) => openComponent(activeCategory, activeProject, comp)}
           onFav={(id, current) => handleToggleFav(id, current)}
           breadcrumb={[
             { label: "Bibliotheek", onTap: jumpToBibliotheek },
             { label: activeCategory, onTap: jumpToProjectList },
             { label: activeProject, onTap: () => {} },
+          ]}
+        />
+      )}
+
+      {view === "snippets" && activeCategory && activeProject && activeComponent && (
+        <DrillDownView
+          level="snippets"
+          category={activeCategory}
+          project={activeProject}
+          component={activeComponent}
+          allSnips={snips}
+          onBack={popView}
+          onOpenSnippet={openSnippet}
+          onOpenNext={() => {}}
+          onFav={(id, current) => handleToggleFav(id, current)}
+          breadcrumb={[
+            { label: "Bibliotheek", onTap: jumpToBibliotheek },
+            { label: activeCategory, onTap: jumpToProjectList },
+            { label: activeProject, onTap: jumpToComponentList },
+            { label: activeComponent, onTap: () => {} },
           ]}
         />
       )}

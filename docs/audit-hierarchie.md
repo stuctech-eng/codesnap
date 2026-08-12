@@ -675,6 +675,103 @@ De zes namen zijn een snelkeuze, geen dwingend schema.
 
 ---
 
+---
+
+## 13. Structurele correctie — vierde niveau (Onderdeel als submap)
+    toegevoegd (v12.15)
+
+> Status: GECORRIGEERD EN GEBOUWD
+
+### 13.1 Wat er fout was — eerlijke analyse
+
+Bij Fase H4 (`DrillDownView.tsx`) is `level="component"` altijd
+geïmplementeerd als eindpunt: een platte snippet-lijst, ongeacht of
+er Onderdeel-waarden waren ingevuld. Dit was een **verkeerde lezing**
+van de eigen, al vastgelegde specificatie in sectie 4.2:
+
+```
+CoachOS → snippets hebben component ingevuld → toon lijst
+    → Recovery → platte snippet-lijst
+```
+
+Deze regel stond er al sinds het allereerste, door de gebruiker
+goedgekeurde ontwerpvoorstel — "toon lijst" betekent een groeperende
+tussenstap, net als bij Project, niet een directe sprong naar
+snippets. Ook de testcase bij Fase H4 zelf ("navigeren Apps →
+CoachOS → Recovery → snippet-lijst") beschrijft expliciet vier
+stappen, niet drie. Dit is bij implementatie gemist en bleef
+onopgemerkt totdat een gebruiker een Onderdeel invulde en merkte dat
+het nergens als eigen, tikbare submap verscheen.
+
+### 13.2 De correctie
+
+`DrillDownView.tsx` kreeg een derde, symmetrisch niveau:
+
+```
+level="project"    → groepeert op project-veld (ongewijzigd)
+level="component"  → groepeert NU op component-veld (was: platte lijst)
+level="snippets"    → NIEUW — het echte eindpunt, platte lijst
+```
+
+Navigatie is nu, waar Onderdeel-waarden gebruikt worden:
+
+```
+Bibliotheek → Apps → CodeSnap → Auth/Toegang → CRON_SECRET
+              (project)  (component-groep)  (snippet)
+```
+
+En blijft, waar geen Onderdeel-waarden gebruikt worden (bijv.
+CoachOS met alleen platte snippets zonder component-veld), exact
+zoals voorheen — direct de platte lijst, geen extra lege stap.
+
+### 13.3 Wijzigingen
+
+- `components/DrillDownView.tsx`: `Level`-type uitgebreid met
+  `"snippets"`; groepeer- en ongegroepeerd-logica generiek gemaakt
+  voor alle drie niveaus i.p.v. component-niveau als speciaal geval
+- `app/page.tsx`: nieuwe view `"snippets"`, nieuwe state
+  `activeComponent`, nieuwe functies `openComponent()` en
+  `jumpToComponentList()` (laatste volgt hetzelfde "expliciete
+  stack instellen"-patroon als de bestaande jump-functies uit Fase
+  H5, niet een simpele extra `pushView`)
+- `openProject()` navigeert nu naar het Component-niveau (dat zelf
+  beslist of het groepeert of doorschiet naar snippets), in plaats
+  van rechtstreeks naar het eindpunt
+- Breadcrumb op het diepste niveau toont nu vier segmenten:
+  Bibliotheek / Categorie / Project / Onderdeel
+
+### 13.4 Verificatie vóór levering
+
+Alle navigatiepaden gesimuleerd, inclusief het volledige vier-
+niveaus-diepe pad en de breadcrumb-sprong terug naar het
+Component-niveau (niet alleen terug-knop, ook het "spring naar
+tussenliggend segment"-mechanisme uit Fase H5):
+
+| Scenario | Resultaat |
+|---|---|
+| Home→Bibliotheek→Project→Component→Snippets→terug | ✅ Component |
+| ...nog een keer terug | ✅ Project |
+| ...nog een keer terug | ✅ Bibliotheek |
+| ...nog een keer terug | ✅ Home |
+| Breadcrumb-sprong van Snippets naar Component-lijst | ✅ Component |
+| Project MET component-waarden (bijv. CodeSnap) | ✅ toont groep |
+| Project ZONDER component-waarden (bijv. CoachOS) | ✅ blijft plat, geen regressie |
+
+### 13.5 Belangrijke les — vastgelegd voor toekomstige fases
+
+Bij het lezen van een eigen, eerder geschreven specificatie:
+letterlijke voorbeelden en testcases (zoals "Apps → CoachOS →
+Recovery → snippet-lijst" — vier stappen) wegen zwaarder dan een
+eigen samenvattende aanname over hoeveel niveaus er "zouden moeten
+zijn". Deze fout is ontdekt doordat de gebruiker het systeem
+daadwerkelijk gebruikte met echte Onderdeel-waarden — een test die
+niet in eerdere gesimuleerde scenario's zat, omdat die zich altijd
+beperkten tot lege/platte projecten.
+
+---
+
 *Codebase-verificatie en implementatieplan toegevoegd: augustus 2026.
 Fase H1 t/m H6 volledig afgerond (v12.08). Standaard Onderdelen-
-patroon (sectie 12) toegevoegd en gebouwd (v12.11). Plan gesloten.*
+patroon (sectie 12) toegevoegd en gebouwd (v12.11). Structurele
+correctie vierde niveau (sectie 13) toegevoegd en gebouwd (v12.15).
+Plan definitief gesloten — geverifieerd tegen eigen specificatie.*

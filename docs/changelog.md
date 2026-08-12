@@ -13,6 +13,28 @@
 
 ---
 
+## v12.15
+
+- **Structurele correctie — Onderdeel werkte niet als submap.**
+  Sinds Fase H4 was het diepste niveau van de hiërarchie
+  (Categorie → Project → Onderdeel → Snippet) altijd een platte
+  lijst, ongeacht ingevulde Onderdeel-waarden — "Ideeën" of
+  "Auth/Toegang" verscheen dus nooit als eigen, tikbare submap,
+  in tegenspraak met de oorspronkelijke specificatie
+  (docs/audit-hierarchie.md sectie 4.2, die dit al vanaf het begin
+  zo beschreef)
+- `components/DrillDownView.tsx`: nieuw derde niveau `"snippets"`
+  toegevoegd — `"component"` groepeert nu net als `"project"` op
+  zijn eigen veld; alleen `"snippets"` is nog het echte eindpunt
+- `app/page.tsx`: nieuwe view `snippets`, state `activeComponent`,
+  functies `openComponent()` en `jumpToComponentList()`
+- Breadcrumb op het diepste niveau toont nu vier segmenten:
+  Bibliotheek / Categorie / Project / Onderdeel
+- Categorieën/projecten zonder Onderdeel-gebruik blijven exact
+  zoals voorheen — direct platte lijst, geen regressie
+- Zie docs/audit-hierarchie.md sectie 13 voor volledige analyse van
+  wat er mis ging en waarom
+
 ## v12.14
 
 - **Bugfix — categorieën met projecten gingen vanuit Home niet naar
