@@ -3,13 +3,6 @@ import { useState, useEffect } from "react";
 import { Snippet } from "@/lib/types";
 
 const initials = (t = "") => t.slice(0, 2).toUpperCase();
-const AV = ["#1d4ed8","#2563eb","#1e40af","#1e3a8a"];
-const avColor = (t = "") => AV[t.charCodeAt(0) % AV.length];
-const CAT_COLORS: Record<string,string> = {
-  "AI Prompts":"#6366f1","Snippets":"#f59e0b",
-  "Config":"#10b981","UI":"#ec4899",
-  "Machines":"#3b82f6","Ideeën":"#8b5cf6",
-};
 const LANG_COLORS: Record<string,string> = {
   html:"#e34c26",css:"#264de4",js:"#f7df1e",ts:"#3178c6",tsx:"#3178c6",
   jsx:"#61dafb",json:"#10b981",sql:"#336791",python:"#3572A5",
@@ -87,8 +80,8 @@ function CodeViewer({ code, filename }: { code:string; filename:string }) {
   const lang = getLang(filename);
   const langColor = LANG_COLORS[lang] || "#8b949e";
   return (
-    <div style={{ background:"#0d1117", borderRadius:12, overflow:"hidden", border:"1px solid #30363d" }}>
-      <div style={{ background:"#161b22", padding:"8px 14px", display:"flex", alignItems:"center", gap:8, borderBottom:"1px solid #21262d" }}>
+    <div style={{ background:"#0d1117", borderRadius:12, overflow:"hidden", border:"1px solid #202A44" }}>
+      <div style={{ background:"#151D31", padding:"8px 14px", display:"flex", alignItems:"center", gap:8, borderBottom:"1px solid #202A44" }}>
         <div style={{ width:10, height:10, borderRadius:"50%", background:"#ff5f57" }} />
         <div style={{ width:10, height:10, borderRadius:"50%", background:"#febc2e" }} />
         <div style={{ width:10, height:10, borderRadius:"50%", background:"#28c840" }} />
@@ -114,13 +107,13 @@ function CodeViewer({ code, filename }: { code:string; filename:string }) {
 interface Props {
   snip:Snippet; copied:boolean; showSheet:boolean; theme:"dark"|"light";
   onBack:()=>void; onDots:()=>void; onEdit:()=>void; onDelete:()=>void;
-  onArchive:()=>void; onCopy:()=>void; onFav:()=>void; onShare:()=>void;
+  onCopy:()=>void; onFav:()=>void; onShare:()=>void;
   onExport:()=>void; onCloseSheet:()=>void; onAdd:()=>void;
 }
 
 type MainTab = "about"|"code";
 
-export default function DetailView({ snip, copied, showSheet, theme, onBack, onDots, onEdit, onDelete, onArchive, onCopy, onFav, onShare, onExport, onCloseSheet, onAdd }: Props) {
+export default function DetailView({ snip, copied, showSheet, theme, onBack, onDots, onEdit, onDelete, onCopy, onFav, onShare, onExport, onCloseSheet, onAdd }: Props) {
   const [tab, setTab] = useState<MainTab>("about");
   const [activeBlockId, setActiveBlockId] = useState<string|null>(snip.codeBlocks?.[0]?.id || null);
   const [fullScreen, setFullScreen] = useState(false);
@@ -128,14 +121,13 @@ export default function DetailView({ snip, copied, showSheet, theme, onBack, onD
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
 
-  const catColor = CAT_COLORS[snip.category] || "var(--accent)";
   const snippetType = snip.snippetType || "code";
   const blocks = snip.codeBlocks || [];
   const activeBlock = blocks.find(b => b.id === activeBlockId) || blocks[0];
 
-  const typeInfo = snippetType==="prompt" ? { icon:"🤖", label:"AI Prompt", color:"#6366f1" }
-    : snippetType==="instructie" ? { icon:"📋", label:"Instructie + Code", color:"#3b82f6" }
-    : { icon:"🔧", label:"Code Snippet", color:"#10b981" };
+  const typeInfo = snippetType==="prompt" ? { icon:"🤖", label:"AI Prompt" }
+    : snippetType==="instructie" ? { icon:"📋", label:"Instructie + Code" }
+    : { icon:"🔧", label:"Code Snippet" };
 
   const copyAction = (action:string, blockId?:string) => {
     const text = buildCopyText(snip, action, blockId);
@@ -145,10 +137,10 @@ export default function DetailView({ snip, copied, showSheet, theme, onBack, onD
   if (fullScreen && activeBlock) {
     return (
       <div style={{ position:"fixed", inset:0, background:"#0d1117", zIndex:500, display:"flex", flexDirection:"column" }}>
-        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid #21262d", background:"#161b22", flexShrink:0 }}>
-          <button style={{ background:"none", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={() => setFullScreen(false)}>← Terug</button>
+        <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 16px 12px", borderBottom:"1px solid #202A44", background:"#151D31", flexShrink:0 }}>
+          <button style={{ background:"none", border:"none", color:"#4F8CFF", fontSize:17, cursor:"pointer" }} onClick={() => setFullScreen(false)}>← Terug</button>
           <span style={{ fontSize:13, fontWeight:600, color:"#e6edf3", fontFamily:"monospace" }}>{activeBlock.filename}</span>
-          <button style={{ background: copyState===activeBlock.id ? "#10b981" : "var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer" }}
+          <button style={{ background: copyState===activeBlock.id ? "#10b981" : "#4F8CFF", border:"none", borderRadius:10, padding:"6px 14px", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer" }}
             onClick={() => copyAction("code", activeBlock.id)}>
             {copyState===activeBlock.id ? "✓" : "Copy"}
           </button>
@@ -161,33 +153,33 @@ export default function DetailView({ snip, copied, showSheet, theme, onBack, onD
   }
 
   return (
-    <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"var(--bg)" }}>
+    <div style={{ display:"flex", flexDirection:"column", minHeight:"100vh", background:"#0B1020" }}>
 
       {/* NAV */}
-      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 14px 12px", borderBottom:"1px solid var(--border)", background:"var(--bg)", position:"sticky", top:0, zIndex:10 }}>
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"52px 14px 12px", borderBottom:"1px solid #202A44", background:"#0B1020", position:"sticky", top:0, zIndex:10 }}>
         <button style={{ display:"flex", alignItems:"center", gap:4, background:"none", border:"none", cursor:"pointer" }} onClick={onBack}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
-          <span style={{ color:"var(--accent)", fontSize:16 }}>Snippets</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F8CFF" strokeWidth="2.5" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
+          <span style={{ color:"#4F8CFF", fontSize:16 }}>Snippets</span>
         </button>
-        <span style={{ fontSize:15, fontWeight:700, color:"var(--text)", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{snip.title}</span>
+        <span style={{ fontSize:15, fontWeight:700, color:"#fff", maxWidth:160, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{snip.title}</span>
         <div style={{ display:"flex", gap:8 }}>
-          <button onClick={onAdd} style={{ width:32, height:32, borderRadius:"50%", background:"var(--accent)", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
+          <button onClick={onAdd} style={{ width:32, height:32, borderRadius:"50%", background:"#4F8CFF", border:"none", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer" }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.5" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
           </button>
           <button onClick={onDots} style={{ background:"none", border:"none", cursor:"pointer" }}>
-            <div style={{ width:32, height:32, borderRadius:"50%", background:"var(--bg2)", border:"1px solid var(--border2)", display:"flex", alignItems:"center", justifyContent:"center" }}>
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="var(--text2)"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+            <div style={{ width:32, height:32, borderRadius:"50%", background:"#151D31", border:"1px solid #202A44", display:"flex", alignItems:"center", justifyContent:"center" }}>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="#94A3B8"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
             </div>
           </button>
         </div>
       </div>
 
-      {/* KOPIEER ALLES — bovenaan */}
+      {/* KOPIEER ALLES */}
       <div style={{ padding:"10px 14px 0" }}>
         <button onClick={() => copyAction("alles")} style={{
           display:"flex", alignItems:"center", justifyContent:"center", gap:8,
           width:"100%", padding:"11px", borderRadius:12, border:"none",
-          background: copyState==="alles" ? "var(--green)" : "var(--accent)",
+          background: copyState==="alles" ? "#10b981" : "#4F8CFF",
           color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer",
           transition:"background 0.2s",
         }}>
@@ -196,14 +188,14 @@ export default function DetailView({ snip, copied, showSheet, theme, onBack, onD
       </div>
 
       {/* TABS */}
-      <div style={{ padding:"10px 14px 0", background:"var(--bg)" }}>
-        <div style={{ background:"var(--bg2)", borderRadius:10, padding:3, display:"flex", border:"1px solid var(--border2)" }}>
+      <div style={{ padding:"10px 14px 0", background:"#0B1020" }}>
+        <div style={{ background:"#151D31", borderRadius:10, padding:3, display:"flex", border:"1px solid #202A44" }}>
           {(["about","code"] as MainTab[]).map(t => (
             <button key={t} onClick={() => setTab(t)} style={{
               flex:1, padding:"7px 0", borderRadius:8, border:"none", cursor:"pointer",
               fontSize:14, fontWeight: tab===t ? 700 : 500,
-              background: tab===t ? "var(--accent)" : "transparent",
-              color: tab===t ? "#fff" : "var(--text2)",
+              background: tab===t ? "#4F8CFF" : "transparent",
+              color: tab===t ? "#fff" : "#94A3B8",
               transition:"background 0.2s",
             }}>
               {t==="about" ? "About" : "Code"+(blocks.length>1?" ("+blocks.length+")":"")}
@@ -217,17 +209,17 @@ export default function DetailView({ snip, copied, showSheet, theme, onBack, onD
         {/* ABOUT TAB */}
         {tab==="about" && (
           <div style={{ padding:"16px" }}>
-            <div style={{ background:"var(--bg2)", borderRadius:14, padding:14, marginBottom:12, border:"1px solid var(--border2)", display:"flex", gap:12, alignItems:"center" }}>
-              <div style={{ width:48, height:48, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, fontWeight:800, color:"#fff", background:avColor(snip.title), flexShrink:0 }}>
+            <div style={{ background:"#151D31", borderRadius:14, padding:14, marginBottom:12, border:"1px solid #202A44", display:"flex", gap:12, alignItems:"center" }}>
+              <div style={{ width:48, height:48, borderRadius:12, display:"flex", alignItems:"center", justifyContent:"center", fontSize:16, fontWeight:700, color:"#E2E8F0", border:"1px solid #2A3654", flexShrink:0 }}>
                 {initials(snip.title)}
               </div>
               <div style={{ flex:1, minWidth:0 }}>
-                <h1 style={{ fontSize:19, fontWeight:800, margin:"0 0 6px", color:"var(--text)", letterSpacing:"-0.02em" }}>{snip.title}</h1>
+                <h1 style={{ fontSize:19, fontWeight:800, margin:"0 0 6px", color:"#fff", letterSpacing:"-0.02em" }}>{snip.title}</h1>
                 <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-                  <div style={{ display:"inline-flex", alignItems:"center", gap:5, background:catColor+"22", padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:600, color:catColor }}>
-                    <div style={{ width:5, height:5, borderRadius:"50%", background:catColor }} />{snip.category}
+                  <div style={{ display:"inline-flex", alignItems:"center", gap:5, border:"1px solid #2A3654", padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:600, color:"#94A3B8" }}>
+                    <div style={{ width:5, height:5, borderRadius:"50%", background:"#94A3B8" }} />{snip.category}
                   </div>
-                  <div style={{ display:"inline-flex", alignItems:"center", gap:5, background:typeInfo.color+"22", padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:600, color:typeInfo.color }}>
+                  <div style={{ display:"inline-flex", alignItems:"center", gap:5, background:"rgba(79,140,255,0.08)", border:"1px solid rgba(79,140,255,0.3)", padding:"3px 10px", borderRadius:20, fontSize:12, fontWeight:600, color:"#4F8CFF" }}>
                     {typeInfo.icon} {typeInfo.label}
                   </div>
                 </div>
@@ -235,53 +227,52 @@ export default function DetailView({ snip, copied, showSheet, theme, onBack, onD
             </div>
 
             {snip.description && (
-              <div style={{ background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", marginBottom:12 }}>
-                <div style={{ fontSize:10, color:"var(--text3)", fontWeight:700, marginBottom:6, letterSpacing:"0.1em" }}>
+              <div style={{ background:"#151D31", border:"1px solid #202A44", borderRadius:12, padding:"12px 14px", marginBottom:12 }}>
+                <div style={{ fontSize:10, color:"#64748B", fontWeight:700, marginBottom:6, letterSpacing:"0.1em" }}>
                   {snippetType==="instructie" ? "INSTRUCTIE" : "BESCHRIJVING"}
                 </div>
-                <p style={{ fontSize:14, color:"var(--text2)", lineHeight:1.6, margin:0, whiteSpace:"pre-wrap" }}>{snip.description}</p>
+                <p style={{ fontSize:14, color:"#94A3B8", lineHeight:1.6, margin:0, whiteSpace:"pre-wrap" }}>{snip.description}</p>
               </div>
             )}
 
             {snip.notes && (
-              <div style={{ background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"12px 14px", marginBottom:12 }}>
-                <div style={{ fontSize:10, color:"var(--text3)", fontWeight:700, marginBottom:6, letterSpacing:"0.1em" }}>NOTITIES</div>
-                <p style={{ fontSize:14, color:"var(--text2)", lineHeight:1.6, margin:0, whiteSpace:"pre-wrap" }}>{snip.notes}</p>
+              <div style={{ background:"#151D31", border:"1px solid #202A44", borderRadius:12, padding:"12px 14px", marginBottom:12 }}>
+                <div style={{ fontSize:10, color:"#64748B", fontWeight:700, marginBottom:6, letterSpacing:"0.1em" }}>NOTITIES</div>
+                <p style={{ fontSize:14, color:"#94A3B8", lineHeight:1.6, margin:0, whiteSpace:"pre-wrap" }}>{snip.notes}</p>
               </div>
             )}
 
             {snip.tags?.length > 0 && (
               <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:14 }}>
                 {snip.tags.map(t => (
-                  <span key={t} style={{ background:"var(--bg3)", color:"var(--text3)", padding:"3px 10px", borderRadius:20, fontSize:12, border:"1px solid var(--border2)" }}>#{t}</span>
+                  <span key={t} style={{ background:"#151D31", color:"#64748B", padding:"3px 10px", borderRadius:20, fontSize:12, border:"1px solid #202A44" }}>#{t}</span>
                 ))}
               </div>
             )}
 
-            {/* DATUM */}
             {(snip.createdAt || snip.updatedAt) && (
               <div style={{ display:"flex", gap:8, marginBottom:14 }}>
                 {snip.createdAt && (
-                  <div style={{ flex:1, background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:10, padding:"8px 12px" }}>
-                    <div style={{ fontSize:10, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:3 }}>AANGEMAAKT</div>
-                    <div style={{ fontSize:12, color:"var(--text2)", fontWeight:500 }}>{formatDate(snip.createdAt)}</div>
+                  <div style={{ flex:1, background:"#151D31", border:"1px solid #202A44", borderRadius:10, padding:"8px 12px" }}>
+                    <div style={{ fontSize:10, color:"#64748B", fontWeight:700, letterSpacing:"0.08em", marginBottom:3 }}>AANGEMAAKT</div>
+                    <div style={{ fontSize:12, color:"#94A3B8", fontWeight:500 }}>{formatDate(snip.createdAt)}</div>
                   </div>
                 )}
                 {snip.updatedAt && snip.updatedAt !== snip.createdAt && (
-                  <div style={{ flex:1, background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:10, padding:"8px 12px" }}>
-                    <div style={{ fontSize:10, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:3 }}>BIJGEWERKT</div>
-                    <div style={{ fontSize:12, color:"var(--text2)", fontWeight:500 }}>{formatDate(snip.updatedAt)}</div>
+                  <div style={{ flex:1, background:"#151D31", border:"1px solid #202A44", borderRadius:10, padding:"8px 12px" }}>
+                    <div style={{ fontSize:10, color:"#64748B", fontWeight:700, letterSpacing:"0.08em", marginBottom:3 }}>BIJGEWERKT</div>
+                    <div style={{ fontSize:12, color:"#94A3B8", fontWeight:500 }}>{formatDate(snip.updatedAt)}</div>
                   </div>
                 )}
               </div>
             )}
 
             <div style={{ display:"flex", gap:8 }}>
-              <button onClick={onFav} style={{ flex:1, padding:"11px 8px", borderRadius:12, background: snip.favorite ? "var(--accent)" : "var(--bg2)", border:"1px solid var(--border2)", cursor:"pointer", fontSize:13, fontWeight:700, color: snip.favorite ? "#fff" : "var(--text2)" }}>
+              <button onClick={onFav} style={{ flex:1, padding:"11px 8px", borderRadius:12, background: snip.favorite ? "#4F8CFF" : "#151D31", border:"1px solid " + (snip.favorite ? "#4F8CFF" : "#202A44"), cursor:"pointer", fontSize:13, fontWeight:700, color: snip.favorite ? "#fff" : "#94A3B8" }}>
                 {snip.favorite ? "★ Favoriet" : "☆ Favoriet"}
               </button>
-              <button onClick={onShare} style={{ flex:1, padding:"11px 8px", borderRadius:12, background:"var(--bg2)", border:"1px solid var(--border2)", cursor:"pointer", fontSize:13, fontWeight:700, color:"var(--text2)" }}>↗ Delen</button>
-              <button onClick={onExport} style={{ flex:1, padding:"11px 8px", borderRadius:12, background:"var(--bg2)", border:"1px solid var(--border2)", cursor:"pointer", fontSize:13, fontWeight:700, color:"var(--text2)" }}>↓ Export</button>
+              <button onClick={onShare} style={{ flex:1, padding:"11px 8px", borderRadius:12, background:"#151D31", border:"1px solid #202A44", cursor:"pointer", fontSize:13, fontWeight:700, color:"#94A3B8" }}>↗ Delen</button>
+              <button onClick={onExport} style={{ flex:1, padding:"11px 8px", borderRadius:12, background:"#151D31", border:"1px solid #202A44", cursor:"pointer", fontSize:13, fontWeight:700, color:"#94A3B8" }}>↓ Export</button>
             </div>
           </div>
         )}
@@ -297,7 +288,7 @@ export default function DetailView({ snip, copied, showSheet, theme, onBack, onD
                   const isActive = activeBlock?.id===block.id;
                   return (
                     <button key={block.id}
-                      style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 12px", borderRadius:8, border:"1px solid "+(isActive?"var(--accent)":"var(--border2)"), background: isActive?"var(--accent)22":"var(--bg2)", color: isActive?"var(--accent)":"var(--text2)", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}
+                      style={{ display:"flex", alignItems:"center", gap:6, padding:"6px 12px", borderRadius:8, border:"1px solid "+(isActive?"#4F8CFF":"#202A44"), background: isActive?"rgba(79,140,255,0.12)":"#151D31", color: isActive?"#4F8CFF":"#94A3B8", fontSize:12, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap", flexShrink:0 }}
                       onClick={() => setActiveBlockId(block.id)}>
                       <span style={{ fontSize:10, fontWeight:700, padding:"1px 6px", borderRadius:8, background: langColor+"22", color: langColor, fontFamily:"monospace" }}>{lang}</span>
                       {block.filename.length>14 ? block.filename.slice(0,14)+"..." : block.filename}
@@ -313,19 +304,19 @@ export default function DetailView({ snip, copied, showSheet, theme, onBack, onD
                     <button onClick={() => copyAction("code", activeBlock.id)} style={{
                       flex:2, display:"flex", alignItems:"center", justifyContent:"center",
                       gap:8, padding:"12px", borderRadius:12, border:"none",
-                      background: copyState===activeBlock.id ? "var(--green)" : "var(--accent)",
+                      background: copyState===activeBlock.id ? "#10b981" : "#4F8CFF",
                       color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer", transition:"background 0.2s",
                     }}>
                       {copyState===activeBlock.id ? "✓ Gekopieerd!" : "⎘ Kopieer "+(activeBlock.filename.length>16?activeBlock.filename.slice(0,16)+"...":activeBlock.filename)}
                     </button>
-                    <button onClick={() => setFullScreen(true)} style={{ flex:1, padding:"12px", borderRadius:12, border:"1px solid var(--border2)", background:"var(--bg2)", fontSize:13, fontWeight:600, cursor:"pointer", color:"var(--text2)" }}>
+                    <button onClick={() => setFullScreen(true)} style={{ flex:1, padding:"12px", borderRadius:12, border:"1px solid #202A44", background:"#151D31", fontSize:13, fontWeight:600, cursor:"pointer", color:"#94A3B8" }}>
                       ⛶ Volledig
                     </button>
                   </div>
                   <CodeViewer code={activeBlock.code} filename={activeBlock.filename} />
                 </>
               ) : (
-                <div style={{ padding:"40px 20px", textAlign:"center", color:"var(--text3)" }}>Geen code blokken</div>
+                <div style={{ padding:"40px 20px", textAlign:"center", color:"#64748B" }}>Geen code blokken</div>
               )}
             </div>
           </div>
@@ -337,18 +328,16 @@ export default function DetailView({ snip, copied, showSheet, theme, onBack, onD
         <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", display:"flex", flexDirection:"column", justifyContent:"flex-end", zIndex:200, padding:"0 8px 34px" }}
           onClick={onCloseSheet}>
           <div onClick={e => e.stopPropagation()}>
-            <div style={{ background:"var(--bg2)", borderRadius:14, overflow:"hidden", marginBottom:8, border:"1px solid var(--border2)" }}>
-              <button style={{ width:"100%", padding:18, background:"transparent", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onEdit}>✏️ Bewerken</button>
-              <div style={{ height:1, background:"var(--border2)" }} />
-              <button style={{ width:"100%", padding:18, background:"transparent", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onShare}>↗ Delen</button>
-              <div style={{ height:1, background:"var(--border2)" }} />
-              <button style={{ width:"100%", padding:18, background:"transparent", border:"none", color:"var(--accent)", fontSize:17, cursor:"pointer" }} onClick={onExport}>↓ Exporteren</button>
-              <div style={{ height:1, background:"var(--border2)" }} />
-              <button style={{ width:"100%", padding:18, background:"transparent", border:"none", color:"#f59e0b", fontSize:17, cursor:"pointer" }} onClick={onArchive}>📦 Archiveren</button>
-              <div style={{ height:1, background:"var(--border2)" }} />
-              <button style={{ width:"100%", padding:18, background:"transparent", border:"none", color:"var(--red)", fontSize:17, cursor:"pointer" }} onClick={onDelete}>🗑 Verwijderen</button>
+            <div style={{ background:"#151D31", borderRadius:14, overflow:"hidden", marginBottom:8, border:"1px solid #202A44" }}>
+              <button style={{ width:"100%", padding:18, background:"transparent", border:"none", color:"#4F8CFF", fontSize:17, cursor:"pointer" }} onClick={onEdit}>✏️ Bewerken</button>
+              <div style={{ height:1, background:"#202A44" }} />
+              <button style={{ width:"100%", padding:18, background:"transparent", border:"none", color:"#4F8CFF", fontSize:17, cursor:"pointer" }} onClick={onShare}>↗ Delen</button>
+              <div style={{ height:1, background:"#202A44" }} />
+              <button style={{ width:"100%", padding:18, background:"transparent", border:"none", color:"#4F8CFF", fontSize:17, cursor:"pointer" }} onClick={onExport}>↓ Exporteren</button>
+              <div style={{ height:1, background:"#202A44" }} />
+              <button style={{ width:"100%", padding:18, background:"transparent", border:"none", color:"#f87171", fontSize:17, cursor:"pointer" }} onClick={onDelete}>🗑 Verwijderen</button>
             </div>
-            <button style={{ width:"100%", padding:18, background:"var(--bg2)", border:"1px solid var(--border2)", color:"var(--accent)", fontSize:17, fontWeight:700, cursor:"pointer", borderRadius:14 }} onClick={onCloseSheet}>Cancel</button>
+            <button style={{ width:"100%", padding:18, background:"#151D31", border:"1px solid #202A44", color:"#4F8CFF", fontSize:17, fontWeight:700, cursor:"pointer", borderRadius:14 }} onClick={onCloseSheet}>Cancel</button>
           </div>
         </div>
       )}

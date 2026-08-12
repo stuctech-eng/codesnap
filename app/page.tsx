@@ -16,7 +16,7 @@ const ProfielView     = dynamic(() => import("@/components/ProfielView"),     { 
 const DetailView      = dynamic(() => import("@/components/DetailView"),      { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "11.07";
+const VERSION = "11.08";
 
 type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "detail" | "edit" | "new";
 
@@ -200,8 +200,7 @@ export default function Page() {
           onBack={() => { setView(returnTo); setActiveId(null); setShowSheet(false); }}
           onDots={() => setShowSheet(true)}
           onEdit={() => { setShowSheet(false); setView("edit"); }}
-          onDelete={() => { if (window.confirm("Naar archief verplaatsen?")) handleDelete(active.id!); }}
-          onArchive={() => { setShowSheet(false); handleDelete(active.id!); }}
+          onDelete={() => { setShowSheet(false); if (window.confirm("Naar archief verplaatsen?")) handleDelete(active.id!); }}
           onCopy={() => { navigator.clipboard.writeText(active.code); setCopied(true); setTimeout(() => setCopied(false), 2200); }}
           onFav={() => handleToggleFav(active.id!, active.favorite)}
           onShare={() => shareSnippet(active)}
