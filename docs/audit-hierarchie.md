@@ -620,5 +620,61 @@ Vervolgstappen (indien gewenst, niet gepland als aparte fase):
 
 ---
 
+## 12. Standaard Onderdelen-patroon (toegevoegd na gebruik, augustus 2026)
+
+> Status: VASTGESTELD EN GEBOUWD (v12.11)
+
+### 12.1 Aanleiding
+
+Na oplevering van Fase H1-H6 bleek het invullen van "Onderdeel" als
+vrij tekstveld te fragmentarisch — elk project kreeg willekeurige,
+niet-herbruikbare namen. Behoefte aan één klein, generiek patroon
+dat voor elk project (bestaand of toekomstig) hetzelfde blijft.
+
+### 12.2 Het vastgestelde patroon
+
+Zes vaste Onderdeel-namen, van toepassing binnen élk Project:
+
+```
+Auth/Toegang   → logins, wachtwoorden, API keys
+Core           → hoofdfunctionaliteit, business logica
+UI             → schermen, componenten, styling
+API            → integraties, webhooks, sync
+Bugs           → project-specifieke fixes
+Ideeën         → project-specifieke brainstorms
+```
+
+Dit is bewust **niet** hardcoded als beperking — de gebruiker kan
+alsnog een eigen, afwijkende waarde intypen via "+ Eigen invoeren".
+De zes namen zijn een snelkeuze, geen dwingend schema.
+
+### 12.3 Twee losse features, beide gebouwd
+
+**A — Onderdeel als keuzelijst (i.p.v. vrij tekstveld)**
+- `components/EditView.tsx`: het "Onderdeel"-veld wordt een popup
+  met de zes vaste namen + een invoerveld voor eigen tekst — zelfde
+  UI-patroon als de bestaande Categorie-popup (`ALL_CATS` +
+  `customCats`), voor consistentie geen nieuw interactiepatroon
+- Voorkomt spelfout-varianten van dezelfde naam ("Core" vs "core"
+  vs "Kern") die anders als aparte, foutieve onderdelen zouden
+  verschijnen in de Bibliotheek-navigatie
+
+**B — Project-autocomplete**
+- Bij het typen in het "Project"-veld: suggesties op basis van
+  Project-namen die al bij eerdere snippets (in dezelfde categorie)
+  gebruikt zijn — voorkomt bijv. "CoachOS" vs "Coachos" vs "coach os"
+- Simpeler dan A: geen aparte popup, gewoon een suggestielijst onder
+  het bestaande tekstveld terwijl je typt
+
+### 12.4 Wat NIET verandert
+
+- Datamodel (`project?: string`, `component?: string`) blijft
+  ongewijzigd — dit is een UI-verbetering, geen schema-wijziging
+- Bestaande snippets met afwijkende, vrij ingetypte Onderdeel-namen
+  blijven gewoon werken — geen migratie, geen dwingende herindeling
+
+---
+
 *Codebase-verificatie en implementatieplan toegevoegd: augustus 2026.
-Fase H1 t/m H6 volledig afgerond (v12.08). Plan gesloten.**
+Fase H1 t/m H6 volledig afgerond (v12.08). Standaard Onderdelen-
+patroon (sectie 12) toegevoegd en gebouwd (v12.11). Plan gesloten.*

@@ -65,6 +65,7 @@ const uid = () => Math.random().toString(36).slice(2, 8);
 
 interface Props {
   snip: Snippet | null;
+  allSnips?: Snippet[]; // Fase "Standaard Onderdelen-patroon" — voor Project-autocomplete
   theme: "dark"|"light";
   forceNew?: boolean;
   onSave: (data: Omit<Snippet,"id">) => void;
@@ -72,9 +73,21 @@ interface Props {
 }
 
 type Field = "title"|"description"|"notes"|"project"|"component"|null;
-type PopupType = "categorie"|"tags"|"bestand"|null;
+type PopupType = "categorie"|"tags"|"bestand"|"onderdeel"|null;
 
-export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Props) {
+// Fase "Standaard Onderdelen-patroon" — zie docs/audit-hierarchie.md
+// sectie 12. Zes vaste namen, herbruikbaar binnen elk Project.
+// Geen dwingend schema -- "+ Eigen invoeren" blijft altijd mogelijk.
+const STANDAARD_ONDERDELEN = [
+  "Auth/Toegang",
+  "Core",
+  "UI",
+  "API",
+  "Bugs",
+  "Ideeën",
+];
+
+export default function EditView({ snip, allSnips, theme, forceNew, onSave, onCancel }: Props) {
   const isNew = forceNew || !snip?.id;
 
   const [form, setForm] = useState({
@@ -99,8 +112,19 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
   const [newCat, setNewCat] = useState("");
   const [newFilename, setNewFilename] = useState("");
   const [customCats, setCustomCats] = useState<string[]>([]);
+  const [showProjectSuggestions, setShowProjectSuggestions] = useState(false);
+  const [existingProjects, setExistingProjects] = useState<string[]>([]);
 
   useEffect(() => { loadCustomCats().then(cats => setCustomCats(cats)); }, []);
+
+  useEffect(() => {
+    if (!allSnips) { setExistingProjects([]); return; }
+    const names = new Set<string>();
+    allSnips.forEach(s => {
+      if (s.category === form.category && s.project) names.add(s.project);
+    });
+    setExistingProjects(Array.from(names).sort());
+  }, [allSnips, form.category]);
 
   const set = (k: string, v: unknown) => setForm(f => ({ ...f, [k]: v }));
 
@@ -307,8 +331,36 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
         {/* PROJECT + ONDERDEEL — Fase H2                      */}
         {/* zie docs/audit-hierarchie.md                       */}
         {/* ------------------------------------------------ */}
+        {/* PROJECT — vrij tekstveld met autocomplete-suggesties eronder */}
         <FieldRow label="PROJECT" field="project" preview={form.project} />
-        <FieldRow label="ONDERDEEL" field="component" preview={form.component} />
+        {existingProjects.length > 0 && (
+          <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:-6, marginBottom:12, paddingLeft:2 }}>
+            {existingProjects.map(p => (
+              <button key={p}
+                style={{ padding:"4px 10px", borderRadius:20, border:"1px solid var(--border2)", background: form.project===p ? "var(--accent)" : "var(--bg2)", color: form.project===p ? "#fff" : "var(--text2)", fontSize:12, fontWeight:600, cursor:"pointer" }}
+                onClick={() => set("project", p)}
+              >
+                {p}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* ONDERDEEL — popup met 6 vaste namen, zelfde patroon als Categorie */}
+        <button
+          style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"13px 14px", width:"100%", cursor:"pointer", marginBottom:12, boxSizing:"border-box" }}
+          onClick={() => setShowPopup("onderdeel")}
+        >
+          <div style={{ flex:1, minWidth:0, textAlign:"left" }}>
+            <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:5 }}>ONDERDEEL</div>
+            <div style={{ fontSize:15, color: form.component ? "var(--text)" : "var(--text3)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontWeight: form.component ? 500 : 400 }}>
+              {form.component || "Tik om te kiezen..."}
+            </div>
+          </div>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0, marginLeft:10 }}>
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
+        </button>
 
         {/* TAGS */}
         <div style={{ marginBottom:12 }}>
@@ -444,6 +496,64 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
                 />
                 <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#fff", fontSize:18, fontWeight:700, cursor:"pointer" }}
                   onClick={addCustomCat}>+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ONDERDEEL POPUP — Fase "Standaard Onderdelen-patroon" */}
+      {showPopup === "onderdeel" && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:300, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 8px 34px" }}
+          onClick={() => setShowPopup(null)}>
+          <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
+              <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Onderdeel kiezen</span>
+              <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer" }}
+                onClick={() => setShowPopup(null)}>Klaar</button>
+            </div>
+            <div style={{ maxHeight:360, overflowY:"auto" }}>
+              <button
+                style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"14px 16px", background: !form.component ? "var(--bg3)" : "transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                onClick={() => { set("component", ""); setShowPopup(null); }}>
+                <span style={{ fontSize:15, color:"var(--text3)", fontStyle:"italic" }}>Geen onderdeel</span>
+                {!form.component && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                )}
+              </button>
+              {STANDAARD_ONDERDELEN.map(o => (
+                <button key={o}
+                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"14px 16px", background: form.component === o ? "var(--bg3)" : "transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                  onClick={() => { set("component", o); setShowPopup(null); }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ width:8, height:8, borderRadius:"50%", background: form.component === o ? "var(--accent)" : "var(--border2)", flexShrink:0 }} />
+                    <span style={{ fontSize:15, color:"var(--text)", fontWeight: form.component === o ? 700 : 400 }}>{o}</span>
+                  </div>
+                  {form.component === o && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  )}
+                </button>
+              ))}
+              {form.component && !STANDAARD_ONDERDELEN.includes(form.component) && (
+                <button
+                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"14px 16px", background:"var(--bg3)", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                  onClick={() => setShowPopup(null)}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ width:8, height:8, borderRadius:"50%", background:"var(--accent)", flexShrink:0 }} />
+                    <span style={{ fontSize:15, color:"var(--text)", fontWeight:700 }}>{form.component}</span>
+                    <span style={{ fontSize:11, color:"var(--text3)" }}>(eigen)</span>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+              )}
+            </div>
+            <div style={{ padding:"10px 14px 14px", borderTop:"1px solid var(--border2)" }}>
+              <div style={{ display:"flex", gap:8 }}>
+                <input style={{ flex:1, background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:10, color:"var(--text)", fontSize:16, padding:"10px 12px", outline:"none" }}
+                  placeholder="Eigen onderdeel..." value={form.component}
+                  onChange={e => set("component", e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") setShowPopup(null); }}
+                />
               </div>
             </div>
           </div>

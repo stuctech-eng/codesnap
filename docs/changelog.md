@@ -13,6 +13,23 @@
 
 ---
 
+## v12.11
+
+- **Standaard Onderdelen-patroon** — zie docs/audit-hierarchie.md
+  sectie 12. Vast, herbruikbaar setje van zes Onderdeel-namen
+  (Auth/Toegang, Core, UI, API, Bugs, Ideeën), toepasbaar binnen
+  elk Project, i.p.v. steeds opnieuw verzonnen namen per project
+- `components/EditView.tsx`: "Onderdeel" is nu een popup-keuzelijst
+  (zelfde patroon als de bestaande Categorie-popup) met de zes
+  vaste namen + "Eigen invoeren" voor afwijkende gevallen
+- "Project" blijft een vrij tekstveld, maar toont nu
+  autocomplete-suggesties (tikbare chips) op basis van Project-namen
+  die al eerder gebruikt zijn binnen dezelfde categorie — voorkomt
+  spelfout-varianten van dezelfde projectnaam
+- `EditView` kreeg een nieuwe, optionele `allSnips`-prop om deze
+  suggesties te kunnen berekenen; beide aanroepen in `app/page.tsx`
+  bijgewerkt
+
 ## v12.10
 
 - **Bugfix — Component-niveau toonde snippets als tikbare groep

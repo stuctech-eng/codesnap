@@ -19,7 +19,7 @@ const DrillDownView   = dynamic(() => import("@/components/DrillDownView"),   { 
 const Breadcrumb       = dynamic(() => import("@/components/Breadcrumb"),      { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "12.10";
+const VERSION = "12.11";
 
 type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "project" | "component" | "detail" | "edit" | "new";
 
@@ -300,12 +300,12 @@ export default function Page() {
       )}
 
       {view === "new" && (
-        <EditView snip={null} theme={theme} onSave={handleAdd} onCancel={popView} />
+        <EditView snip={null} allSnips={snips} theme={theme} onSave={handleAdd} onCancel={popView} />
       )}
 
       {view === "edit" && active && (
         <EditView
-          snip={active} theme={theme}
+          snip={active} allSnips={snips} theme={theme}
           onSave={(data) => { handleUpdate(active.id!, data); setView("detail"); }}
           onCancel={() => setView("detail")}
         />
