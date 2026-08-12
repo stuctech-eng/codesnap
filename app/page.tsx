@@ -19,7 +19,7 @@ const DrillDownView   = dynamic(() => import("@/components/DrillDownView"),   { 
 const Breadcrumb       = dynamic(() => import("@/components/Breadcrumb"),      { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "12.12";
+const VERSION = "12.13";
 
 type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "project" | "component" | "detail" | "edit" | "new";
 
@@ -57,7 +57,11 @@ export default function Page() {
   };
 
   const active     = snips.find(s => s.id === activeId);
-  const lastOpened = snips.find(s => s.id === lastOpenedId);
+  // BUGFIX: lastOpened moet niet meer verschijnen als de snippet
+  // inmiddels verwijderd is (deletedAt gezet) — anders blijft een
+  // net verwijderde snippet zichtbaar in "Verder waar je gebleven
+  // was" op Home. Zie melding via screenshot, augustus 2026.
+  const lastOpened = snips.find(s => s.id === lastOpenedId && !s.deletedAt);
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);

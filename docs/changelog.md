@@ -13,6 +13,22 @@
 
 ---
 
+## v12.13
+
+- **Bugfix — verwijderde snippet bleef staan in "Verder waar je
+  gebleven was".** Als de laatst-geopende snippet daarna verwijderd
+  werd (naar Archief), bleef hij toch zichtbaar in de Continue
+  Working-hero op Home, inclusief werkende "Doorgaan"-knop naar een
+  inmiddels verwijderde snippet
+- `app/page.tsx`: `lastOpened` filtert nu ook op `!s.deletedAt` —
+  een verwijderde snippet verdwijnt hierdoor correct uit de
+  Continue Working-sectie; Home valt dan terug op de lege staat
+  ("Begin met je eerste snippet") als er geen andere geldige
+  laatst-geopende snippet is
+- `active` (de snippet in DetailView zelf) is bewust NIET gewijzigd
+  — die moet nog zichtbaar blijven op het moment van verwijderen
+  zelf, vlak vóór de gebruiker teruggestuurd wordt
+
 ## v12.12
 
 - **Bugfix — korte "0 snippets" flits direct na app-start.** Na de
