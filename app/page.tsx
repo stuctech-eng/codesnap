@@ -32,18 +32,20 @@ export default function Page() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   // Fase H3 — stack i.p.v. enkele waarde, zodat meerdere niveaus
   // diep (H4: Project/Component) correct terug kunnen navigeren.
+  // pushView legt de HUIDIGE view vast als terugkeerpunt, dus er
+  // is geen handmatig "from"-argument nodig bij de aanroeper.
   // Zie docs/audit-hierarchie.md sectie 8, Fase H3.
-  const [returnStack, setReturnStack] = useState<View[]>(["home"]);
-  const pushView = (from: View, next: View) => {
-    setReturnStack(prev => [...prev, from]);
+  const [returnStack, setReturnStack] = useState<View[]>([]);
+  const pushView = (next: View) => {
+    setReturnStack(prev => [...prev, view]);
     setView(next);
   };
   const popView = () => {
     setReturnStack(prev => {
-      if (prev.length <= 1) return ["home"];
-      const next = prev.slice(0, -1);
-      setView(next[next.length - 1]);
-      return next;
+      if (prev.length === 0) { setView("home"); return []; }
+      const last = prev[prev.length - 1];
+      setView(last);
+      return prev.slice(0, -1);
     });
   };
 
@@ -120,11 +122,11 @@ export default function Page() {
     flash("Geexporteerd");
   };
 
-  const openSnippet = (id: string, from: View) => {
+  const openSnippet = (id: string) => {
     setActiveId(id);
     setLastOpenedId(id);
     localStorage.setItem("lastOpenedId", id);
-    pushView(from, "detail");
+    pushView("detail");
   };
 
   const openCategory = (cat: string) => {
@@ -134,7 +136,7 @@ export default function Page() {
 
   const goHome = () => {
     setView("home");
-    setReturnStack(["home"]);
+    setReturnStack([]);
     setActiveId(null);
     setActiveCategory(null);
     setShowSheet(false);
@@ -150,12 +152,12 @@ export default function Page() {
           allSnips={snips}
           lastOpened={lastOpened || null}
           onOpenCategory={openCategory}
-          onOpenSnippet={(id) => openSnippet(id, "home")}
+          onOpenSnippet={openSnippet}
           onSearch={() => setView("search")}
           onFav={(id, current) => handleToggleFav(id, current)}
-          onAdd={() => pushView("home", "new")}
-          onOpenBibliotheek={() => setView("bibliotheek")}
-          onOpenProfiel={() => setView("profiel")}
+          onAdd={() => pushView("new")}
+          onOpenBibliotheek={() => pushView("bibliotheek")}
+          onOpenProfiel={() => pushView("profiel")}
         />
       )}
 
@@ -163,7 +165,7 @@ export default function Page() {
         <BibliotheekView
           allSnips={snips}
           onBack={goHome}
-          onOpenSnippet={(id) => openSnippet(id, "bibliotheek")}
+          onOpenSnippet={openSnippet}
           onOpenCategory={openCategory}
           onFav={(id, current) => handleToggleFav(id, current)}
         />
@@ -183,7 +185,7 @@ export default function Page() {
           category={activeCategory}
           allSnips={snips}
           onBack={goHome}
-          onOpenSnippet={(id) => openSnippet(id, "category")}
+          onOpenSnippet={openSnippet}
           onFav={(id, current) => handleToggleFav(id, current)}
         />
       )}
@@ -192,7 +194,7 @@ export default function Page() {
         <SearchView
           allSnips={snips}
           onBack={goHome}
-          onOpenSnippet={(id) => openSnippet(id, "search")}
+          onOpenSnippet={openSnippet}
           onFav={(id, current) => handleToggleFav(id, current)}
         />
       )}
@@ -221,7 +223,7 @@ export default function Page() {
           onShare={() => shareSnippet(active)}
           onExport={() => exportSnippet(active)}
           onCloseSheet={() => setShowSheet(false)}
-          onAdd={() => pushView("detail", "new")}
+          onAdd={() => pushView("new")}
         />
       )}
 

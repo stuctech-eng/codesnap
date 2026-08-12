@@ -438,6 +438,40 @@ die er gebruik van maken.
 - App-gedrag na deze fase: onveranderd zichtbaar — nog geen UI om
   deze velden in te vullen of te gebruiken
 
+**Fase H3 — belangrijke correctie tijdens implementatie:**
+
+De eerste versie van `pushView(from, next)` nam een handmatig
+`from`-argument aan de aanroepzijde. Handmatige simulatie van alle
+navigatiepaden (vóór levering, dus vóór dit ooit live kwam) toonde
+een echte bug: `HomeView.onOpenBibliotheek` en `onOpenProfiel`
+gingen nog via het oude `setView(...)` direct, niet via `pushView`.
+Gevolg: Bibliotheek → snippet → Detail → terug bracht de gebruiker
+naar Home in plaats van terug naar Bibliotheek.
+
+**Fix:** het mechanisme is herontworpen zodat `pushView(next)` de
+**huidige `view`-state** zelf op de stack zet, in plaats van een
+door de aanroeper handmatig opgegeven `from`-waarde. Dit maakt de
+aanroep simpeler (`pushView("detail")` i.p.v.
+`pushView("home", "detail")`) én voorkomt structureel dat een
+vergeten `pushView`-aanroep ergens tot een foute terugkeer leidt —
+er is nu nog maar één plek (de `view`-state zelf) die ooit "waar
+ben ik nu" hoeft bij te houden.
+
+Alle navigatiepaden zijn opnieuw handmatig gesimuleerd tegen de
+gecorrigeerde code vóór levering, inclusief het scenario dat eerder
+faalde. Zie onderstaande tabel.
+
+| Scenario | Resultaat |
+|---|---|
+| Home → Detail → terug | ✅ Home |
+| Home → Bibliotheek → Detail → terug | ✅ Bibliotheek |
+| ...en daarna nog een keer terug | ✅ Home |
+| Home → Categorie → Detail → terug | ✅ Categorie |
+| Home → Zoeken → Detail → terug | ✅ Zoeken |
+| Home → Detail → Nieuw → annuleer | ✅ Detail |
+| Home → Nieuw → opslaan | ✅ Home |
+| Home → Profiel → terug | ✅ Home |
+
 **Fase H3 details:**
 - `app/page.tsx` — `returnTo: View` (enkele waarde) vervangen door
   `returnStack: View[]` met `pushView(from, next)` en `popView()`
