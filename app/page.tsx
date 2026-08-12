@@ -16,7 +16,7 @@ const ProfielView     = dynamic(() => import("@/components/ProfielView"),     { 
 const DetailView      = dynamic(() => import("@/components/DetailView"),      { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "12.03";
+const VERSION = "12.04";
 
 type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "detail" | "edit" | "new";
 
@@ -30,7 +30,22 @@ export default function Page() {
   const [showSheet, setShowSheet] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const [returnTo, setReturnTo] = useState<View>("home");
+  // Fase H3 — stack i.p.v. enkele waarde, zodat meerdere niveaus
+  // diep (H4: Project/Component) correct terug kunnen navigeren.
+  // Zie docs/audit-hierarchie.md sectie 8, Fase H3.
+  const [returnStack, setReturnStack] = useState<View[]>(["home"]);
+  const pushView = (from: View, next: View) => {
+    setReturnStack(prev => [...prev, from]);
+    setView(next);
+  };
+  const popView = () => {
+    setReturnStack(prev => {
+      if (prev.length <= 1) return ["home"];
+      const next = prev.slice(0, -1);
+      setView(next[next.length - 1]);
+      return next;
+    });
+  };
 
   const active     = snips.find(s => s.id === activeId);
   const lastOpened = snips.find(s => s.id === lastOpenedId);
@@ -57,7 +72,7 @@ export default function Page() {
   const handleAdd = async (data: Omit<Snippet, "id">) => {
     await addSnippet(data);
     flash("Snippet opgeslagen");
-    setView(returnTo);
+    popView();
   };
 
   const handleUpdate = async (id: string, data: Partial<Snippet>) => {
@@ -70,8 +85,8 @@ export default function Page() {
   const handleDelete = async (id: string) => {
     await softDeleteSnippet(id);
     flash("Naar archief verplaatst");
-    setView(returnTo);
     setActiveId(null);
+    popView();
   };
 
   const handleRestore = async (id: string) => {
@@ -106,11 +121,10 @@ export default function Page() {
   };
 
   const openSnippet = (id: string, from: View) => {
-    setReturnTo(from);
     setActiveId(id);
     setLastOpenedId(id);
     localStorage.setItem("lastOpenedId", id);
-    setView("detail");
+    pushView(from, "detail");
   };
 
   const openCategory = (cat: string) => {
@@ -120,6 +134,7 @@ export default function Page() {
 
   const goHome = () => {
     setView("home");
+    setReturnStack(["home"]);
     setActiveId(null);
     setActiveCategory(null);
     setShowSheet(false);
@@ -138,7 +153,7 @@ export default function Page() {
           onOpenSnippet={(id) => openSnippet(id, "home")}
           onSearch={() => setView("search")}
           onFav={(id, current) => handleToggleFav(id, current)}
-          onAdd={() => { setReturnTo("home"); setView("new"); }}
+          onAdd={() => pushView("home", "new")}
           onOpenBibliotheek={() => setView("bibliotheek")}
           onOpenProfiel={() => setView("profiel")}
         />
@@ -183,7 +198,7 @@ export default function Page() {
       )}
 
       {view === "new" && (
-        <EditView snip={null} theme={theme} onSave={handleAdd} onCancel={() => setView(returnTo)} />
+        <EditView snip={null} theme={theme} onSave={handleAdd} onCancel={popView} />
       )}
 
       {view === "edit" && active && (
@@ -197,7 +212,7 @@ export default function Page() {
       {view === "detail" && active && (
         <DetailView
           snip={active} copied={copied} showSheet={showSheet} theme={theme}
-          onBack={() => { setView(returnTo); setActiveId(null); setShowSheet(false); }}
+          onBack={() => { setActiveId(null); setShowSheet(false); popView(); }}
           onDots={() => setShowSheet(true)}
           onEdit={() => { setShowSheet(false); setView("edit"); }}
           onDelete={() => { setShowSheet(false); if (window.confirm("Naar archief verplaatsen?")) handleDelete(active.id!); }}
@@ -206,7 +221,7 @@ export default function Page() {
           onShare={() => shareSnippet(active)}
           onExport={() => exportSnippet(active)}
           onCloseSheet={() => setShowSheet(false)}
-          onAdd={() => { setReturnTo("detail"); setView("new"); }}
+          onAdd={() => pushView("detail", "new")}
         />
       )}
 

@@ -423,8 +423,8 @@ die er gebruik van maken.
 |---|---|
 | H1 — Datamodel (`project`/`component` velden) | ✅ Afgerond (v12.02) |
 | H2 — EditView invoervelden | ✅ Afgerond (v12.03) |
-| H3 — Routing: returnStack | ⏳ Volgende |
-| H4 — ProjectListView + ComponentListView | ⬜ Gepland |
+| H3 — Routing: returnStack | ✅ Afgerond (v12.04) |
+| H4 — ProjectListView + ComponentListView | ⏳ Volgende |
 | H5 — Breadcrumb-component | ⬜ Gepland |
 | H6 — Contextuele drill-down in Bibliotheek | ⬜ Gepland |
 
@@ -437,6 +437,23 @@ die er gebruik van maken.
   beide velden
 - App-gedrag na deze fase: onveranderd zichtbaar — nog geen UI om
   deze velden in te vullen of te gebruiken
+
+**Fase H3 details:**
+- `app/page.tsx` — `returnTo: View` (enkele waarde) vervangen door
+  `returnStack: View[]` met `pushView(from, next)` en `popView()`
+  helper-functies
+- Gedrag exact behouden voor alle bestaande navigatie: elke plek
+  die voorheen `setReturnTo(x)` + `setView(y)` deed, doet nu
+  `pushView(x, y)`; elke plek die `setView(returnTo)` deed, doet nu
+  `popView()`
+- `goHome()` reset de stack naar `["home"]` — voorkomt dat een oude,
+  diepe stack blijft hangen als de gebruiker via Home-knop terugkeert
+- Edit-flow (`detail ↔ edit`) bewust NIET via de stack gerouteerd —
+  dat gebruikte `returnTo` ook nooit, blijft directe `setView()`
+  zoals voorheen
+- Dit is de laatste fase vóór nieuwe schermen worden toegevoegd
+  (H4) — de stack is nu bewezen te werken met de bestaande navigatie
+  vóórdat er iets nieuws op wordt gebouwd
 
 **Fase H2 details:**
 - `components/EditView.tsx` — twee nieuwe velden "Project" en
@@ -454,4 +471,5 @@ die er gebruik van maken.
 ---
 
 *Codebase-verificatie en implementatieplan toegevoegd: augustus 2026.
-Fase H1 en H2 afgerond. Volgende stap: Fase H3 na expliciete "go".**
+Fase H1, H2 en H3 afgerond. Volgende stap: Fase H4 na expliciete
+"go".**
