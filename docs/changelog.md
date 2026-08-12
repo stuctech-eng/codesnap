@@ -13,6 +13,23 @@
 
 ---
 
+## v12.10
+
+- **Bugfix — Component-niveau toonde snippets als tikbare groep
+  i.p.v. te openen.** Op het diepste niveau van de hiërarchie
+  (Bibliotheek → Categorie → Project → Onderdeel) verscheen een
+  snippet met een ingevulde Onderdeel-waarde onterecht als eigen
+  tikbare "map" i.p.v. als openbare snippet — tikken deed niets
+  (`onOpenNext` was daar terecht een lege functie, want er bestaat
+  geen niveau na Component, maar de groepeerlogica probeerde daar
+  toch nog op te groeperen)
+- `components/DrillDownView.tsx`: op `level === "component"` worden
+  nooit meer groepen gevormd — alle snippets in scope verschijnen nu
+  altijd als platte, direct openbare lijst op dat niveau
+- Sectie-labels aangepast: "Overig binnen X" alleen nog zichtbaar op
+  Project-niveau wanneer er daadwerkelijk groepen zijn; Component-
+  niveau toont voortaan simpelweg "Snippets" boven de lijst
+
 ## v12.09
 
 - **Bugfix — verwijderde snippets bleven zichtbaar.** `HomeView`,

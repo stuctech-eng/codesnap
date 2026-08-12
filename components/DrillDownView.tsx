@@ -60,22 +60,28 @@ export default function DrillDownView({
     return base;
   }, [allSnips, category, project, level]);
 
-  // Groepen op dit niveau (projecten, of onderdelen binnen het project)
+  // Groepen op dit niveau. Alleen relevant op level "project" (dat
+  // groepeert op het project-veld om door te kunnen naar Component).
+  // Op level "component" bestaat er geen dieper niveau meer — dat
+  // scherm toont altijd de platte snippet-lijst, nooit groepen.
+  // BUGFIX: eerder groepeerde dit ook op "component" op het
+  // component-niveau zelf, waardoor snippets met een ingevulde
+  // Onderdeel-waarde onterecht als tikbare groep verschenen i.p.v.
+  // als openbare snippet. Zie melding via screenshot, augustus 2026.
   const groups = useMemo(() => {
-    const field = level === "project" ? "project" : "component";
+    if (level === "component") return [];
     const names = new Set<string>();
-    scoped.forEach(s => {
-      const v = s[field as "project" | "component"];
-      if (v) names.add(v);
-    });
+    scoped.forEach(s => { if (s.project) names.add(s.project); });
     return Array.from(names).sort();
   }, [scoped, level]);
 
-  // Platte snippets zonder een waarde op dit niveau — die horen hier
-  // gewoon in de lijst thuis, geen los "leeg"-niveau ervoor nodig.
+  // Snippets die op dit niveau als platte lijst getoond moeten worden.
+  // Op level "project": snippets zonder project-waarde (vallen niet
+  // in een groep). Op level "component": ALLE snippets in scope —
+  // er is geen dieper niveau, dus niets wordt nog weggefilterd.
   const ungrouped = useMemo(() => {
-    const field = level === "project" ? "project" : "component";
-    return scoped.filter(s => !s[field as "project" | "component"]);
+    if (level === "component") return scoped;
+    return scoped.filter(s => !s.project);
   }, [scoped, level]);
 
   const title = level === "project" ? category : project!;
@@ -130,9 +136,16 @@ export default function DrillDownView({
 
         {ungrouped.length > 0 && (
           <>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#94A3B8", letterSpacing: "0.08em", textTransform: "uppercase", marginTop: groups.length > 0 ? 20 : 0, marginBottom: 8 }}>
-              {level === "project" ? "Overig binnen " + category : "Overig binnen " + project}
-            </div>
+            {level === "project" && groups.length > 0 && (
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#94A3B8", letterSpacing: "0.08em", textTransform: "uppercase", marginTop: 20, marginBottom: 8 }}>
+                Overig binnen {category}
+              </div>
+            )}
+            {level === "component" && (
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#94A3B8", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>
+                Snippets
+              </div>
+            )}
             {ungrouped.map(snip => {
               const lang = getLang(snip);
               return (
