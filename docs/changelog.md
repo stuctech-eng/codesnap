@@ -7,12 +7,54 @@
 
 ## Ongepland / In behandeling
 
-### Design Baseline v2.0 — vastgelegd, implementatie nog niet gestart
-- Zie docs/design-baseline-v2.md voor volledige specificatie
-- Zie docs/roadmap.md voor fasering (Fase 1 t/m 6)
-- Status: Fase 0 (baseline) afgerond, Fase 1 (Home Screen) nog niet gestart
+- 30-dagen automatische Archief-cleanup — vereist Firebase Cloud
+  Function of Vercel Cron Job, nog niet gebouwd (infrastructuurtaak,
+  zie docs/design-baseline-v2.md sectie 10.4)
+- Fase 5 (responsive/PWA polish) en Fase 6 (oude ListView.tsx
+  verwijderen) uit docs/roadmap.md — doorlopend/handmatig
 
 ---
+
+## v11.06
+
+- **Bibliotheek-scherm** toegevoegd (BibliotheekView.tsx) — algeheel
+  overzicht van alle snippets, los van CategoryView. Tabs: Alle /
+  Favorieten / Categorieën, met sortering. Bereikbaar via "Bekijk
+  alles" op Home
+- Snippet-rijen in Bibliotheek: geen gekleurde vlakken meer, subtiele
+  1px donkerblauwe rand, favoriet = blauwe rand + blauw hart
+  (volgens goedgekeurde preview-bibliotheek.html)
+- **Profiel-scherm** toegevoegd (ProfielView.tsx) — bereikbaar via
+  icoon rechtsboven op Home. Bevat Account/Instellingen (placeholders)
+  en Archief
+- **Archief** verplaatst naar Profiel — geen losse navigatie-knop.
+  Toont verwijderde snippets met verwijderdatum en dagen resterend
+- **Soft-delete systeem**: `archived: boolean` vervangen door
+  `deletedAt?: string` in lib/types.ts. "Verwijderen" in DetailView
+  verplaatst nu naar Archief (30 dagen) i.p.v. direct te wissen
+- lib/db.ts: nieuwe functies `softDeleteSnippet()`,
+  `daysUntilPermanentDelete()`. `deleteSnippet()` nu alleen gebruikt
+  voor definitieve verwijdering vanuit Archief
+- Automatische migratie: bestaande snippets met `archived: true`
+  krijgen bij eerste keer laden een `deletedAt` timestamp
+
+## v10.06
+
+- **Design Baseline v2.0 volledig geïmplementeerd** (Fase 1 t/m 4 in
+  één sessie afgerond)
+- HomeView.tsx nu de standaard startscherm (was: ListView)
+- CategoryView.tsx toegevoegd — categorieën zijn nu losse schermen
+  ipv inline uitklappende lijst
+- SearchView.tsx toegevoegd — volledig scherm zoeken vanuit Home
+- Continue Working toont echte laatst-geopende snippet met relatieve
+  tijd (zojuist/min/uur/dagen geleden) en taal-badge
+- Empty states: nieuwe gebruiker (0 snippets), geen favorieten
+- Lijn-iconen (SVG) vervangen emoji's in categorie-weergave
+- Kleurensysteem v2.0 toegepast (#0B1020 basis, #4F8CFF accent)
+- Nieuwe routing in app/page.tsx: home/category/search/detail/edit/new
+  met `returnTo` state voor correcte terug-navigatie
+- `components/ListView.tsx` niet meer actief gebruikt — nog wel in
+  repo aanwezig als fallback, verwijderen is Fase 6 (handmatig)
 
 ## v09.06
 
