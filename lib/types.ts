@@ -15,8 +15,11 @@ export interface Snippet {
   notes?: string;
   snippetType?: SnippetType;
   category: string;
-  project?: string;     // optioneel — Fase H1, zie docs/audit-hierarchie.md
-  component?: string;   // optioneel — Fase H1, onderdeel binnen project
+
+  // Fase H1 — hiërarchische bibliotheek, zie docs/audit-hierarchie.md
+  project?: string;
+  component?: string;
+
   tags: string[];
   favorite: boolean;
   archived?: boolean;   // legacy — wordt uitgefaseerd, zie deletedAt
