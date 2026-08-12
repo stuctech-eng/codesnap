@@ -303,9 +303,10 @@ export default function EditView({ snip, theme, forceNew, onSave, onCancel }: Pr
           </button>
         </div>
 
-        {/* PROJECT + ONDERDEEL */}
-        {/* Fase H2 — hierarchische bibliotheek */}
-        {/* zie docs/audit-hierarchie.md */}
+        {/* ------------------------------------------------ */}
+        {/* PROJECT + ONDERDEEL — Fase H2                      */}
+        {/* zie docs/audit-hierarchie.md                       */}
+        {/* ------------------------------------------------ */}
         <FieldRow label="PROJECT" field="project" preview={form.project} />
         <FieldRow label="ONDERDEEL" field="component" preview={form.component} />
 

@@ -1,5 +1,7 @@
 # CodeSnap — Audit: Bibliotheek Hiërarchische Structuur
 
+<!-- update: H2 voortgang toegevoegd -->
+
 > Audit uitgevoerd naar aanleiding van extern voorstel voor
 > Categorie → Project/App → Onderdeel → Snippet navigatie.
 > Status: AUDIT VOLTOOID + VOORSTEL DEFINITIEF VASTGESTELD.
