@@ -4,8 +4,11 @@
 
 **Live:** https://codesnap-mu.vercel.app
 **Repo:** https://github.com/stuctech-eng/codesnap
-**Versie:** v09.06
-**Actief ontwerp:** Design Baseline v2.0 (Fase 1 nog te starten — zie docs/roadmap.md)
+**Versie:** v12.06
+**Actief ontwerp:** Design Baseline v2.0 — volledig geïmplementeerd
+**Actieve uitbreiding:** Hiërarchische Bibliotheek (Categorie → Project
+→ Onderdeel), Fase H1-H5 afgerond, Fase H6 volgende — zie
+docs/audit-hierarchie.md
 
 ---
 
@@ -16,10 +19,15 @@ prioriteitsvolgorde (zie ook standing rule "Volgorde van waarheid"):
 
 1. **README.md** (dit bestand) — actuele status, snelstart, changelog-samenvatting
 2. **docs/design-baseline-v2.md** — vastgelegde productbeslissingen voor de UI-redesign
-3. **docs/architecture.md** — technische structuur, data flow, componenten
-4. **docs/roadmap.md** — actieve fasering, wat nu/volgende/later
-5. **docs/changelog.md** — volledige chronologische geschiedenis
-6. Bestaande broncode
+3. **docs/audit-hierarchie.md** — hiërarchische Bibliotheek-structuur
+   (Categorie → Project → Onderdeel → Snippet): audit, ontwerp,
+   implementatieplan Fase H1-H6, en actuele voortgang per fase.
+   **Dit is een actief lopende uitbreiding — check dit bestand altijd
+   voor de huidige stand voordat je verder bouwt aan de Bibliotheek.**
+4. **docs/architecture.md** — technische structuur, data flow, componenten
+5. **docs/roadmap.md** — actieve fasering, wat nu/volgende/later
+6. **docs/changelog.md** — volledige chronologische geschiedenis
+7. Bestaande broncode
 
 Bij twijfel over "hoe hoort dit te werken" gaat deze volgorde voor
 op aannames uit de code.
