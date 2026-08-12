@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { Snippet } from "@/lib/types";
+import Breadcrumb, { BreadcrumbSegment } from "./Breadcrumb";
 
 // Generiek component voor de hiërarchie-niveaus Project en
 // Onderdeel (Component). Zie docs/audit-hierarchie.md sectie 4.4:
@@ -20,6 +21,7 @@ interface Props {
   onOpenSnippet: (id: string) => void;
   onOpenNext: (value: string) => void; // drill verder naar component-niveau
   onFav: (id: string, cur: boolean) => void;
+  breadcrumb?: BreadcrumbSegment[]; // Fase H5 — optioneel, alleen tonen als er >1 segment is
 }
 
 const initials = (t = "") => t.slice(0, 2).toUpperCase();
@@ -46,7 +48,7 @@ function getLang(snip: Snippet): string {
 }
 
 export default function DrillDownView({
-  level, category, project, allSnips, onBack, onOpenSnippet, onOpenNext, onFav,
+  level, category, project, allSnips, onBack, onOpenSnippet, onOpenNext, onFav, breadcrumb,
 }: Props) {
   // Basisverzameling: snippets binnen deze categorie (en, op
   // component-niveau, binnen dit specifieke project).
@@ -88,6 +90,8 @@ export default function DrillDownView({
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4F8CFF" strokeWidth="2.5" strokeLinecap="round"><path d="m15 18-6-6 6-6"/></svg>
           <span style={{ color: "#4F8CFF", fontSize: 16 }}>{backLabel}</span>
         </button>
+
+        {breadcrumb && <Breadcrumb segments={breadcrumb} />}
 
         <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: "-0.03em", marginBottom: 4 }}>{title}</h1>
         <div style={{ fontSize: 13, color: "#94A3B8" }}>{scoped.length} {scoped.length === 1 ? "snippet" : "snippets"}</div>

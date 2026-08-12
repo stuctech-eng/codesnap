@@ -15,9 +15,10 @@ const BibliotheekView = dynamic(() => import("@/components/BibliotheekView"), { 
 const ProfielView     = dynamic(() => import("@/components/ProfielView"),     { ssr: false });
 const DetailView      = dynamic(() => import("@/components/DetailView"),      { ssr: false });
 const DrillDownView   = dynamic(() => import("@/components/DrillDownView"),   { ssr: false });
+const Breadcrumb       = dynamic(() => import("@/components/Breadcrumb"),      { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "12.05";
+const VERSION = "12.06";
 
 type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "project" | "component" | "detail" | "edit" | "new";
 
@@ -160,6 +161,22 @@ export default function Page() {
     setShowSheet(false);
   };
 
+  // Fase H5 — breadcrumb "spring naar" functies. Zetten de stack
+  // EXPLICIET voor het doelniveau, i.p.v. popView() herhaaldelijk
+  // aan te roepen (dat zou door React's asynchrone state-updates
+  // onbetrouwbaar kunnen worden bij snel na elkaar meerdere pops).
+  const jumpToBibliotheek = () => {
+    setReturnStack(["home"]);
+    setActiveProject(null);
+    setView("bibliotheek");
+  };
+
+  const jumpToProjectList = () => {
+    setReturnStack(["home", "bibliotheek"]);
+    setActiveProject(null);
+    setView("project");
+  };
+
   const toggleTheme = () => setTheme(t => t === "dark" ? "light" : "dark");
 
   return (
@@ -230,6 +247,11 @@ export default function Page() {
           onOpenSnippet={openSnippet}
           onOpenNext={() => {}}
           onFav={(id, current) => handleToggleFav(id, current)}
+          breadcrumb={[
+            { label: "Bibliotheek", onTap: jumpToBibliotheek },
+            { label: activeCategory, onTap: jumpToProjectList },
+            { label: activeProject, onTap: () => {} },
+          ]}
         />
       )}
 

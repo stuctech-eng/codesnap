@@ -425,8 +425,8 @@ die er gebruik van maken.
 | H2 — EditView invoervelden | ✅ Afgerond (v12.03) |
 | H3 — Routing: returnStack | ✅ Afgerond (v12.04) |
 | H4 — ProjectListView + ComponentListView | ✅ Afgerond (v12.05) |
-| H5 — Breadcrumb-component | ⏳ Volgende |
-| H6 — Contextuele drill-down in Bibliotheek | ⬜ Gepland |
+| H5 — Breadcrumb-component | ✅ Afgerond (v12.06) |
+| H6 — Contextuele drill-down in Bibliotheek | ⏳ Volgende |
 
 **Fase H1 details:**
 - `lib/types.ts` — `project?: string` en `component?: string`
@@ -437,6 +437,33 @@ die er gebruik van maken.
   beide velden
 - App-gedrag na deze fase: onveranderd zichtbaar — nog geen UI om
   deze velden in te vullen of te gebruiken
+
+**Fase H5 details:**
+- `components/Breadcrumb.tsx` (nieuw) — kleine, herbruikbare
+  component. Toont segmenten gescheiden door `/`; laatste segment
+  is de huidige positie (niet tikbaar, grijs), overige segmenten
+  zijn blauw en tikbaar
+- `DrillDownView.tsx` kreeg een optionele `breadcrumb`-prop —
+  alleen het Component-niveau (diepste, waar het meeste waarde
+  zit) geeft nu segmenten mee: `Bibliotheek / [Categorie] / [Project]`
+- **Belangrijk technisch verschil met gewone navigatie:** de
+  breadcrumb gebruikt NIET `popView()` (die gaat altijd precies één
+  stap terug). In plaats daarvan zijn er specifieke "jump"-functies
+  (`jumpToBibliotheek`, `jumpToProjectList`) die de `returnStack`
+  EXPLICIET instellen op wat die correct zou moeten zijn na de
+  sprong. Reden: meerdere `popView()`-aanroepen na elkaar afvuren
+  zou onbetrouwbaar kunnen worden door React's asynchrone
+  state-updates — expliciet instellen is voorspelbaarder.
+- Gesimuleerd vóór levering: normaal drillen naar Component, dan via
+  breadcrumb terugspringen naar een tussenniveau, en gecontroleerd
+  of een daarop volgende `popView()` nog steeds correct gedrag geeft
+  (dus niet alleen "springt de breadcrumb goed", maar ook "blijft de
+  stack daarna kloppen voor gewone terug-navigatie").
+
+**Fase H5 — wat nog NIET is gedaan (bewust, hoort bij H6):**
+- Project-niveau (`level="project"`) krijgt nog geen breadcrumb-prop
+  mee — pas zinvol zodra H6 het Project-niveau daadwerkelijk
+  bereikbaar maakt vanuit Bibliotheek
 
 **Fase H4 details:**
 - `components/DrillDownView.tsx` (nieuw) — één generiek component
@@ -546,4 +573,4 @@ faalde. Zie onderstaande tabel.
 ---
 
 *Codebase-verificatie en implementatieplan toegevoegd: augustus 2026.
-Fase H1 t/m H4 afgerond. Volgende stap: Fase H5 na expliciete "go".**
+Fase H1 t/m H5 afgerond. Volgende stap: Fase H6 na expliciete "go".**
