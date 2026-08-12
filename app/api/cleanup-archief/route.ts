@@ -14,6 +14,7 @@ import { db, ensureAuth } from "@/lib/firebase";
 // server-side route eerst anoniem inloggen — anders faalt elke
 // aanroep stilletjes met een permission-denied fout.
 
+// beveiligingsfix
 const RETENTION_DAYS = 30;
 const COL = "snippets";
 
