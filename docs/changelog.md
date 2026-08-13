@@ -13,6 +13,20 @@
 
 ---
 
+## v12.16
+
+- **Notitie-indicator** — het avatar-vlak (initialen zoals "CO",
+  "FA") links van elke snippet in Bibliotheek en de submap-lijsten
+  (DrillDownView) is vervangen door een 📝-icoon, alleen zichtbaar
+  als de snippet een notitie heeft. Tik erop voor een snelle
+  popup met de notitie-tekst, zonder eerst naar Bewerken te hoeven
+- Reden: de initialen gaven geen bruikbare informatie (titel was
+  al zichtbaar), terwijl notities voorheen alleen zichtbaar waren
+  na het openen van het Bewerk-scherm
+- `components/BibliotheekView.tsx` en `components/DrillDownView.tsx`
+  bijgewerkt; de nu ongebruikte `initials()`-hulpfunctie verwijderd
+  uit beide bestanden
+
 ## v12.15
 
 - **Structurele correctie — Onderdeel werkte niet als submap.**

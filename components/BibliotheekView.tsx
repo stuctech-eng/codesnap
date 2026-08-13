@@ -27,7 +27,6 @@ function getLang(snip: Snippet): string {
   return block.filename.split(".").pop()?.toLowerCase() || "";
 }
 
-const initials = (t = "") => t.slice(0, 2).toUpperCase();
 
 interface Props {
   allSnips: Snippet[];
@@ -42,6 +41,7 @@ export default function BibliotheekView({ allSnips, onBack, onOpenSnippet, onOpe
   const [tab, setTab] = useState<FilterTab>("alle");
   const [sort, setSort] = useState<SortType>("nieuwste");
   const [showSort, setShowSort] = useState(false);
+  const [notesSnip, setNotesSnip] = useState<Snippet | null>(null); // welke notitie-popup open staat
 
   const activeSnips = useMemo(() => allSnips.filter(s => !s.deletedAt), [allSnips]);
   const favorites = useMemo(() => activeSnips.filter(s => s.favorite), [activeSnips]);
@@ -151,8 +151,11 @@ export default function BibliotheekView({ allSnips, onBack, onOpenSnippet, onOpe
                 onClick={() => onOpenSnippet(snip.id!)}
                 style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 14px", borderRadius: 14, border: "1px solid " + (snip.favorite ? "rgba(79,140,255,0.35)" : "#202A44"), marginBottom: 8, background: "#0B1020", cursor: "pointer" }}
               >
-                <div style={{ width: 38, height: 38, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#E2E8F0", border: "1px solid #2A3654", flexShrink: 0 }}>
-                  {initials(snip.title)}
+                <div
+                  style={{ width: 38, height: 38, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16, border: "1px solid " + (snip.notes ? "rgba(79,140,255,0.35)" : "#202A44"), background: snip.notes ? "rgba(79,140,255,0.08)" : "transparent", flexShrink: 0, cursor: snip.notes ? "pointer" : "default" }}
+                  onClick={e => { if (snip.notes) { e.stopPropagation(); setNotesSnip(snip); } }}
+                >
+                  {snip.notes ? "📝" : ""}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#fff", marginBottom: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{snip.title}</div>
@@ -176,6 +179,31 @@ export default function BibliotheekView({ allSnips, onBack, onOpenSnippet, onOpe
           })
         )}
       </div>
+
+      {/* NOTITIE POPUP */}
+      {notesSnip && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 300, display: "flex", flexDirection: "column", justifyContent: "flex-end", padding: "0 8px 34px" }}
+          onClick={() => setNotesSnip(null)}>
+          <div style={{ background: "#151D31", borderRadius: 16, overflow: "hidden", border: "1px solid #202A44" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 16px", borderBottom: "1px solid #202A44" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 16 }}>📝</span>
+                <span style={{ fontSize: 15, fontWeight: 700, color: "#fff" }}>{notesSnip.title}</span>
+              </div>
+              <button style={{ background: "none", border: "none", color: "#64748B", fontSize: 20, cursor: "pointer" }} onClick={() => setNotesSnip(null)}>×</button>
+            </div>
+            <div style={{ padding: "16px", maxHeight: 300, overflowY: "auto" }}>
+              <p style={{ fontSize: 14, color: "#94A3B8", lineHeight: 1.7, margin: 0, whiteSpace: "pre-wrap" }}>{notesSnip.notes}</p>
+            </div>
+            <div style={{ padding: "10px 16px 14px", borderTop: "1px solid #202A44" }}>
+              <button style={{ width: "100%", padding: "11px", borderRadius: 10, background: "#4F8CFF", border: "none", color: "#fff", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+                onClick={() => { const id = notesSnip.id; setNotesSnip(null); onOpenSnippet(id!); }}>
+                Open snippet →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
