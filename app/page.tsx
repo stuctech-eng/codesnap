@@ -19,7 +19,7 @@ const DrillDownView   = dynamic(() => import("@/components/DrillDownView"),   { 
 const Breadcrumb       = dynamic(() => import("@/components/Breadcrumb"),      { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "12.16";
+const VERSION = "12.17";
 
 type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "project" | "component" | "snippets" | "detail" | "edit" | "new";
 

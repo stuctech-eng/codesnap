@@ -73,7 +73,7 @@ interface Props {
 }
 
 type Field = "title"|"description"|"notes"|"project"|"component"|null;
-type PopupType = "categorie"|"tags"|"bestand"|"onderdeel"|null;
+type PopupType = "categorie"|"tags"|"bestand"|"onderdeel"|"project"|null;
 
 // Fase "Standaard Onderdelen-patroon" — zie docs/audit-hierarchie.md
 // sectie 12. Zes vaste namen, herbruikbaar binnen elk Project.
@@ -112,19 +112,23 @@ export default function EditView({ snip, allSnips, theme, forceNew, onSave, onCa
   const [newCat, setNewCat] = useState("");
   const [newFilename, setNewFilename] = useState("");
   const [customCats, setCustomCats] = useState<string[]>([]);
-  const [showProjectSuggestions, setShowProjectSuggestions] = useState(false);
   const [existingProjects, setExistingProjects] = useState<string[]>([]);
+  const [newProject, setNewProject] = useState("");
 
   useEffect(() => { loadCustomCats().then(cats => setCustomCats(cats)); }, []);
 
+  // BUGFIX (augustus 2026): projectsuggesties werden eerder per
+  // categorie gefilterd, waardoor "CodeSnap" (categorie Apps) niet
+  // verscheen als je een nieuwe snippet in categorie "AI Prompts"
+  // aanmaakte -- ook al bedoelde je hetzelfde project. Nu over ALLE
+  // categorieën heen, zodat één project consistent te kiezen is
+  // ongeacht in welke categorie een snippet staat.
   useEffect(() => {
     if (!allSnips) { setExistingProjects([]); return; }
     const names = new Set<string>();
-    allSnips.forEach(s => {
-      if (s.category === form.category && s.project) names.add(s.project);
-    });
+    allSnips.forEach(s => { if (s.project) names.add(s.project); });
     setExistingProjects(Array.from(names).sort());
-  }, [allSnips, form.category]);
+  }, [allSnips]);
 
   const set = (k: string, v: unknown) => setForm(f => ({ ...f, [k]: v }));
 
@@ -331,20 +335,21 @@ export default function EditView({ snip, allSnips, theme, forceNew, onSave, onCa
         {/* PROJECT + ONDERDEEL — Fase H2                      */}
         {/* zie docs/audit-hierarchie.md                       */}
         {/* ------------------------------------------------ */}
-        {/* PROJECT — vrij tekstveld met autocomplete-suggesties eronder */}
-        <FieldRow label="PROJECT" field="project" preview={form.project} />
-        {existingProjects.length > 0 && (
-          <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginTop:-6, marginBottom:12, paddingLeft:2 }}>
-            {existingProjects.map(p => (
-              <button key={p}
-                style={{ padding:"4px 10px", borderRadius:20, border:"1px solid var(--border2)", background: form.project===p ? "var(--accent)" : "var(--bg2)", color: form.project===p ? "#fff" : "var(--text2)", fontSize:12, fontWeight:600, cursor:"pointer" }}
-                onClick={() => set("project", p)}
-              >
-                {p}
-              </button>
-            ))}
+        {/* PROJECT — popup-keuzelijst, zelfde patroon als Categorie/Onderdeel */}
+        <button
+          style={{ display:"flex", alignItems:"center", justifyContent:"space-between", background:"var(--bg2)", border:"1px solid var(--border2)", borderRadius:12, padding:"13px 14px", width:"100%", cursor:"pointer", marginBottom:12, boxSizing:"border-box" }}
+          onClick={() => setShowPopup("project")}
+        >
+          <div style={{ flex:1, minWidth:0, textAlign:"left" }}>
+            <div style={{ fontSize:11, color:"var(--text3)", fontWeight:700, letterSpacing:"0.08em", marginBottom:5 }}>PROJECT</div>
+            <div style={{ fontSize:15, color: form.project ? "var(--text)" : "var(--text3)", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap", fontWeight: form.project ? 500 : 400 }}>
+              {form.project || "Tik om te kiezen..."}
+            </div>
           </div>
-        )}
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--text3)" strokeWidth="2" strokeLinecap="round" style={{ flexShrink:0, marginLeft:10 }}>
+            <path d="m9 18 6-6-6-6"/>
+          </svg>
+        </button>
 
         {/* ONDERDEEL — popup met 6 vaste namen, zelfde patroon als Categorie */}
         <button
@@ -554,6 +559,69 @@ export default function EditView({ snip, allSnips, theme, forceNew, onSave, onCa
                   onChange={e => set("component", e.target.value)}
                   onKeyDown={e => { if (e.key === "Enter") setShowPopup(null); }}
                 />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PROJECT POPUP — hoofdletterongevoelige matching, over alle categorieën heen */}
+      {showPopup === "project" && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.7)", zIndex:300, display:"flex", flexDirection:"column", justifyContent:"flex-end", padding:"0 8px 34px" }}
+          onClick={() => setShowPopup(null)}>
+          <div style={{ background:"var(--bg2)", borderRadius:16, overflow:"hidden", border:"1px solid var(--border2)" }} onClick={e => e.stopPropagation()}>
+            <div style={{ display:"flex", alignItems:"center", justifyContent:"space-between", padding:"14px 16px", borderBottom:"1px solid var(--border2)" }}>
+              <span style={{ fontSize:16, fontWeight:700, color:"var(--text)" }}>Project kiezen</span>
+              <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"6px 14px", color:"#fff", fontSize:14, fontWeight:700, cursor:"pointer" }}
+                onClick={() => setShowPopup(null)}>Klaar</button>
+            </div>
+            <div style={{ maxHeight:360, overflowY:"auto" }}>
+              <button
+                style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"14px 16px", background: !form.project ? "var(--bg3)" : "transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                onClick={() => { set("project", ""); setShowPopup(null); }}>
+                <span style={{ fontSize:15, color:"var(--text3)", fontStyle:"italic" }}>Geen project</span>
+                {!form.project && (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                )}
+              </button>
+              {existingProjects.map(p => {
+                const isSelected = form.project?.toLowerCase() === p.toLowerCase();
+                return (
+                  <button key={p}
+                    style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"14px 16px", background: isSelected ? "var(--bg3)" : "transparent", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                    onClick={() => { set("project", p); setShowPopup(null); }}>
+                    <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                      <div style={{ width:8, height:8, borderRadius:"50%", background: isSelected ? "var(--accent)" : "var(--border2)", flexShrink:0 }} />
+                      <span style={{ fontSize:15, color:"var(--text)", fontWeight: isSelected ? 700 : 400 }}>{p}</span>
+                    </div>
+                    {isSelected && (
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    )}
+                  </button>
+                );
+              })}
+              {form.project && !existingProjects.some(p => p.toLowerCase() === form.project.toLowerCase()) && (
+                <button
+                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between", width:"100%", padding:"14px 16px", background:"var(--bg3)", border:"none", cursor:"pointer", borderBottom:"1px solid var(--border)" }}
+                  onClick={() => setShowPopup(null)}>
+                  <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+                    <div style={{ width:8, height:8, borderRadius:"50%", background:"var(--accent)", flexShrink:0 }} />
+                    <span style={{ fontSize:15, color:"var(--text)", fontWeight:700 }}>{form.project}</span>
+                    <span style={{ fontSize:11, color:"var(--text3)" }}>(nieuw)</span>
+                  </div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" strokeWidth="2.5" strokeLinecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                </button>
+              )}
+            </div>
+            <div style={{ padding:"10px 14px 14px", borderTop:"1px solid var(--border2)" }}>
+              <div style={{ display:"flex", gap:8 }}>
+                <input style={{ flex:1, background:"var(--bg3)", border:"1px solid var(--border2)", borderRadius:10, color:"var(--text)", fontSize:16, padding:"10px 12px", outline:"none" }}
+                  placeholder="Nieuw project..." value={newProject}
+                  onChange={e => setNewProject(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter" && newProject.trim()) { set("project", newProject.trim()); setNewProject(""); setShowPopup(null); } }}
+                />
+                <button style={{ background:"var(--accent)", border:"none", borderRadius:10, padding:"10px 16px", color:"#fff", fontSize:18, fontWeight:700, cursor:"pointer" }}
+                  onClick={() => { if (newProject.trim()) { set("project", newProject.trim()); setNewProject(""); setShowPopup(null); } }}>+</button>
               </div>
             </div>
           </div>

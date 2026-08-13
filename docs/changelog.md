@@ -13,6 +13,25 @@
 
 ---
 
+## v12.17
+
+- **Project is nu een popup-keuzelijst**, zelfde patroon als
+  Categorie en Onderdeel — niet langer een vrij tekstveld met
+  suggestie-chips eronder. Toont alle bestaande Project-namen,
+  aangevinkt welke actief is, plus "Nieuw project..." onderaan
+- **Bugfix — Project-suggesties waren onterecht per categorie
+  gefilterd.** Een project als "CodeSnap" (aangemaakt binnen
+  categorie Apps) verscheen niet als suggestie bij het aanmaken van
+  een snippet in een andere categorie (bijv. AI Prompts), ook al was
+  het bedoeld als hetzelfde project. Suggesties zijn nu over ALLE
+  categorieën heen, consistent met hoe Onderdeel al werkte
+- **Hoofdletterongevoelige matching** — "CodeSnap" en "Codesnap"
+  worden nu herkend als hetzelfde project bij het selecteren
+  (matching gebeurt met `.toLowerCase()`); de uiteindelijk
+  opgeslagen tekst behoudt wel de exacte spelling die je koos of
+  intypte, om onbedoelde stille wijzigingen aan bestaande data te
+  voorkomen
+
 ## v12.16
 
 - **Notitie-indicator** — het avatar-vlak (initialen zoals "CO",
