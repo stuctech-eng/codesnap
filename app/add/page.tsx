@@ -21,10 +21,20 @@ function AddSnippetParamsWrapper() {
   const code = searchParams.get("code") || "";
   const bestand = searchParams.get("bestand") || "snippet.tsx";
 
+  // project/onderdeel toegevoegd -- deze velden bestonden al op het
+  // Snippet-type (Fase H1, hierarchische bibliotheek) maar werden nog
+  // niet uit de URL-parameters gelezen. Optioneel: als ze ontbreken,
+  // blijft de bestaande manuele-selectie-flow in de editor gewoon
+  // werken zoals voorheen -- geen breaking change.
+  const project = searchParams.get("project") || undefined;
+  const component = searchParams.get("onderdeel") || undefined;
+
   const prefillSnip: Snippet = {
     title:       searchParams.get("titel") || "",
     description: searchParams.get("beschrijving") || "",
     category:    searchParams.get("categorie") || "Snippets",
+    project,
+    component,
     tags,
     code:        "",
     codeBlocks:  code ? [{ id: "prefill", filename: bestand, code }] : [],
