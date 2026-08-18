@@ -13,6 +13,31 @@
 
 ---
 
+## v12.18
+
+- **Nieuwe deeplink-route `/plannen`** — opent (en maakt indien
+  nodig automatisch aan) de "Mijn Plannen"-map voor een gegeven
+  project, direct vanuit een andere app of Kortere Opdrachten
+  ```
+  https://codesnap-mu.vercel.app/plannen?project=CoachOS
+  ```
+  Categorie is altijd vast "Apps". Werkt voor zowel bestaande als
+  nog niet bestaande projecten — als "Mijn Plannen" nog niet bestaat
+  voor dat project, wordt een starter-snippet aangemaakt
+- `app/page.tsx`: nieuwe auto-navigatie via
+  `?openProject=X&openComponent=Y` URL-parameters, opgepikt zodra de
+  Firestore-data geladen is (`dataReady`). Gebruikt bewust
+  `window.location.search` i.p.v. `useSearchParams()` om geen
+  Suspense-boundary-wijziging te hoeven doen in deze grote,
+  bestaande component
+- **Bugfix — `app/add/page.tsx` miste `ensureAuth()`.** Deze
+  bestaande route (voor het aanmaken van snippets vanuit AI-tools)
+  bleek sinds de Firestore-beveiligingsfix (v12.07) nooit
+  bijgewerkt met de vereiste authenticatie-stap, ontdekt tijdens het
+  bouwen van de nieuwe `/plannen`-route die hetzelfde patroon nodig
+  had. Zonder deze fix zou `addSnippet()` daar stil falen met een
+  permission-denied fout
+
 ## v12.17
 
 - **Project is nu een popup-keuzelijst**, zelfde patroon als

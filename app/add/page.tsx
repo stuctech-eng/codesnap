@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { addSnippet } from "@/lib/db";
+import { ensureAuth } from "@/lib/firebase";
 import { Snippet } from "@/lib/types";
 import dynamic from "next/dynamic";
 
@@ -32,9 +33,18 @@ function AddSnippetParamsWrapper() {
     archived:    false,
   };
 
+  const [authReady, setAuthReady] = useState(false);
+
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
   }, [theme]);
+
+  // BUGFIX: deze route miste ensureAuth() sinds de Firestore Rules
+  // werden aangescherpt (v12.07) -- addSnippet() zou hier falen met
+  // een permission-denied fout zonder eerst anoniem in te loggen.
+  useEffect(() => {
+    ensureAuth().then(() => setAuthReady(true)).catch(err => console.error("Auth error:", err));
+  }, []);
 
   const copyCodeToClipboard = async () => {
     try {
@@ -45,6 +55,14 @@ function AddSnippetParamsWrapper() {
       alert("Kon niet kopiëren -- plak handmatig");
     }
   };
+
+  if (!authReady) {
+    return (
+      <div style={{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", background:"var(--bg)" }}>
+        <p style={{ color:"var(--text3)", fontSize:14 }}>Laden...</p>
+      </div>
+    );
+  }
 
   if (saved) {
     return (

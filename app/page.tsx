@@ -19,7 +19,7 @@ const DrillDownView   = dynamic(() => import("@/components/DrillDownView"),   { 
 const Breadcrumb       = dynamic(() => import("@/components/Breadcrumb"),      { ssr: false });
 const EditView        = dynamic(() => import("@/components/EditView"),        { ssr: false });
 
-const VERSION = "12.17";
+const VERSION = "12.18";
 
 type View = "home" | "category" | "search" | "bibliotheek" | "profiel" | "project" | "component" | "snippets" | "detail" | "edit" | "new";
 
@@ -91,6 +91,7 @@ export default function Page() {
     });
     return () => unsub();
   }, [authReady]);
+
 
   useEffect(() => {
     const saved = localStorage.getItem("lastOpenedId");
@@ -192,6 +193,23 @@ export default function Page() {
     setActiveComponent(comp);
     pushView("snippets");
   };
+
+  // Deeplink-ondersteuning voor /plannen route: als de app opstart
+  // met ?openProject=X&openComponent=Y in de URL, navigeer dan
+  // automatisch naar die map zodra de data geladen is. Bewust
+  // window.location.search i.p.v. useSearchParams() -- voorkomt een
+  // Suspense-boundary-wijziging in deze grote, bestaande component.
+  // Zie app/plannen/page.tsx voor de route die dit triggert.
+  useEffect(() => {
+    if (!dataReady) return;
+    const params = new URLSearchParams(window.location.search);
+    const openProject = params.get("openProject");
+    const openComp = params.get("openComponent") || "Mijn Plannen";
+    if (openProject) {
+      openComponent("Apps", openProject, openComp);
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  }, [dataReady]);
 
   const goHome = () => {
     setView("home");
