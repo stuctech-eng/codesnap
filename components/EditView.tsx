@@ -76,9 +76,14 @@ type Field = "title"|"description"|"notes"|"project"|"component"|null;
 type PopupType = "categorie"|"tags"|"bestand"|"onderdeel"|"project"|null;
 
 // Fase "Standaard Onderdelen-patroon" — zie docs/audit-hierarchie.md
-// sectie 12. Zes vaste namen, herbruikbaar binnen elk Project.
+// sectie 12. Zeven vaste namen, herbruikbaar binnen elk Project.
 // Geen dwingend schema -- "+ Eigen invoeren" blijft altijd mogelijk.
+// "Mijn Plannen" toegevoegd (augustus 2026) zodat deze niet steeds
+// opnieuw handmatig getypt hoeft te worden -- de /plannen deeplink-
+// route (app/plannen/page.tsx) maakt hier al gebruik van, deze
+// lijst maakt 'm nu ook als handmatige keuze beschikbaar.
 const STANDAARD_ONDERDELEN = [
+  "Mijn Plannen",
   "Auth/Toegang",
   "Core",
   "UI",

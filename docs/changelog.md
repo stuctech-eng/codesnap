@@ -13,6 +13,15 @@
 
 ---
 
+## v12.19
+
+- **"Mijn Plannen" toegevoegd aan de vaste Onderdeel-lijst** (was
+  zes namen, nu zeven). Deze naam werd al automatisch gebruikt door
+  de `/plannen`-deeplink route, maar stond niet in de handmatige
+  keuzelijst in EditView — je moest 'm elke keer opnieuw intypen via
+  "Eigen onderdeel..." om een snippet in dezelfde map te krijgen.
+  Nu gewoon een directe keuze, consistent met wat de deeplink al doet
+
 ## v12.18
 
 - **Nieuwe deeplink-route `/plannen`** — opent (en maakt indien
